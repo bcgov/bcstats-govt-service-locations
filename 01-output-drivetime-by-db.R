@@ -41,19 +41,26 @@ options(timeout = 600)
 
 # data for service bc with unique id
 data_folder <- safepaths::use_network_path()
+data_path <- glue::glue("{data_folder}/data/raw/20250321/")
+file_path <- list.files(data_path, full.names = TRUE, recursive = TRUE)[7]
+loc <- gsub(glue::glue("({data_path})(.*)(/locality_)([0-9][0-9][0-9])(.*)"), "\\4", file_path)
+
 outfolder <- glue::glue("{data_folder}/data/processed/")
-new_da_servicebc_file_path = glue::glue("{data_folder}/data/raw/20250324/Langford_min_dist_adjusted/locality_909_nearest_with_admin_id_servicebc_20250324_152921_no_errors.csv") # nolint: line_length_linter.
-new_da_servicebc_df <- read_csv(new_da_servicebc_file_path)
+
+new_da_servicebc_df <- read_csv(file_path, col_types = cols(.default = "c"))
 
 address_sf_with_da <- new_da_servicebc_df %>%
   janitor::clean_names() %>%
   filter(tag == "servicebc") %>% # rows for distance to nearest service bc only
   rename(address_albers_x = site_albers_x, address_albers_y = site_albers_y) %>%
+  mutate(daid = str_sub(dissemination_block_id, 1, 8),
+         drv_time_sec = as.numeric(drv_time_sec),
+         drv_dist = as.numeric(drv_dist)) %>%
   st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005)
 
 address_sf_with_da %>%
   st_drop_geometry() %>%
-  write_csv(glue::glue("{outfolder}/address_with_da_langford.csv"))
+  write_csv(glue::glue("{outfolder}/address_with_da_loc_{loc}.csv"))
 
 #------------------------------------------------------------------------------
 # Create a DA level summary table: average drive time and distance
@@ -62,23 +69,20 @@ address_sf_with_da %>%
 # therefore not full picture.
 #------------------------------------------------------------------------------
 
-avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
+avg_dist_drvtime_by_db_service <- address_sf_with_da %>%
   st_drop_geometry() %>%
-  group_by(daid) %>%
+  group_by(dissemination_block_id, daid) %>%
   summarise(
-    avg_drv_time_sec = mean(drv_time_sec),
-    avg_drv_dist = mean(drv_dist),
-    n_address = n_distinct(fid)
-  )
+    avg_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
+    avg_drv_dist = mean(drv_dist, na.rm = TRUE),
+    n_address = n_distinct(full_address)
+  ) %>%
+  ungroup()
 
-# sanity check
-avg_dist_drvtime_by_da_service %>%
-  filter(is.na(avg)) %>%
-  count(daid) %>%
-  glimpse()
+avg_dist_drvtime_by_db_service %>% view()
 
 avg_dist_drvtime_by_da_service %>%
-    write_csv(glue::glue("{outfolder}/da_langford.csv"))
+    write_csv(glue::glue("{outfolder}/da_average_times_dist_loc_{loc}.csv"))
 
 #------------------------------------------------------------------------------
 # pre-process Dissemination Geographies Relationship File
