@@ -1,3 +1,6 @@
+https://www.saintsjd.com/2011/01/what-is-a-bare-git-repository/
+
+
 # create a git repo 
 git init
 
@@ -9,7 +12,7 @@ git remote -v
 git remote add origin ../remoteness-index.git
 
 # colleague can clone a copy of this repo
-# git clone ../bare-remote/remoteness-index.git
+git clone ../bare-remote/remoteness-index.git
 
 # check if remote is set
 git remote -v
@@ -23,8 +26,8 @@ git push origin main
 # and pull as usual
 git pull origin main
 
-# branches work as well but, 
-# looking at remote, I don't see where the new branch is specified
+# branches work as well but...
+# looking at remote I don't see where the new branch is specified
 
 # switch branches as usual
 git checkout -b test
@@ -34,8 +37,6 @@ git push origin test
 
 # you may need to set the upstream branch
 git push --set-upstream origin test
-
-
 
 git checkout -b test
 git pull origin test 
