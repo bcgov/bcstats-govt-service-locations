@@ -42,10 +42,10 @@ options(timeout = 600)
 # data for service bc with unique id
 data_folder <- safepaths::use_network_path()
 outfolder <- glue::glue("{data_folder}/data/processed/")
-new_da_servicebc_file_path_2 = glue::glue("{data_folder}/data/raw/20250324/Langford_min_dist_adjusted/locality_909_nearest_with_admin_id_servicebc_20250324_152921_no_errors.csv") # nolint: line_length_linter.
-new_da_servicebc_df2 <- read_csv(new_da_servicebc_file_path_2)
+new_da_servicebc_file_path = glue::glue("{data_folder}/data/raw/20250324/Langford_min_dist_adjusted/locality_909_nearest_with_admin_id_servicebc_20250324_152921_no_errors.csv") # nolint: line_length_linter.
+new_da_servicebc_df <- read_csv(new_da_servicebc_file_path)
 
-address_sf_with_da <- new_da_servicebc_df2 %>%
+address_sf_with_da <- new_da_servicebc_df %>%
   janitor::clean_names() %>%
   filter(tag == "servicebc") %>% # rows for distance to nearest service bc only
   rename(address_albers_x = site_albers_x, address_albers_y = site_albers_y) %>%
