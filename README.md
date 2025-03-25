@@ -1,24 +1,17 @@
 https://www.saintsjd.com/2011/01/what-is-a-bare-git-repository/
 
-
-# create a git repo 
-git init
-
+# the remote for this is a bare clone created with:
 # create a bare clone in shared directory
-git clone --bare remoteness-index ../bare-remote/remoteness-index.git
+git clone --bare remoteness-index 'G:/Operations/Data Science and Analytics/2025 Government Service Locations/remoteness-index.git'
 
-# in the local repo check the remote is set and add, if not.
-git remote -v
-git remote add origin ../remoteness-index.git
-
-# colleague can clone a copy of this repo
-git clone ../bare-remote/remoteness-index.git
+# you can clone a copy of this repo
+git clone 'G:/Operations/Data Science and Analytics/2025 Government Service Locations/remoteness-index.git'
 
 # check if remote is set
 git remote -v
-git remote add origin ../remoteness-index.git
+git remote add origin 'G:/Operations/Data Science and Analytics/2025 Government Service Locations/remoteness-index.git'
 
-# both repos should be able to add and commit changes
+# you should be able to add and commit changes
 git add .
 git commit -m "commit message"
 git push origin main
@@ -34,10 +27,9 @@ git checkout -b test
 
 # commit changes and push 
 git push origin test
+git pull origin test 
 
 # you may need to set the upstream branch
 git push --set-upstream origin test
 
-git checkout -b test
-git pull origin test 
 
