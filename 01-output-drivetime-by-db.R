@@ -5,18 +5,15 @@ library(janitor)
 
 library(sf)
 
-#library(cancensus) # nolint
-#library(cansim) # nolint
+# library(cancensus) # nolint
+# library(cansim) # nolint
 
-#library(bcmaps) # nolint
-#library(geojsonsf) # nolint
-
+# library(bcmaps) # nolint
+# library(geojsonsf) # nolint
 # library(jsonlite) imported by bcmaps
 
 #library(cowplot) for aligning multiple plots # nolint
 #library(patchwork) # nolint
-
-
 
 # library(arrow) # nolint
 # library(duckdb) # nolint
@@ -26,6 +23,7 @@ library(sf)
 
 # functions for plotting maps
 # source("../../git-repos/github/bcstats-ses/src/utils.R") # nolint: 
+
 # set timeout on file load process
 getOption("timeout")
 options(timeout = 600)
@@ -41,11 +39,14 @@ options(timeout = 600)
 
 # data for service bc with unique id
 data_folder <- safepaths::use_network_path()
-data_path <- glue::glue("{data_folder}/data/raw/20250321/")
-file_path <- list.files(data_path, full.names = TRUE, recursive = TRUE)[7]
-loc <- gsub(glue::glue("({data_path})(.*)(/locality_)([0-9][0-9][0-9])(.*)"), "\\4", file_path)
+data_path <- glue::glue("{data_folder}/data/raw/20250325/")
+file_path <- list.files(data_path, full.names = TRUE, recursive = TRUE)[18]
+loc <- gsub(glue::glue("({data_path})(.*)(/locality_)([0-9][0-9][0-9])(.*)"), "\\4", file_path) # nolint: line_length_linter.
 
-outfolder <- glue::glue("{data_folder}/data/processed/")
+outfolder <- glue::glue("{data_folder}/data/processed/locality_{loc}")
+if (!dir.exists(outfolder)) {
+  dir.create(outfolder)
+}
 
 new_da_servicebc_df <- read_csv(file_path, col_types = cols(.default = "c"))
 
@@ -55,9 +56,12 @@ address_sf_with_da <- new_da_servicebc_df %>%
   rename(address_albers_x = site_albers_x, address_albers_y = site_albers_y) %>%
   mutate(daid = str_sub(dissemination_block_id, 1, 8),
          drv_time_sec = as.numeric(drv_time_sec),
-         drv_dist = as.numeric(drv_dist)) %>%
+         drv_dist = as.numeric(drv_dist), 
+         address_albers_x = as.numeric(address_albers_x),
+         address_albers_y = as.numeric(address_albers_y)) %>%
   st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005)
 
+# drop the address coordinates
 address_sf_with_da %>%
   st_drop_geometry() %>%
   write_csv(glue::glue("{outfolder}/address_with_da_loc_{loc}.csv"))
@@ -75,133 +79,65 @@ avg_dist_drvtime_by_db_service <- address_sf_with_da %>%
   summarise(
     avg_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
     avg_drv_dist = mean(drv_dist, na.rm = TRUE),
-    n_address = n_distinct(full_address)
+    n_address = n_distinct(fid)
   ) %>%
   ungroup()
 
 avg_dist_drvtime_by_db_service %>% view()
 
-avg_dist_drvtime_by_da_service %>%
-    write_csv(glue::glue("{outfolder}/da_average_times_dist_loc_{loc}.csv"))
+avg_dist_drvtime_by_db_service %>%
+  write_csv(glue::glue("{outfolder}/db_average_times_dist_loc_{loc}.csv"))
 
 #------------------------------------------------------------------------------
-# pre-process Dissemination Geographies Relationship File
-# currently keeps csds.  Look at DB's etc.
+# DA shp file
 #------------------------------------------------------------------------------
-
-# Dissemination Geographies Relationship File from statscan
-# geouid_url = "https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/files-fichiers/2021_98260004.zip" # nolint
-# download.file(geouid_url, destfile = "./out/2021_98260004.zip") # nolint
-#unzip("./out/2021_98260004.zip", exdir = "./out/2021_98260004") # nolint
-
-daid_file_path = "./out/2021_98260004/2021_98260004.csv"
-
-# read csv all columns as strings instead of numbers
-bc_daid_df <- read_csv(daid_file_path, col_types = cols(.default = "c")) %>%
-  filter(PRDGUID_PRIDUGD == "2021A000259") # BC
-
-bc_cd_daid_mapping <- bc_daid_df %>%
-  count(PRDGUID_PRIDUGD, CDDGUID_DRIDUGD, CSDDGUID_SDRIDUGD, DADGUID_ADIDUGD, DBDGUID_IDIDUGD) # 7848 DAs in BC
+download.file("https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/files-fichiers/lda_000b21a_e.zip", # nolint: line_length_linter.
+               destfile=glue::glue("{data_folder}/data/raw/boundaries/lda_000a21a_e.zip")) # nolint: line_length_linter.
 
 
-#------------------------------------------------------------------------------
-# preprocess the csd file from statscan - 
-# downloading to project folder and then reading it
-# doesn't work so download straight from statsca.
-# needed here since I want the name of each csd - 
-# not needed for the DA file as can be stripped from name
-#------------------------------------------------------------------------------
+#file_path <- glue::glue("{data_folder}/data/raw/lda_000a21a_e/lda_000b21a_e.shp") # nolint
+file_path <- "data/lda_000a21a_e/lda_000b21a_e.shp"
 
-SGC_2021_url = 
-  "https://www.statcan.gc.ca/en/statistical-programs/document/sgc-cgt-2021-structure-eng.csv"
+# # Load the dissemination area shapefile
+da_shapefile <- st_read(file_path)
+da_shapefile <- da_shapefile %>%
+  filter(PRUID == "59") %>%
+  st_transform(crs = 3005)
 
-sgc_2021_df = read_csv(SGC_2021_url, col_types = cols(.default = "c")) %>%
-  filter(str_sub(Code, 1, 2) == "59") %>%
-  filter(`Hierarchical structure` %in% c("Census subdivision")) %>%
-  select(CSDID = Code, MUN_NAME_2021 = `Class title`) %>%
-  write_csv(("./out/bc_csdid_name_2021.csv"))
+plot.dat <- da_shapefile %>% 
+  inner_join(avg_dist_drvtime_by_db_service %>%
+               distinct(daid), by = c("DAUID" = "daid")) # nolint: line_length_linter.
 
-#------------------------------------------------------------------------------
-# join csd names to daid file and do some further processing
-# I"m not sure what is being processed here but it creates a map with
-# only CD, CDS and DA to the DA name.  7848 DA's total
-#------------------------------------------------------------------------------
+ggplot(plot.dat) +
+  geom_sf() +
+  geom_sf(aes(address_sf_with_da))
 
-bc_daid_mapping  <- bc_cd_daid_mapping  %>%
-  select(CDDGUID_DRIDUGD, CSDDGUID_SDRIDUGD, DADGUID_ADIDUGD, DBDGUID_IDIDUGD) %>%
-  mutate(
-    CDID = str_sub(CDDGUID_DRIDUGD, 10, 13),
-    CSDID = str_sub(CSDDGUID_SDRIDUGD, 10, 16),
-    DAID = str_sub(DADGUID_ADIDUGD, 10, 17),
-    DBID = str_sub(DBDGUID_IDIDUGD, 10, 17)
-  ) %>%
-  select(-CDDGUID_DRIDUGD, -CSDDGUID_SDRIDUGD, -DADGUID_ADIDUGD, -DBDGUID_IDIDUGD) %>%
-  select(-DBID) %>%
-  distinct() %>%
-  #select(-CDDGUID_DRIDUGD, -CSDDGUID_SDRIDUGD, -DADGUID_ADIDUGD, ) %>%
-  left_join(sgc_2021_df, by = join_by(CSDID))
+ggplot() +
+  geom_sf(data = plot.dat, fill = "white") +
+  geom_sf(data = address_sf_with_da,
+          aes(color = drv_dist, alpha = 0.1)) +
+  theme_minimal()
 
-bc_daid_mapping %>%
-  write_csv(("./out/bc_daid_mapping.csv"))
-
-# errors with row 4 and row 9699
-CSD_DA_address_dist_drvtime <- bc_daid_mapping %>%
-  left_join(
-    address_sf_with_da %>% mutate(DAID = as.character(DAID)),
-    by = join_by("DAID" == "DAID"))
-
-# -- List of municipalities
-CSD_DA_address_dist_drvtime %>% 
-  count(MUN_NAME_2021) %>% View()
-
-town <- "Smithers"
-one_town <- CSD_DA_address_dist_drvtime %>% 
-  filter(MUN_NAME_2021 == town) %>%
-  filter(TAG_2 == "servicebc")
-
-one_town %>% glimpse()
-
-ggplot2::ggplot(one_town, aes(x = ADDRESS_ALBERS_X, y = ADDRESS_ALBERS_Y, color = DRV_TIME_SEC/3600)) +
-  geom_point(show.legend = TRUE) +
-  coord_quickmap()
-
-ggplot(data = csd_shapefile %>% filter(TAG_2 == "servicebc")) +
-    geom_sf(aes(fill = DRV_TIME_SEC, color = "gray"))
 
 
 # Notes
 
-# Stats Canada Files: 
+# Stats Canada Files:
 # 1. Dissemination Geographies Relationship File
-# https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21
+# https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21 # nolint
 
-# StatsCan’s 2021 Census uses a hierarchical geographic framework. At one level, census subdivisions (CSDs) represent municipalities and similar administrative areas, 
-# while at a lower level, dissemination areas (DAs) are created by aggregating dissemination blocks into contiguous areas (typically with 400–700 people) 
+# StatsCan’s 2021 Census uses a hierarchical geographic framework. At one level, census subdivisions (CSDs) represent municipalities and similar administrative areas,  # nolint
+# while at a lower level, dissemination areas (DAs) are created by aggregating dissemination blocks into contiguous areas (typically with 400–700 people)  # nolint
 # that usually nest within CSD boundaries.
 
-# To help users link these different levels, Statistics Canada provides a lookup table—the Dissemination Geographies Relationship File—which uses 
-# unique identifiers (DGUIDs) to connect DAs to higher geographic units such as CSDs, census tracts, and beyond. 
-# This file (along with related correspondence files) lets analysts cross-reference and integrate data across the geographic hierarchy.
-
-# Get the Dissemination Geographies Relationship File from statscan, and join the distance dataset to the DA shape file.
-
+# To help users link these different levels, Statistics Canada provides a lookup table—the Dissemination Geographies Relationship File—which uses  # nolint
+# unique identifiers (DGUIDs) to connect DAs to higher geographic units such as CSDs, census tracts, and beyond.  # nolint
+# This file (along with related correspondence files) lets analysts cross-reference and integrate data across the geographic hierarchy. # nolint
 
 # 2. boundary files
-# https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21
-# landing page for Downloadable boudary files, many options.  Including cartographic and digital and three types of geographic area: administrative, statistical and non-standard
-
-
-# 3. geographic attribute file
-# https://www12.statcan.gc.ca/census-recensement/2021/geo/aip-pia/attribute-attribs/index-eng.cfm
-# The Geographic Attribute File contains geographic data at the dissemination block level.
-
-
+# https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21 # nolint
+# landing page for Downloadable boudary files, many options.  Including cartographic and digital and three types of geographic area: administrative, statistical and non-standard # nolint
 
 # General Notes
-# Geodata team has updated the data with DA id but can add any admin boundary id if requested
-# Geodata fixed those addresses that does not have valid coordinates or are not connected to the road network. - check if this has been done in our files?  
-
-# Check these stats:
-# 751 CSDs and 7848 DAs in the DA shape file from statsan
-# but only 420 CSDUIDs and 6967 DAs in the CSD_DA_list/TMF file from bcstats
-# 7326 DAs in distance dataset from geodata team
+# Geodata team has updated the data with DA id but can add any admin boundary id if requested # nolint
+# Geodata fixed those addresses that does not have valid coordinates or are not connected to the road network. - check if this has been done in our files?   # nolint
