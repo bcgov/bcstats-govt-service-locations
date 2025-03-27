@@ -1,3 +1,7 @@
+
+source("configuration.R") # load libraries and other settings
+source("fxns/fxns.R") # functions for plotting maps
+
 #------------------------------------------------------------------------------
 # DA shp file
 # To do: collect db shapefile from statistics candada

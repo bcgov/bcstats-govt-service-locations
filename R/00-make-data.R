@@ -1,31 +1,3 @@
-library(tidyverse)
-library(safepaths)
-library(glue)
-library(janitor)
-library(e1071)
-
-library(sf)
-
-# library(cancensus) # nolint
-# library(cansim) # nolint
-
-# library(bcmaps) # nolint
-# library(geojsonsf) # nolint
-# library(jsonlite) imported by bcmaps
-
-#library(cowplot) for aligning multiple plots # nolint
-#library(patchwork) # nolint
-# library(duckdb) # nolint
-
-# Load the rlang package for the bang-bang operator - imported by cowplot
-# library(rlang) # nolint
-
-# functions for plotting maps
-source("fxns/fxns.R")
-
-# set timeout on file load process
-getOption("timeout")
-options(timeout = 600)
 
 #------------------------------------------------------------------------------
 # geodata team creates drive times files for service bc
@@ -38,6 +10,9 @@ options(timeout = 600)
 # Dawson Creek: locality 213
 # Kamploops: Locality 420
 #------------------------------------------------------------------------------
+
+source("configuration.R") # load libraries and other settings
+source("fxns/fxns.R") # functions for plotting maps
 
 # data for service bc with unique id
 data_folder <- safepaths::use_network_path()
