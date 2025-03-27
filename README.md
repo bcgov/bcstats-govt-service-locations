@@ -3,26 +3,44 @@
 Geodata team has updated the data with Dissemintaion Block id but can add any admin boundary id if requested 
 Geodata fixed those addresses that does not have valid coordinates or are not connected to the road network. - check if this has been done in our files?  
 
+
+The project team has been given permission by executive to do this work in the open based on:
+
+1. no data is stored in GitHub
+2. the data used for this analysis step has no PI
+3. defaulting to the open follows our digital principles and 
+4. this will enable transparency
+5. allow for easier easier progress. 
+
+If at any time the "risk" changes we can convert the repo to bcgov-c GitHub.
+
 ## Data Sources
 
 This project uses data from the following sources:
 
-1. Dissemination Geographies Relationship File (not used yet)
-StatsCan’s 2021 Census uses a hierarchical geographic framework. At one level, census subdivisions (CSDs) represent municipalities and similar administrative areas,  while at a lower level, dissemination areas (DAs) are created by aggregating dissemination blocks into contiguous areas (typically with 400–700 people).  DAs usually nest within CSD boundaries.  To help users link these different levels, Statistics Canada provides the Dissemination Geographies Relationship File to connect DAs to higher geographic units such as CSDs, census tracts, and beyond.  
-This file (along with related correspondence files) was used to cross-reference and integrate data across the geographic hierarchy. 
+**Geocoder/NFA data output (include metadata)** 
 
-    https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21
+The original address data used by the geocoder is restricted under licencing, however the output is open source. As such, we have not included any of the source data in this project.  
 
-2. Dissemination Area Boundary Files 
+**Dissemination Geographies Relationship File (not used yet)**
 
-StatsCan provided data to the project for boundary files for dissemination areas (DAs) and dissemination blocks (DBs) in various formats.  The shapefile format was used to create maps and perform spatial analysis.  
+A mapping file was (along with related correspondence files) was used to cross-reference and integrate data across different geographic hierarchy. In particular from CSD to DA's. The files were sourced from Statistics Canada and downloaded from: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21
 
-    https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21
 
-3. Population Data
+**Dissemination Area Boundary Files**
 
-    https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259 
+Boundary Shape Files (.shp) for Dissemination Areas (DAs) and Dissemination Blocks (DBs) were sourced from Statistics Canada.  These files were used to create maps and perform spatial analysis.  The shape files were downloaded from: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21
 
+
+**Population Data**
+
+Population and dwelling counts for selected dissemination areas were sourced from Statistics Canada’s 2021 Census.  This data was used to calculate population density and other demographic statistics.  The data was downloaded from: https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259 
+
+Statistics Canada. Table 98-10-0015-02  Population and dwelling counts: Canada, provinces and territories and dissemination areas. DOI: https://doi.org/10.25318/9810001501-eng
+
+## Sample data assets
+
+Drew suggested we can include some open Vancouver address data attached as a release asset so ppl can run the code as well, which I think is a great idea. 
 
 ## How to work with a bare repository
 
