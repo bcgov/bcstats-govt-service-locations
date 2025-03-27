@@ -2,6 +2,7 @@ library(tidyverse)
 library(safepaths)
 library(glue)
 library(janitor)
+library(e1071)
 
 library(sf)
 
@@ -14,15 +15,13 @@ library(sf)
 
 #library(cowplot) for aligning multiple plots # nolint
 #library(patchwork) # nolint
-
-# library(arrow) # nolint
 # library(duckdb) # nolint
 
 # Load the rlang package for the bang-bang operator - imported by cowplot
 # library(rlang) # nolint
 
 # functions for plotting maps
-# source("../../git-repos/github/bcstats-ses/src/utils.R") # nolint: 
+source("fxns/fxns.R")
 
 # set timeout on file load process
 getOption("timeout")
@@ -34,7 +33,10 @@ options(timeout = 600)
 # zik files are just zip files, so read_csv can handle them directly.
 # currently only service bc locations are needed
 # geodata team has removed duplicate rows
-# ask geodatabc team - why do we have DAID column in the file? Should be DBID
+# Langford: locality 909
+# Smithers: locality 227
+# Dawson Creek: locality 213
+# Kamploops: Locality 420
 #------------------------------------------------------------------------------
 
 # data for service bc with unique id
@@ -59,7 +61,7 @@ address_sf_with_da <- new_da_servicebc_df %>%
          drv_dist = as.numeric(drv_dist), 
          address_albers_x = as.numeric(address_albers_x),
          address_albers_y = as.numeric(address_albers_y)) %>%
-  st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005)
+  st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005) 
 
 # drop the address coordinates
 address_sf_with_da %>%
@@ -69,30 +71,79 @@ address_sf_with_da %>%
 #------------------------------------------------------------------------------
 # Create a DA level summary table: average drive time and distance
 # and number of address. No row missing distance value
-# all the addresses and DA information are from geodata team by sampling, 
+# all the addresses and DA information are from geodata team by sampling,
 # therefore not full picture.
+# To do: DA or DB?
+# To do: is this the full sample of data?
 #------------------------------------------------------------------------------
 
 avg_dist_drvtime_by_db_service <- address_sf_with_da %>%
   st_drop_geometry() %>%
   group_by(dissemination_block_id, daid) %>%
   summarise(
-    avg_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
-    avg_drv_dist = mean(drv_dist, na.rm = TRUE),
+    mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
+    mn_drv_dist = mean(drv_dist, na.rm = TRUE),
+    qnt0_drv_time_sec = quantile(drv_time_sec, probs = 0, na.rm = TRUE),
+    qnt1_drv_time_sec = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),
+    qnt2_drv_time_sec = quantile(drv_time_sec, probs = 0.5, na.rm = TRUE),
+    qnt3_drv_time_sec = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),
+    qnt4_drv_time_sec = quantile(drv_time_sec, probs = 1, na.rm = TRUE),
+    qnt0_drv_dist = quantile(drv_dist, probs = 0, na.rm = TRUE),
+    qnt1_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),
+    qnt2_drv_dist = quantile(drv_dist, probs = 0.5, na.rm = TRUE),
+    qnt3_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),
+    qnt4_drv_dist = quantile(drv_dist, probs = 1, na.rm = TRUE),
+    var_drv_time_sec = var(drv_time_sec, na.rm = TRUE),
+    var_drv_dist = var(drv_dist, na.rm = TRUE),
+    skw_drv_time_sec = skewness(drv_time_sec, na.rm = TRUE, type = 1),
+    skw_drv_dist = skewness(drv_dist, na.rm = TRUE, type = 1),
+    kurt_drv_time_sec = kurtosis(drv_time_sec, na.rm = TRUE, type = 1),
+    kurt_drv_dist = kurtosis(drv_dist, na.rm = TRUE, type = 1),
+    n_address = n_distinct(fid)
+  ) %>%
+  ungroup()
+
+avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
+  st_drop_geometry() %>%
+  group_by(daid) %>%
+  summarise(
+    mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
+    mn_drv_dist = mean(drv_dist, na.rm = TRUE),
+    qnt0_drv_time_sec = quantile(drv_time_sec, probs = 0, na.rm = TRUE),
+    qnt1_drv_time_sec = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),
+    qnt2_drv_time_sec = quantile(drv_time_sec, probs = 0.5, na.rm = TRUE),
+    qnt3_drv_time_sec = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),
+    qnt4_drv_time_sec = quantile(drv_time_sec, probs = 1, na.rm = TRUE),
+    qnt0_drv_dist = quantile(drv_dist, probs = 0, na.rm = TRUE),
+    qnt1_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),
+    qnt2_drv_dist = quantile(drv_dist, probs = 0.5, na.rm = TRUE),
+    qnt3_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),
+    qnt4_drv_dist = quantile(drv_dist, probs = 1, na.rm = TRUE),
+    var_drv_time_sec = var(drv_time_sec, na.rm = TRUE),
+    var_drv_dist = var(drv_dist, na.rm = TRUE),
+    skw_drv_time_sec = skewness(drv_time_sec, na.rm = TRUE, type = 1),
+    skw_drv_dist = skewness(drv_dist, na.rm = TRUE, type = 1),
+    kurt_drv_time_sec = kurtosis(drv_time_sec, na.rm = TRUE, type = 1),
+    kurt_drv_dist = kurtosis(drv_dist, na.rm = TRUE, type = 1),
     n_address = n_distinct(fid)
   ) %>%
   ungroup()
 
 avg_dist_drvtime_by_db_service %>% view()
+avg_dist_drvtime_by_da_service %>% view()
 
 avg_dist_drvtime_by_db_service %>%
   write_csv(glue::glue("{outfolder}/db_average_times_dist_loc_{loc}.csv"))
 
+avg_dist_drvtime_by_da_service %>%
+  write_csv(glue::glue("{outfolder}/da_average_times_dist_loc_{loc}.csv"))
+
 #------------------------------------------------------------------------------
 # DA shp file
+# To do: collect db shapefile from statistics candada
 #------------------------------------------------------------------------------
 download.file("https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/files-fichiers/lda_000b21a_e.zip", # nolint: line_length_linter.
-               destfile=glue::glue("{data_folder}/data/raw/boundaries/lda_000a21a_e.zip")) # nolint: line_length_linter.
+              destfile = glue::glue("{data_folder}/data/raw/boundaries/lda_000a21a_e.zip")) # nolint: line_length_linter.
 
 
 #file_path <- glue::glue("{data_folder}/data/raw/lda_000a21a_e/lda_000b21a_e.shp") # nolint
@@ -118,26 +169,3 @@ ggplot() +
           aes(color = drv_dist, alpha = 0.1)) +
   theme_minimal()
 
-
-
-# Notes
-
-# Stats Canada Files:
-# 1. Dissemination Geographies Relationship File
-# https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21 # nolint
-
-# StatsCan’s 2021 Census uses a hierarchical geographic framework. At one level, census subdivisions (CSDs) represent municipalities and similar administrative areas,  # nolint
-# while at a lower level, dissemination areas (DAs) are created by aggregating dissemination blocks into contiguous areas (typically with 400–700 people)  # nolint
-# that usually nest within CSD boundaries.
-
-# To help users link these different levels, Statistics Canada provides a lookup table—the Dissemination Geographies Relationship File—which uses  # nolint
-# unique identifiers (DGUIDs) to connect DAs to higher geographic units such as CSDs, census tracts, and beyond.  # nolint
-# This file (along with related correspondence files) lets analysts cross-reference and integrate data across the geographic hierarchy. # nolint
-
-# 2. boundary files
-# https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21 # nolint
-# landing page for Downloadable boudary files, many options.  Including cartographic and digital and three types of geographic area: administrative, statistical and non-standard # nolint
-
-# General Notes
-# Geodata team has updated the data with DA id but can add any admin boundary id if requested # nolint
-# Geodata fixed those addresses that does not have valid coordinates or are not connected to the road network. - check if this has been done in our files?   # nolint
