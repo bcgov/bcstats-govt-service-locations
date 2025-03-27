@@ -15,6 +15,18 @@
 source("configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
+# load prepared data for service bc with unique id
+# Langford: locality 909
+# Smithers: locality 227
+# Dawson Creek: locality 213
+# Kamploops: locality 420
+#------------------------------------------------------------------------------
+
+data_folder <- safepaths::use_network_path()
+loc <- "213" # Dawson Creek: locality 213
+outfolder <- glue::glue("{data_folder}/data/processed/locality_{loc}")
+
+#------------------------------------------------------------------------------
 # Create a DA level summary table: average drive time and distance
 # and number of address. No row missing distance value
 # all the addresses and DA information are from geodata team by sampling,
@@ -24,7 +36,6 @@ source("configuration.R") # load libraries and other settings
 #------------------------------------------------------------------------------
 
 avg_dist_drvtime_by_db_service <- address_sf_with_da %>%
-  st_drop_geometry() %>%
   group_by(dissemination_block_id, daid) %>%
   summarise(
     mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
@@ -50,7 +61,6 @@ avg_dist_drvtime_by_db_service <- address_sf_with_da %>%
   ungroup()
 
 avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
-  st_drop_geometry() %>%
   group_by(daid) %>%
   summarise(
     mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
@@ -74,9 +84,6 @@ avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
     n_address = n_distinct(fid)
   ) %>%
   ungroup()
-
-avg_dist_drvtime_by_db_service %>% view()
-avg_dist_drvtime_by_da_service %>% view()
 
 avg_dist_drvtime_by_db_service %>%
   write_csv(glue::glue("{outfolder}/db_average_times_dist_loc_{loc}.csv"))
