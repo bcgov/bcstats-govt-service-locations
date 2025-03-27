@@ -1,5 +1,4 @@
 source("configuration.R") # load libraries and other settings
-source("fxns/fxns.R") # functions for plotting maps
 
 
 #------------------------------------------------------------------------------

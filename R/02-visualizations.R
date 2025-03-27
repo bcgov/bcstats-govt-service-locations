@@ -1,6 +1,6 @@
 
 source("configuration.R") # load libraries and other settings
-source("fxns/fxns.R") # functions for plotting maps
+source("fxns/maps.R") # functions for plotting maps
 
 #------------------------------------------------------------------------------
 # DA shp file

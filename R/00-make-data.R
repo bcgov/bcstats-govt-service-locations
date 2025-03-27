@@ -12,7 +12,6 @@
 #------------------------------------------------------------------------------
 
 source("configuration.R") # load libraries and other settings
-source("fxns/fxns.R") # functions for plotting maps
 
 # data for service bc with unique id
 data_folder <- safepaths::use_network_path()
