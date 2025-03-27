@@ -1,3 +1,18 @@
+# Copyright 2025 Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+source("configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
 # geodata team creates drive times files for service bc
@@ -10,8 +25,6 @@
 # Dawson Creek: locality 213
 # Kamploops: Locality 420
 #------------------------------------------------------------------------------
-
-source("configuration.R") # load libraries and other settings
 
 # data for service bc with unique id
 data_folder <- safepaths::use_network_path()
@@ -32,10 +45,10 @@ address_sf_with_da <- new_da_servicebc_df %>%
   rename(address_albers_x = site_albers_x, address_albers_y = site_albers_y) %>%
   mutate(daid = str_sub(dissemination_block_id, 1, 8),
          drv_time_sec = as.numeric(drv_time_sec),
-         drv_dist = as.numeric(drv_dist), 
+         drv_dist = as.numeric(drv_dist),
          address_albers_x = as.numeric(address_albers_x),
          address_albers_y = as.numeric(address_albers_y)) %>%
-  st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005) 
+  st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005)
 
 # drop the address coordinates
 address_sf_with_da %>%
