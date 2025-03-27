@@ -16,8 +16,20 @@ source("configuration.R") # load libraries and other settings
 source("fxns/maps.R") # functions for plotting maps
 
 #------------------------------------------------------------------------------
+# load aggregated data average drive time and distance by DA and DB 
+# Langford: locality 909
+# Smithers: locality 227
+# Dawson Creek: locality 213
+# Kamploops: locality 420
+#------------------------------------------------------------------------------
+
+data_folder <- safepaths::use_network_path()
+loc <- "213" # Dawson Creek: locality 213
+outfolder_da <- glue::glue("{data_folder}/data/da_average_times_dist_loc_{loc}")
+outfolder_db <- glue::glue("{data_folder}/data/db_average_times_dist_loc_{loc}")
+
+#------------------------------------------------------------------------------
 # DA shp file
-# To do: collect db shapefile from statistics candada
 #------------------------------------------------------------------------------
 download.file("https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/files-fichiers/lda_000b21a_e.zip", # nolint: line_length_linter.
               destfile = glue::glue("{data_folder}/data/raw/boundaries/lda_000a21a_e.zip")) # nolint: line_length_linter.
@@ -30,6 +42,10 @@ da_shapefile <- st_read(file_path)
 da_shapefile <- da_shapefile %>%
   filter(PRUID == "59") %>%
   st_transform(crs = 3005)
+
+#------------------------------------------------------------------------------
+# DB shp file
+#------------------------------------------------------------------------------
 
 plot.dat <- da_shapefile %>% 
   inner_join(avg_dist_drvtime_by_db_service %>%
