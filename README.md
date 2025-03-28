@@ -12,8 +12,7 @@ The project team has been given permission by executive to do this work in the o
 3. Defaulting to the open follows our digital principles
 4. This will enable transparency
 
-If at any time the "risk" changes we can convert the repo to bcgov-c GitHub.
-
+If at any time the analysis changes to include data with personal information, we will convert the repo to bcgov-c GitHub. 
 ## Data Sources
 
 This project uses data from the following sources:
@@ -88,6 +87,8 @@ you may need to set the upstream branch
 If you would like to contribute to the guide, please see our [CONTRIBUTING](CONTRIBUTING.md) guideleines.
 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+
+In addition, no contributor will push data to this repository as no data will be stored in this repository. 
 
 ## License
 

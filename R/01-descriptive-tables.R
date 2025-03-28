@@ -31,7 +31,6 @@ outfolder <- glue::glue("{data_folder}/data/processed/locality_{loc}")
 # and number of address. No row missing distance value
 # all the addresses and DA information are from geodata team by sampling,
 # therefore not full picture.
-# To do: DA or DB?
 # To do: is this the full sample of data?
 #------------------------------------------------------------------------------
 
@@ -84,6 +83,11 @@ avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
     n_address = n_distinct(fid)
   ) %>%
   ungroup()
+
+#------------------------------------------------------------------------------
+# Add in population data
+#------------------------------------------------------------------------------
+
 
 avg_dist_drvtime_by_db_service %>%
   write_csv(glue::glue("{outfolder}/db_average_times_dist_loc_{loc}.csv"))
