@@ -100,17 +100,6 @@ pop <- read_csv(glue::glue("{data_folder}/data/raw/statscan/98100015-eng/9810001
     "land_area_in_sq_km_2021" = "population_and_dwelling_counts_5_land_area_in_square_kilometres_2021_4",
     "population_density_per_square_kilometre_2021" = "population_and_dwelling_counts_5_population_density_per_square_kilometre_2021_5")
 
-  filter(grepl("^2021S", dguid)) %>%
-  mutate(daid = gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid)) %>%
-  filter(grepl("^59", daid)) %>% # only keep BC dissemination areas
-  names()
-
-  str_sub(1, 8)) %>%
-  select(dissemination_area_id, population) %>%
-  mutate(dissemination_area_id = str_sub(dissemination_area_id, 1, 8)) %>%
-  left_join(avg_dist_drvtime_by_db_service, by = c("dissemination_area_id" = "daid")) %>%
-  select(-dissemination_area_id) %>%
-  rename(daid = dissemination_block_id) -> avg_dist_drvtime_by_db_servi
 #------------------------------------------------------------------------------
 # write prepared data files to source folder
 #------------------------------------------------------------------------------
