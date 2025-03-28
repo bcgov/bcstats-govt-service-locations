@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source("configuration.R") # load libraries and other settings
+source("R/configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
 # load prepared data for service bc with unique id
@@ -21,11 +21,12 @@ source("configuration.R") # load libraries and other settings
 # Dawson Creek: locality 213
 # Kamploops: locality 420
 #------------------------------------------------------------------------------
-
+loc <- "227" # hard coded for now
 data_folder <- safepaths::use_network_path()
-loc <- "213" # Dawson Creek: locality 213
-outfolder <- glue::glue("{data_folder}/data/processed/locality_{loc}")
+in_folder <- out_folder <- glue::glue("{data_folder}/data/source/locality_{loc}")
 
+data_file <- glue::glue("in_folder/address_with_da_loc_{loc}.csv")
+address_sf_with_da <- read_csv(data_file)
 #------------------------------------------------------------------------------
 # Create a DA level summary table: average drive time and distance
 # and number of address. No row missing distance value
@@ -88,9 +89,8 @@ avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
 # Add in population data
 #------------------------------------------------------------------------------
 
-
 avg_dist_drvtime_by_db_service %>%
-  write_csv(glue::glue("{outfolder}/db_average_times_dist_loc_{loc}.csv"))
+  write_csv(glue::glue("{out_folder}/db_average_times_dist_loc_{loc}.csv"))
 
 avg_dist_drvtime_by_da_service %>%
-  write_csv(glue::glue("{outfolder}/da_average_times_dist_loc_{loc}.csv"))
+  write_csv(glue::glue("{out_folder}/da_average_times_dist_loc_{loc}.csv"))
