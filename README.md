@@ -1,14 +1,7 @@
 
-## How We Work
+## Project Description
 
-The project team has been given permission by executive to do this work in the open based on:
-
-1. No data is stored in GitHub
-2. The data used for this analysis step has no PI
-3. Defaulting to the open follows our digital principles
-4. This will enable transparency
-
-If at any time the analysis changes to include data with personal information, we will convert the repo to bcgov-c GitHub. 
+ 
 
 ## Data Sources
 
@@ -36,8 +29,18 @@ Population and dwelling counts for selected dissemination areas were sourced fro
 
 Statistics Canada. Table 98-10-0015-02  Population and dwelling counts: Canada, provinces and territories and dissemination areas. DOI: https://doi.org/10.25318/9810001501-eng
 
-## Sample data assets
+## Sample Data Assets
 
+## How We Work
+
+The project team has been given permission by executive to do this work in the open based on:
+
+1. No data is stored in GitHub
+2. The data used for this analysis step has no PI
+3. Defaulting to the open follows our digital principles
+4. This will enable transparency
+
+If at any time the analysis changes to include data with personal information, we will convert the repo to bcgov-c GitHub.
 
 ## How to Contribute
 
