@@ -1,7 +1,3 @@
-# Notes
-
-Geodata team has updated the data with Dissemintaion Block id but can add any admin boundary id if requested 
-Geodata fixed those addresses that does not have valid coordinates or are not connected to the road network. - check if this has been done in our files?  
 
 ## How We Work
 
@@ -13,11 +9,16 @@ The project team has been given permission by executive to do this work in the o
 4. This will enable transparency
 
 If at any time the analysis changes to include data with personal information, we will convert the repo to bcgov-c GitHub. 
+
 ## Data Sources
 
 This project uses data from the following sources:
 
 **Geocoder/NFA data output (incomplete)** 
+
+Includes the Dissemintaion Block id but can add any admin boundary id if requested 
+Addresses that did not have valid coordinates or are not connected to the road network were (fixed/removed - confirm). 
+
 
 The original address data used by the geocoder is restricted under licencing, however the output is open source. As such, we have not included any of the source data in this project.  
 
