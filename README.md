@@ -37,8 +37,6 @@ Statistics Canada. Table 98-10-0015-02  Population and dwelling counts: Canada, 
 
 ## Sample data assets
 
-Drew suggested we can include some open Vancouver address data attached as a release asset so ppl can run the code as well, which I think is a great idea. 
-
 ## How to work with a bare repository
 
 see https://www.saintsjd.com/2011/01/what-is-a-bare-git-repository/
