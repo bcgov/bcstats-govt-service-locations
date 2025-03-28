@@ -14,18 +14,18 @@ This project uses data from the following sources:
 
 **Geocoder/NFA data output (incomplete)** 
 
-Includes the Dissemintaion Block id but can add any admin boundary id if requested 
-Addresses that did not have valid coordinates or are not connected to the road network were (fixed/removed - confirm). 
+Includes the Dissemination Block id but can add any admin boundary id if requested 
+Addresses that did not have valid coordinates or are not connected to the road network were removed. 
 
-The original address data used by the geocoder is restricted under licencing, however the output is open source. As such, we have not included any of the source data in this project.  
+The original address data used by the geocoder is restricted under licencing, however the output is open source. We have not included any of the source data in this project.  
 
 **Dissemination Geographies Relationship File (not used yet)**
 
-A mapping file was (along with related correspondence files) was used to cross-reference and integrate data across different geographic hierarchy. In particular from CSD to DA's. The files were sourced from Statistics Canada and downloaded from: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21
+A mapping file was used to cross-reference and integrate data across different geographic hierarchy.  The files were sourced from Statistics Canada and downloaded from: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21
 
 **Dissemination Area Boundary Files**
 
-Boundary Shape Files (.shp) for Dissemination Areas (DAs) and Dissemination Blocks (DBs) were sourced from Statistics Canada.  These files were used to create maps and perform spatial analysis.  The shape files were downloaded from: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21
+Boundary Shape Files (.shp) for Dissemination Areas (DAs) and Dissemination Blocks (DBs) were sourced from Statistics Canada and used to create maps and perform spatial analysis.  The shape files were downloaded from: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21
 
 **Population Data**
 
@@ -40,7 +40,7 @@ Statistics Canada. Table 98-10-0015-02  Population and dwelling counts: Canada, 
 The project team has been given permission to do this work under the following conditions:
 
 1. No data is stored in GitHub
-2. The data used for this analysis step has no personal identifiers and is not sensitive (i.e. PI)
+2. The data used for this analysis step has no personal identifiers and is not sensitive (i.e. no PI)
 3. Defaulting to the open follows our digital principles
 4. This will enable transparency and reproducibility of the analysis
 
