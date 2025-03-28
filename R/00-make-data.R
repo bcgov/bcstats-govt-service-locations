@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script loads raw csv data files containing spatial data for addresses in 
+# a defined municipality in BC (loc).  The datasets are processed to be ready 
+# for use for data analytics. 
+
 source("R/configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
