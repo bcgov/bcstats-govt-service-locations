@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 # This script loads csv data files containing spatial data for addresses in 
 # a defined municipality in BC (loc).  Basic descriptive statisics are calculated
 # at the dissemination area and dissemination block level. Population statistics 
@@ -26,6 +27,7 @@ source("R/configuration.R") # load libraries and other settings
 # Dawson Creek: locality 213
 # Kamploops: locality 420
 #------------------------------------------------------------------------------
+
 loc <- "227" # hard coded for now
 data_folder <- safepaths::use_network_path()
 in_folder <- glue::glue("{data_folder}/data/source/locality_{loc}")
@@ -94,6 +96,7 @@ avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
 #------------------------------------------------------------------------------
 # Add in population data from statistics Canada
 #------------------------------------------------------------------------------
+
 pop <- read_csv(glue::glue("{data_folder}/data/raw/statscan/98100015-eng/98100015.csv")) %>% # nolint
   janitor::clean_names() %>%
   select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
