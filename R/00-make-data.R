@@ -33,7 +33,7 @@ data_path <- glue::glue("{data_folder}/data/raw/")
 # get the most recent file.  This could be used to process all of them
 file_path <- file.info(list.files(data_path, full.names = TRUE, pattern = "no_errors.csv", recursive = TRUE)) %>%
   dplyr::arrange(desc(mtime)) %>%
-  slice(1) %>%
+  slice(2) %>%
   rownames()
 
 # get the locality number from the file path

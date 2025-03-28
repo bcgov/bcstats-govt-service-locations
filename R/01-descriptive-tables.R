@@ -26,7 +26,7 @@ data_folder <- safepaths::use_network_path()
 in_folder <- out_folder <- glue::glue("{data_folder}/data/source/locality_{loc}")
 
 data_file <- glue::glue("in_folder/address_with_da_loc_{loc}.csv")
-address_sf_with_da <- read_csv(data_file)
+address_sf_with_da <- read_csv(glue::glue("{data_file}/data/source/locality_{loc}")
 #------------------------------------------------------------------------------
 # Create a DA level summary table: average drive time and distance
 # and number of address. No row missing distance value
@@ -87,6 +87,30 @@ avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
 
 #------------------------------------------------------------------------------
 # Add in population data from statistics Canada
+#------------------------------------------------------------------------------
+pop <- read_csv(glue::glue("{data_folder}/data/raw/statscan/98100015-eng/98100015.csv")) %>%
+  janitor::clean_names() %>%
+  select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
+  filter(grepl("^2021S", dguid)) %>%
+  mutate(daid = gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid)) %>%
+  filter(grepl("^59", daid))
+
+
+  filter(grepl("^2021S", dguid)) %>%
+  mutate(daid = gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid)) %>%
+  filter(grepl("^59", daid)) %>% # only keep BC dissemination areas
+  names()
+
+  str_sub(1, 8)) %>%
+  select(dissemination_area_id, population) %>%
+  mutate(dissemination_area_id = str_sub(dissemination_area_id, 1, 8)) %>%
+  left_join(avg_dist_drvtime_by_db_service, by = c("dissemination_area_id" = "daid")) %>%
+  select(-dissemination_area_id) %>%
+  rename(daid = dissemination_block_id) -> avg_dist_drvtime_by_db_service
+
+#------------------------------------------------------------------------------
+# write prepared data files to source folder
+#------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 
 avg_dist_drvtime_by_db_service %>%
