@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script loads csv data files containing spatial data for addresses in 
+# a defined municipality in BC (loc).  Basic descriptive statisics are calculated
+# at the dissemination area and dissemination block level. Population statistics 
+# from Statistics Canada are appended
+
 source("R/configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
@@ -27,6 +32,7 @@ in_folder <- glue::glue("{data_folder}/data/source/locality_{loc}")
 out_folder <- in_folder
 
 data_file <- read_csv(glue::glue("{in_folder}/address_with_da_loc_{loc}.csv"))
+
 #------------------------------------------------------------------------------
 # Create a DA level summary table: average drive time and distance
 # and number of address. No row missing distance value
