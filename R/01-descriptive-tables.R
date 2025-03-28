@@ -86,7 +86,7 @@ avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
   ungroup()
 
 #------------------------------------------------------------------------------
-# Add in population data
+# Add in population data from statistics Canada
 #------------------------------------------------------------------------------
 
 avg_dist_drvtime_by_db_service %>%
