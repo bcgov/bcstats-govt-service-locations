@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source("configuration.R") # load libraries and other settings
+source("R/configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
 # geodata team creates drive times files for service bc
@@ -28,13 +28,21 @@ source("configuration.R") # load libraries and other settings
 
 # data for service bc with unique id
 data_folder <- safepaths::use_network_path()
-data_path <- glue::glue("{data_folder}/data/raw/20250325/")
-file_path <- list.files(data_path, full.names = TRUE, recursive = TRUE)[18]
-loc <- gsub(glue::glue("({data_path})(.*)(/locality_)([0-9][0-9][0-9])(.*)"), "\\4", file_path) # nolint: line_length_linter.
+data_path <- glue::glue("{data_folder}/data/raw/")
 
-outfolder <- glue::glue("{data_folder}/data/processed/locality_{loc}")
-if (!dir.exists(outfolder)) {
-  dir.create(outfolder)
+# get the most recent file.  This could be used to process all of them
+file_path <- file.info(list.files(data_path, full.names = TRUE, pattern = "no_errors.csv", recursive = TRUE)) %>%
+  dplyr::arrange(desc(mtime)) %>%
+  slice(1) %>%
+  rownames()
+
+# get the locality number from the file path
+loc <- gsub(glue::glue("({data_path})(.*)(/locality_)([0-9][0-9][0-9])(.*)"), "\\4", file_path) # nolint
+
+out_folder <- glue::glue("{data_folder}/data/source/locality_{loc}")
+
+if (!dir.exists(out_folder)) {
+  dir.create(out_folder)
 }
 
 new_da_servicebc_df <- read_csv(file_path, col_types = cols(.default = "c"))
@@ -53,4 +61,4 @@ address_sf_with_da <- new_da_servicebc_df %>%
 # drop the address coordinates
 address_sf_with_da %>%
   st_drop_geometry() %>%
-  write_csv(glue::glue("{outfolder}/address_with_da_loc_{loc}.csv"))
+  write_csv(glue::glue("{out_folder}/address_with_da_loc_{loc}.csv"))
