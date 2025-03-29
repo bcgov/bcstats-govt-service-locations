@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script loads aggregated csv data files containing spatial data for 
+# municipality of interest in BC (loc). It produces maps at the dissemination block level 
+# displaying quantitative information on basic descriptive statisics
+
 source("configuration.R") # load libraries and other settings
 source("fxns/maps.R") # functions for plotting maps
 

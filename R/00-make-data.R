@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This script loads raw csv data files containing spatial data for addresses in 
+# a defined municipality in BC (loc).  The datasets are processed to be ready 
+# for use for data analytics. 
+
 source("R/configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
@@ -33,7 +37,7 @@ data_path <- glue::glue("{data_folder}/data/raw/")
 # get the most recent file.  This could be used to process all of them
 file_path <- file.info(list.files(data_path, full.names = TRUE, pattern = "no_errors.csv", recursive = TRUE)) %>%
   dplyr::arrange(desc(mtime)) %>%
-  slice(1) %>%
+  slice(2) %>%
   rownames()
 
 # get the locality number from the file path
