@@ -33,14 +33,12 @@ Statistics Canada. Table 98-10-0015-02  Population and dwelling counts: Canada, 
 
 ## How We Work
 
-The project team has been given permission by executive to do this work in the open based on:
+The project team has been given permission to do this work under the following conditions:
 
 1. No data is stored in GitHub
-2. The data used for this analysis step has no PI
+2. The data used for this analysis step has no personal identifiers and is not sensitive (i.e. no PI)
 3. Defaulting to the open follows our digital principles
-4. This will enable transparency
-
-If at any time the analysis changes to include data with personal information, we will convert the repo to bcgov-c GitHub.
+4. This will enable transparency and reproducibility of the analysis
 
 ## How to Contribute
 
