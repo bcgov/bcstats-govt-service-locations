@@ -42,9 +42,7 @@ The project team has been given permission to do this work under the following c
 
 1. No data is stored in GitHub
 2. The data used for this analysis step has no personal identifiers and is not sensitive (i.e. no PI)
-2. The data used for this analysis step has no personal identifiers and is not sensitive (i.e. no PI)
 3. Defaulting to the open follows our digital principles
-4. This will enable transparency and reproducibility of the analysis
 4. This will enable transparency and reproducibility of the analysis
 
 
