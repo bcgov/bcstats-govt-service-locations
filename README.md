@@ -38,10 +38,13 @@ Statistics Canada. Table 98-10-0015-02  Population and dwelling counts: Canada, 
 ## How We Work
 
 The project team has been given permission to do this work under the following conditions:
+The project team has been given permission to do this work under the following conditions:
 
 1. No data is stored in GitHub
 2. The data used for this analysis step has no personal identifiers and is not sensitive (i.e. no PI)
+2. The data used for this analysis step has no personal identifiers and is not sensitive (i.e. no PI)
 3. Defaulting to the open follows our digital principles
+4. This will enable transparency and reproducibility of the analysis
 4. This will enable transparency and reproducibility of the analysis
 
 
@@ -68,3 +71,4 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
