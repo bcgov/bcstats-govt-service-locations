@@ -16,7 +16,6 @@
 # a defined municipality in BC (loc).  The datasets are processed to be ready 
 # for use for data analytics. 
 
-
 import os
 import glob
 import pandas as pd
