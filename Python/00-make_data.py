@@ -17,7 +17,6 @@
 # for use for data analytics. 
 
 
-
 import os
 import glob
 import pandas as pd
@@ -51,25 +50,29 @@ out_folder = os.path.join(data_folder, "data", "source", f"locality_{loc}")
 if not os.path.exists(out_folder):
     os.makedirs(out_folder)
 
-# get the most recently processes file
+# get the most recently provisiones files
 files = glob.glob(os.path.join(data_path, "**", "*_no_errors.csv"), recursive=True)
 file_info = [(f, os.path.getmtime(f)) for f in files]
+
 sorted_files = sorted(file_info, key=lambda x: x[1], reverse=True)
+
 if len(sorted_files) > 1:
     file_path = sorted_files[1][0]
 else:
     raise ValueError("Not enough files matching the pattern 'no_errors.csv'")
 
 # get the locality number from the file path 
-
-#loc_match = re.search(rf"{re.escape(data_path)}(.*)/locality_([0-9][0-9][0-9])(.*)", file_path)
+# loc_match = re.search(rf"{re.escape(data_path)}(.*)/locality_([0-9][0-9][0-9])(.*)", file_path)
 # hard code for now as the above line isn't working
 loc=227
+
 if loc_match:
     loc = loc_match.group(2)
 else:
     raise ValueError(f"Could not extract locality from file path: {file_path}")
 
+# read data and do some basic cleaning - we want only the servicebc data
+# explicitly convert data types and rename some columns
 new_da_servicebc_df = pd.read_csv(file_path, dtype=str)
 
 address_sf_with_da = (
