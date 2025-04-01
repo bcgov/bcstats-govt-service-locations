@@ -12,7 +12,7 @@ from pathlib import Path
 def use_network_path():
     """Placeholder for R's safepaths::use_network_path()"""
     # Replace with your actual network path retrieval logic
-    return "G://Operations/Data Science and Analytics/2025 Government Service Locations" # example, replace with your actual path
+    return "" # example, replace with your actual path
 
 #------------------------------------------------------------------------------
 # geodata team creates drive times files for service bc
