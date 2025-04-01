@@ -22,14 +22,6 @@ import glob
 import pandas as pd
 import re
 
-
-# For now, I'll define a placeholder function
-def use_network_path():
-    """Placeholder for R's safepaths::use_network_path()"""
-    # Replace with your actual network path retrieval logic
-    return "" # example, replace with your actual path
-
-
 #------------------------------------------------------------------------------
 # geodata team creates drive times files for service bc
 # with unique id in place of civic address
