@@ -120,8 +120,8 @@ pop <- read_csv(glue::glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv
 #------------------------------------------------------------------------------
 
 avg_dist_drvtime_by_db_service %>%
-  write_csv(glue::glue("{out_folder}/db_average_times_dist_loc_{loc}.csv"))
+  write_csv(glue::glue("{src_data_folder}/db_average_times_dist_loc_{loc}.csv"))
 
 avg_dist_drvtime_by_da_service %>%
   left_join(pop, by = "daid") %>%
-  write_csv(glue::glue("{out_folder}/da_average_times_dist_loc_{loc}.csv"))
+  write_csv(glue::glue("{src_data_folder}/da_average_times_dist_loc_{loc}.csv"))
