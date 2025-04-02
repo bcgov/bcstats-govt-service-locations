@@ -42,5 +42,11 @@ library(sf)
 getOption("timeout")
 options(timeout = 600)
 
+loc_list <- c("909", "227", "213", "420")
+
+lan_folder <- safepaths::use_network_path()
+src_data_folder <- glue::glue("{lan_folder}/data/source/")
+raw_data_folder <- glue::glue("{lan_folder}/data/raw/")
+
 
 
