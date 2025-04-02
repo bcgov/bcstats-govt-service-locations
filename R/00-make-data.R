@@ -12,57 +12,86 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script loads raw csv data files containing spatial data for addresses in 
-# a defined municipality in BC (loc).  The datasets are processed to be ready 
-# for use for data analytics. 
+# This script loads raw csv data files containing spatial data for addresses in
+# a defined municipality in BC (loc).  The datasets are processed to be ready
+# for use for data analytics.
 
 source("R/configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
-# geodata team creates drive times files for service bc
-# with unique id in place of civic address
-# zik files are just zip files, so read_csv can handle them directly.
-# currently only service bc locations are needed
-# geodata team has removed duplicate rows
+# GeoData team has prepared drive times to nearest service bc facility for
+# all addresses within a municipality, for four municipalities.
+# The municipalities are defined by "locality id" (more clarification needed)
+# and mapped to municipality:
 # Langford: locality 909
 # Smithers: locality 227
 # Dawson Creek: locality 213
 # Kamploops: Locality 420
+# Each row in the data is identified by a unique id in place of civic address;
+# geodata team has removed duplicate rows.
+
+# The data is provided as a series of .zik files, partitioned into a subfolder
+# in the project directory by date of provision.
+# .zik files are extracted manually into same folder ("data/raw").
+
+# This script finds the most recent drive time data file for each locality
+# and loads the data into R.  The data is lightly pre-processed and
+# then written to "data/source" for further analytics.
+
 #------------------------------------------------------------------------------
 
-# data for service bc with unique id
+# set paths for input (raw) and output (source) data
 data_folder <- safepaths::use_network_path()
 data_path <- glue::glue("{data_folder}/data/raw/")
 
-# get the most recent file.  This could be used to process all of them
-file_path <- file.info(list.files(data_path, full.names = TRUE, pattern = "no_errors.csv", recursive = TRUE)) %>%
+loc_list <- c("909", "227", "213", "420")
+
+# get the most recent files and check there is one per locality.
+file_paths <- file.info(list.files(data_path, full.names = TRUE, pattern = "no_errors.csv", recursive = TRUE)) %>%
+  rownames_to_column("fn") %>%
+  mutate(loc = gsub(glue::glue("({data_path})(.*)(/locality_)([0-9][0-9][0-9])(.*)"), "\\4", fn)) %>%
+  group_by(loc) %>%
   dplyr::arrange(desc(mtime)) %>%
-  slice(2) %>%
-  rownames()
+  slice(1) %>%
+  select(fn, loc)
 
-# get the locality number from the file path
-loc <- gsub(glue::glue("({data_path})(.*)(/locality_)([0-9][0-9][0-9])(.*)"), "\\4", file_path) # nolint
+# TODO: add warning if the locs are not the same as the expected list
 
-out_folder <- glue::glue("{data_folder}/data/source/locality_{loc}")
+# function to process each locality
+preprocess_locs <- function(fl, loc, fld = data_folder) {
 
-if (!dir.exists(out_folder)) {
-  dir.create(out_folder)
+  out_folder <- glue::glue("{fld}/data/source/locality_{loc}")
+  if (!dir.exists(out_folder)) {
+    dir.create(out_folder)
+  }
+
+  data <- read_csv(fl, col_types = cols(.default = "c")) %>%
+    janitor::clean_names()
+
+  #add some data checks in here for colnames
+  reqd_cols <- c("site_albers_x", "site_albers_y", "dissemination_block_id",
+                 "drv_time_sec", "drv_dist", "tag")
+
+  if (!all(reqd_cols %in% colnames(data))) {
+    message(glue::glue("error processing locality {loc}: not all required columns are found in data"))
+    return(NULL)
+  }
+
+  data <- data%>%
+    filter(tag == "servicebc") %>% 
+    rename(address_albers_x = site_albers_x,
+           address_albers_y = site_albers_y) %>%
+    mutate(daid = str_sub(dissemination_block_id, 1, 8),
+           drv_time_sec = as.numeric(drv_time_sec),
+           drv_dist = as.numeric(drv_dist),
+           address_albers_x = as.numeric(address_albers_x),
+           address_albers_y = as.numeric(address_albers_y))
+
+  # write to output folder TODO output warning message if overwriting files
+  data %>%
+    write_csv(glue::glue("{out_folder}/address_with_da_loc_{loc}.csv"))
+
 }
 
-new_da_servicebc_df <- read_csv(file_path, col_types = cols(.default = "c"))
-
-address_sf_with_da <- new_da_servicebc_df %>%
-  janitor::clean_names() %>%
-  filter(tag == "servicebc") %>% # rows for distance to nearest service bc only
-  rename(address_albers_x = site_albers_x, address_albers_y = site_albers_y) %>%
-  mutate(daid = str_sub(dissemination_block_id, 1, 8),
-         drv_time_sec = as.numeric(drv_time_sec),
-         drv_dist = as.numeric(drv_dist),
-         address_albers_x = as.numeric(address_albers_x),
-         address_albers_y = as.numeric(address_albers_y)) %>%
-  st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005)
-
-# drop the address coordinates
-address_sf_with_da %>%
-  st_drop_geometry() %>%
-  write_csv(glue::glue("{out_folder}/address_with_da_loc_{loc}.csv"))
+# process each locality
+purrr::map2(.x = file_paths$fn, .y = file_paths$loc, .f = preprocess_locs)
