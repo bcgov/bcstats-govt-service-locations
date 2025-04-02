@@ -12,11 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#------------------------------------------------------------------------------
+# This script loads csv files containing drive times to nearest service bc
+# facility for all addresses within a municipality, for four municipalities.
+# The municipalities are defined by "locality id" (more clarification needed)
+# and mapped to municipality:
+# Langford: locality 909
+# Smithers: locality 227
+# Dawson Creek: locality 213
+# Kamploops: Locality 420
+# Each row in the data is identified by a unique id in place of civic address;
+# geodata team has removed duplicate rows.
 
-# This script loads csv data files containing spatial data for addresses in 
-# a defined municipality in BC (loc).  Basic descriptive statisics are calculated
-# at the dissemination area and dissemination block level. Population statistics 
-# from Statistics Canada are appended
+# Basic descriptive statisics are calculated at the dissemination area 
+# and dissemination block level. Population statistics from 
+# Statistics Canada are appended
 
 source("R/configuration.R") # load libraries and other settings
 
@@ -28,22 +38,20 @@ source("R/configuration.R") # load libraries and other settings
 # Kamploops: locality 420
 #------------------------------------------------------------------------------
 
-loc <- "227" # hard coded for now
-data_folder <- safepaths::use_network_path()
-in_folder <- glue::glue("{data_folder}/data/source/locality_{loc}")
-out_folder <- in_folder
+lan_folder <- safepaths::use_network_path()
+src_data_folder <- glue::glue("{lan_folder}/data/source/")
+raw_data_folder <- glue::glue("{lan_folder}/data/raw/")
 
-data_file <- read_csv(glue::glue("{in_folder}/address_with_da_loc_{loc}.csv"))
+loc <- "227" # hard coded for now
+data <- read_csv(glue::glue("{src_data_folder}/locality_{loc}/address_with_da_loc_{loc}.csv"))
 
 #------------------------------------------------------------------------------
 # Create a DA level summary table: average drive time and distance
-# and number of address. No row missing distance value
-# all the addresses and DA information are from geodata team by sampling,
-# therefore not full picture.
-# To do: is this the full sample of data?
+# and number of address. 
+# TODO:Check no row missing distance value?
 #------------------------------------------------------------------------------
 
-avg_dist_drvtime_by_db_service <- address_sf_with_da %>%
+avg_dist_drvtime_by_db_service <- data %>%
   group_by(dissemination_block_id, daid) %>%
   summarise(
     mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
@@ -68,7 +76,7 @@ avg_dist_drvtime_by_db_service <- address_sf_with_da %>%
   ) %>%
   ungroup()
 
-avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
+avg_dist_drvtime_by_da_service <- data %>%
   group_by(daid) %>%
   summarise(
     mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
@@ -94,20 +102,17 @@ avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
   ungroup()
 
 #------------------------------------------------------------------------------
-# Add in population data from statistics Canada
+# Add in population data from Statistics Canada
 #------------------------------------------------------------------------------
 
-pop <- read_csv(glue::glue("{data_folder}/data/raw/statscan/98100015-eng/98100015.csv")) %>% # nolint
+pop <- read_csv(glue::glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv")) %>% # nolint
   janitor::clean_names() %>%
   select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
+  setNames(gsub("population_and_dwelling_counts_5","",names(.))) %>%
+  setNames(gsub("_[0-9]$","",names(.))) %>%
   filter(grepl("^2021S", dguid)) %>%
-  mutate(daid = as.numeric(gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid))) %>%
   filter(grepl("^59", daid)) %>%
-  rename("population_2021" = "population_and_dwelling_counts_5_population_2021_1",
-    "total_private_dwellings_2021" = "population_and_dwelling_counts_5_total_private_dwellings_2021_2",
-    "private_dwellings_occupied_by_usual_residents_2021" = "population_and_dwelling_counts_5_private_dwellings_occupied_by_usual_residents_2021_3",
-    "land_area_in_sq_km_2021" = "population_and_dwelling_counts_5_land_area_in_square_kilometres_2021_4",
-    "population_density_per_square_kilometre_2021" = "population_and_dwelling_counts_5_population_density_per_square_kilometre_2021_5")
+  mutate(daid = as.numeric(gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid)))
 
 #------------------------------------------------------------------------------
 # write prepared data files to source folder
