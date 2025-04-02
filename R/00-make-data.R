@@ -19,6 +19,11 @@
 source("R/configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
+
+# This script finds the most recent drive time data file for each locality
+# and loads the data into R.  The data is lightly pre-processed and
+# then written to "data/source" for further analytics.
+
 # GeoData team has prepared drive times to nearest service bc facility for
 # all addresses within a municipality, for four municipalities.
 # The municipalities are defined by "locality id" (more clarification needed)
@@ -33,10 +38,6 @@ source("R/configuration.R") # load libraries and other settings
 # The data is provided as a series of .zik files, partitioned into a subfolder
 # in the project directory by date of provision.
 # .zik files are extracted manually into same folder ("data/raw").
-
-# This script finds the most recent drive time data file for each locality
-# and loads the data into R.  The data is lightly pre-processed and
-# then written to "data/source" for further analytics.
 
 #------------------------------------------------------------------------------
 
