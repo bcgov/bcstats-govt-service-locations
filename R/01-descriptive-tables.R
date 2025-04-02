@@ -30,19 +30,19 @@
 
 source("R/configuration.R") # load libraries and other settings
 
-#------------------------------------------------------------------------------
-# load prepared data for service bc with unique id
-# Langford: locality 909
-# Smithers: locality 227
-# Dawson Creek: locality 213
-# Kamploops: locality 420
-#------------------------------------------------------------------------------
-
 
 #TODO: check if the available locs are the same as the expected list
 
 
 stats_by_db <- function(loc, src_data_folder) {
+#------------------------------------------------------------------------------
+# Create a DB-level summary table with variables:
+# average drive time
+# distance
+# number of addresses
+# quartiles, etc.
+# TODO: missing data checks - should this be done in 00-make-data?
+#------------------------------------------------------------------------------
 
   fl = glue::glue("{src_data_folder}/locality_{loc}/address_with_da_loc_{loc}.csv")
   # TODO: # replace with tryCatch
@@ -52,15 +52,6 @@ stats_by_db <- function(loc, src_data_folder) {
   }
 
   data <- read_csv(fl)
-
-#------------------------------------------------------------------------------
-# Create a DB-level summary table with variables:
-# average drive time
-# distance
-# number of addresses
-# quartiles, etc.
-# TODO: missing data checks - should this be done in 00-make-data?
-#------------------------------------------------------------------------------
 
   avg_dist_drvtime_by_db_service <- data %>%
     group_by(dissemination_block_id, daid) %>%
@@ -94,6 +85,15 @@ stats_by_db <- function(loc, src_data_folder) {
 }
 
 stats_by_da <- function(loc, src_data_folder, raw_data_folder) {
+
+#------------------------------------------------------------------------------
+# Create a DA-level summary table with variables:
+# average drive time
+# distance
+# number of addresses
+# quartiles, etc.
+# TODO: missing data checks - should this be done in 00-make-data?
+#------------------------------------------------------------------------------
 
   fil = glue::glue("{src_data_folder}/locality_{loc}/address_with_da_loc_{loc}.csv")
   # TODO: # replace with tryCatch
