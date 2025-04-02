@@ -45,7 +45,6 @@ source("R/configuration.R") # load libraries and other settings
 data_folder <- safepaths::use_network_path()
 data_path <- glue::glue("{data_folder}/data/raw/")
 
-loc_list <- c("909", "227", "213", "420")
 
 # get the most recent files and check there is one per locality.
 file_paths <- file.info(list.files(data_path, full.names = TRUE, pattern = "no_errors.csv", recursive = TRUE)) %>%

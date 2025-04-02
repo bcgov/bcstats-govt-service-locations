@@ -110,9 +110,10 @@ pop <- read_csv(glue::glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv
   select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
   setNames(gsub("population_and_dwelling_counts_5","",names(.))) %>%
   setNames(gsub("_[0-9]$","",names(.))) %>%
+  mutate(daid = as.numeric(gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid))) %>% 
+  #FIXME: logic introduced NA's which are removed in the next subsequent step.
   filter(grepl("^2021S", dguid)) %>%
-  filter(grepl("^59", daid)) %>%
-  mutate(daid = as.numeric(gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid)))
+  filter(grepl("^59", daid))
 
 #------------------------------------------------------------------------------
 # write prepared data files to source folder
