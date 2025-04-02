@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+# This script loads csv data files containing spatial data for addresses in 
+# a defined municipality in BC (loc).  Basic descriptive statisics are calculated
+# at the dissemination area and dissemination block level. Population statistics 
+# from Statistics Canada are appended
+
 source("R/configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
@@ -21,12 +27,14 @@ source("R/configuration.R") # load libraries and other settings
 # Dawson Creek: locality 213
 # Kamploops: locality 420
 #------------------------------------------------------------------------------
+
 loc <- "227" # hard coded for now
 data_folder <- safepaths::use_network_path()
-in_folder <- out_folder <- glue::glue("{data_folder}/data/source/locality_{loc}")
+in_folder <- glue::glue("{data_folder}/data/source/locality_{loc}")
+out_folder <- in_folder
 
-data_file <- glue::glue("in_folder/address_with_da_loc_{loc}.csv")
-address_sf_with_da <- read_csv(data_file)
+data_file <- read_csv(glue::glue("{in_folder}/address_with_da_loc_{loc}.csv"))
+
 #------------------------------------------------------------------------------
 # Create a DA level summary table: average drive time and distance
 # and number of address. No row missing distance value
@@ -86,11 +94,28 @@ avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
   ungroup()
 
 #------------------------------------------------------------------------------
-# Add in population data
+# Add in population data from statistics Canada
+#------------------------------------------------------------------------------
+
+pop <- read_csv(glue::glue("{data_folder}/data/raw/statscan/98100015-eng/98100015.csv")) %>% # nolint
+  janitor::clean_names() %>%
+  select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
+  filter(grepl("^2021S", dguid)) %>%
+  mutate(daid = as.numeric(gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid))) %>%
+  filter(grepl("^59", daid)) %>%
+  rename("population_2021" = "population_and_dwelling_counts_5_population_2021_1",
+    "total_private_dwellings_2021" = "population_and_dwelling_counts_5_total_private_dwellings_2021_2",
+    "private_dwellings_occupied_by_usual_residents_2021" = "population_and_dwelling_counts_5_private_dwellings_occupied_by_usual_residents_2021_3",
+    "land_area_in_sq_km_2021" = "population_and_dwelling_counts_5_land_area_in_square_kilometres_2021_4",
+    "population_density_per_square_kilometre_2021" = "population_and_dwelling_counts_5_population_density_per_square_kilometre_2021_5")
+
+#------------------------------------------------------------------------------
+# write prepared data files to source folder
 #------------------------------------------------------------------------------
 
 avg_dist_drvtime_by_db_service %>%
   write_csv(glue::glue("{out_folder}/db_average_times_dist_loc_{loc}.csv"))
 
 avg_dist_drvtime_by_da_service %>%
+  left_join(pop, by = "daid") %>%
   write_csv(glue::glue("{out_folder}/da_average_times_dist_loc_{loc}.csv"))
