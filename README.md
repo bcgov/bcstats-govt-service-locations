@@ -12,8 +12,7 @@ Accessing project files and data requires the [`safepaths`](https://github.com/b
 
 ## Installation
 
-**R:** (Pending)
-This project requires a recent version of R (4.0.0 or later).
+**R:** This project requires a recent version of R (4.0.0 or later).
 
 **R Packages:** Install required packages using:
 
