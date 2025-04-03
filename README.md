@@ -55,9 +55,9 @@ Aggregate population and dwelling count data at the Dissemination Area (DA) leve
 
 This project operates under the following guidelines:
 
-1.  **Code Repository Only:** This GitHub repository stores only code. All data resides on secure LAN storage accessed via `safepaths`.
-2.  **Non-Sensitive Data Focus:**  The analysis utilizes data that contain no Personal Information (PI) or other sensitive information.  
-3.  **Open Code:** In line with BC Government digital principles, the analytic code is developed openly to promote transparency and reproducibility.
+1.  This GitHub repository stores only code. All data resides on secure LAN storage accessed via `safepaths`.
+2.  The analysis utilizes data that contain no Personal Information (PI) or other sensitive information.  
+3.  In line with BC Government digital principles, the analytic code is developed openly to promote transparency and reproducibility.
 
 
 ## How to Contribute
