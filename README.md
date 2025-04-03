@@ -4,22 +4,36 @@
 
 ## Project Description
 
+(Description pending)
  
-## Project Files and Access
+## Secure Data Access
 
-Accessing project files and data requires the `safepaths` R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure `safepaths` as well as the LAN location of all data files. 
+Accessing project files and data requires the [`safepaths`](https://github.com/bcgov/safepaths) R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure `safepaths` as well as the LAN location of all data files. 
 
-Please refer to the safepaths package documentation for installation and usage instructions: https://github.com/bcgov/safepaths, and the project maintainers for project's folder LAN path.
+## Installation
+
+**R:** (Pending)
+This project equires a recent version of R (e.g., 4.0.0 or later).
+
+**R Packages:** Install required packages using:
+
+```R
+# Manually install packages:
+install.packages(c("dplyr", "sf", "ggplot2", "tidyverse", "glue", "janitor", "e1071", "remotes"))
+remotes::install_github("bcgov/safepaths")
+```
+
+**Safepaths Configuration:** Follow the [safepaths package documentation](https://github.com/bcgov/safepaths) for initial setup. You will need the project's specific LAN path key from the project maintainers to configure access to the required datasets.
 
 ## Data Sources
 
-This project uses data from the following sources:
+This analysis relies on the following primary data sources:
 
 **Geocoded Address Points (via BC Geocoder API)**
 
-Geographic coordinates for project-relevant addresses were generated using the British Columbia Physical Address Geocoder REST API service ([Base URL: https://geocoder.api.gov.bc.ca/]). This API performs address validation and returns point location data (latitude/longitude or projected coordinates). The output dataset utilized in this project includes these derived coordinates along with the corresponding Statistics Canada Dissemination Block (DB) identifier (blockID field from the API response), enabling spatial linkage. Records returned by the geocoder that lacked valid coordinates were excluded during further processing.
+Geographic coordinates for project-relevant addresses were generated using the British Columbia Physical Address Geocoder REST API service ([https://geocoder.api.gov.bc.ca/](https://geocoder.api.gov.bc.ca/)). This API performs address validation and returns point location data (latitude/longitude or projected coordinates). The output dataset utilized in this project includes these derived coordinates along with the corresponding Statistics Canada Dissemination Block (DB) identifier (blockID field from the API response), enabling spatial linkage. Records returned by the geocoder that lacked valid coordinates were excluded from the analysis dataset.
 
-While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates identifiers used in further analysis are open. 
+While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates used the analysis are open. 
 
 **NFA Data:** 
 
@@ -27,15 +41,15 @@ While the source address list input to the geocoder is restricted under license,
 
 **Geographic Concordance File**
 
-A geographic concordance file was acquired from Statistics Canada ([statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21]) to facilitate data linkage across disparate census geographic hierarchies (e.g., linking Dissemination Areas to Census Subdivisions). This file enables the aggregation or translation of data between administrative or statistical units. Note: This dataset has been acquired but not yet implemented in the current analysis workflow.
+A geographic concordance file was acquired from Statistics Canada ([statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21](statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21)) to facilitate data linkage across disparate census geographic hierarchies (e.g., linking Dissemination Areas to Census Subdivisions). This file enables the aggregation or translation of data between administrative or statistical units. Note: This dataset has been acquired but not yet implemented in the current analysis workflow.
 
 **Digital Boundary Files (Shapefile Format)**
 
-Digital boundary files in ESRI Shapefile format (.shp), defining the geographic extents of Dissemination Areas (DAs) and Dissemination Blocks (DBs), were obtained from Statistics Canada ([https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21]). These vector datasets served as the geometric base for cartographic visualization and underpinning geospatial operations within the analysis.
+Digital boundary files in ESRI Shapefile format (.shp), defining the geographic extents of Dissemination Areas (DAs) and Dissemination Blocks (DBs), were obtained from Statistics Canada ([https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21](https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21)). These vector datasets served as the geometric base for cartographic visualization and underpinning geospatial operations within the analysis.
 
 **Census Population and Dwelling Counts**
 
-Aggregate population and dwelling count data at the Dissemination Area (DA) level were extracted from the Statistics Canada 2021 Census profile tables ([https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259] - Table 98-10-0015-0]. This dataset provided the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study region [or specify 'for selected DAs based on criteria X' if applicable].
+Aggregate population and dwelling count data at the Dissemination Area (DA) level were extracted from the Statistics Canada 2021 Census profile tables ([https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259) - Table 98-10-0015-02]. This dataset provided the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study regions.
 
 ## Guiding Principles
 
@@ -48,11 +62,14 @@ This project operates under the following guidelines:
 
 ## How to Contribute
 
-If you would like to contribute to the guide, please see our [CONTRIBUTING](CONTRIBUTING.md) guideleines.
+If you would like to contribute to the guide, please see our [CONTRIBUTING](CONTRIBUTING.md) guidelines.
 
-Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms and conform to the project Guiding Principles.
 
-In addition, no contributor will push data to this repository as no data will be stored in this repository. 
+
+## Contact 
+
+For questions about this project or to obtain the necessary `safepaths` configuration, please contact Bonnie Ashcroft at bonnie.ashcroft@gov.bc.ca or open an issue in this repository.
 
 ## License
 
@@ -62,7 +79,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-   http://www.apache.org/licenses/LICENSE-2.0
+  [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
