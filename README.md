@@ -15,38 +15,34 @@ Please refer to the safepaths package documentation for installation and usage i
 
 This project uses data from the following sources:
 
-**Geocoder/NFA data output (incomplete)** 
+**Geocoded Address Points (via BC Geocoder API)**
 
-Includes the Dissemination Block id but can add any admin boundary id if requested 
-Addresses that did not have valid coordinates or are not connected to the road network were removed. 
+Geographic coordinates for project-relevant addresses were generated using the British Columbia Physical Address Geocoder REST API service ([Base URL: https://geocoder.api.gov.bc.ca/]). This API performs address validation and returns point location data (latitude/longitude or projected coordinates). The output dataset utilized in this project includes these derived coordinates along with the corresponding Statistics Canada Dissemination Block (DB) identifier (blockID field from the API response), enabling spatial linkage. 
 
-The original address data used by the geocoder is restricted under licencing, however the output is open source. We have not included any of the source data in this project.  
+**NFA**
+(Section not complete) 
+Records returned by the geocoder that lacked valid coordinates were excluded during post-processing. 
+Note: While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates and associated DB identifiers used herein are open.
 
-**Dissemination Geographies Relationship File (not used yet)**
+**DGeographic Concordance File**
 
-A mapping file was used to cross-reference and integrate data across different geographic hierarchy.  The files were sourced from Statistics Canada and downloaded from: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21
+A geographic concordance file was acquired from Statistics Canada ([statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21]) to facilitate data linkage across disparate census geographic hierarchies (e.g., linking Dissemination Areas to Census Subdivisions). This file enables the aggregation or translation of data between administrative or statistical units. Note: This dataset has been acquired but not yet implemented in the current analysis workflow.
 
-**Dissemination Area Boundary Files**
+**Digital Boundary Files (Shapefile Format)**
 
-Boundary Shape Files (.shp) for Dissemination Areas (DAs) and Dissemination Blocks (DBs) were sourced from Statistics Canada and used to create maps and perform spatial analysis.  The shape files were downloaded from: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21
+Digital boundary files in ESRI Shapefile format (.shp), defining the geographic extents of Dissemination Areas (DAs) and Dissemination Blocks (DBs), were obtained from Statistics Canada ([https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21]). These vector datasets served as the geometric base for cartographic visualization and underpinning geospatial operations within the analysis.
 
-**Population Data**
+**Census Population and Dwelling Counts**
 
-Population and dwelling counts for selected dissemination areas were sourced from Statistics Canada’s 2021 Census.  This data was used to calculate population density and other demographic statistics.  The data was downloaded from: https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259
+Aggregate population and dwelling count data at the Dissemination Area (DA) level were extracted from the Statistics Canada 2021 Census profile tables ([https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259] - Table 98-10-0015-0]. This dataset provided the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study region [or specify 'for selected DAs based on criteria X' if applicable].
 
-Statistics Canada. Table 98-10-0015-02  Population and dwelling counts: Canada, provinces and territories and dissemination areas. DOI: https://doi.org/10.25318/9810001501-eng
+## Guiding Principles
 
-## Sample Data Assets
+This project operates under the following guidelines:
 
-## How We Work
-
-The project team has been given permission to do this work under the following conditions:
-The project team has been given permission to do this work under the following conditions:
-
-1. No data is stored in GitHub
-2. The data used for this analysis step has no personal identifiers and is not sensitive (i.e. no PI)
-3. Defaulting to the open follows our digital principles
-4. This will enable transparency and reproducibility of the analysis
+1.  **Code Repository Only:** This GitHub repository stores only code. All data resides on secure LAN storage accessed via `safepaths`.
+2.  **Non-Sensitive Data Focus:**  The analysis utilizes data that contain no Personal Information (PI) or other sensitive information.
+3.  **Open Code:** In line with BC Government digital principles, the analytic code is developed openly to promote transparency and reproducibility.
 
 
 ## How to Contribute
