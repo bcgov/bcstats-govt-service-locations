@@ -17,14 +17,15 @@ This project uses data from the following sources:
 
 **Geocoded Address Points (via BC Geocoder API)**
 
-Geographic coordinates for project-relevant addresses were generated using the British Columbia Physical Address Geocoder REST API service ([Base URL: https://geocoder.api.gov.bc.ca/]). This API performs address validation and returns point location data (latitude/longitude or projected coordinates). The output dataset utilized in this project includes these derived coordinates along with the corresponding Statistics Canada Dissemination Block (DB) identifier (blockID field from the API response), enabling spatial linkage. 
+Geographic coordinates for project-relevant addresses were generated using the British Columbia Physical Address Geocoder REST API service ([Base URL: https://geocoder.api.gov.bc.ca/]). This API performs address validation and returns point location data (latitude/longitude or projected coordinates). The output dataset utilized in this project includes these derived coordinates along with the corresponding Statistics Canada Dissemination Block (DB) identifier (blockID field from the API response), enabling spatial linkage. Records returned by the geocoder that lacked valid coordinates were excluded during further processing.
 
-**NFA**
-(Section not complete) 
-Records returned by the geocoder that lacked valid coordinates were excluded during post-processing. 
-Note: While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates and associated DB identifiers used herein are open.
+While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates identifiers used in further analysis are open. 
 
-**DGeographic Concordance File**
+**NFA Data:** 
+
+(Description pending - this dataset represents output from the Nearest Facility Analysis pipeline, details to be added.)
+
+**Geographic Concordance File**
 
 A geographic concordance file was acquired from Statistics Canada ([statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21]) to facilitate data linkage across disparate census geographic hierarchies (e.g., linking Dissemination Areas to Census Subdivisions). This file enables the aggregation or translation of data between administrative or statistical units. Note: This dataset has been acquired but not yet implemented in the current analysis workflow.
 
@@ -41,7 +42,7 @@ Aggregate population and dwelling count data at the Dissemination Area (DA) leve
 This project operates under the following guidelines:
 
 1.  **Code Repository Only:** This GitHub repository stores only code. All data resides on secure LAN storage accessed via `safepaths`.
-2.  **Non-Sensitive Data Focus:**  The analysis utilizes data that contain no Personal Information (PI) or other sensitive information.
+2.  **Non-Sensitive Data Focus:**  The analysis utilizes data that contain no Personal Information (PI) or other sensitive information.  
 3.  **Open Code:** In line with BC Government digital principles, the analytic code is developed openly to promote transparency and reproducibility.
 
 
