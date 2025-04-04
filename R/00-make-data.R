@@ -28,7 +28,7 @@ getOption("timeout")
 options(timeout = 600)
 
 # --- Constants ---
-LOC_LIST <- c("909", "227", "213", "420")
+EXPECTED_LOCALITIES <- c("909", "227", "213", "420")
 
 LAN_FOLDER <- use_network_path()
 SRC_DATA_FOLDER <- glue("{lan_folder}/data/source/")
@@ -75,7 +75,16 @@ file_paths <- file.info(list.files(RAW_DATA_FOLDER,  full.names = TRUE, pattern 
   slice_head(n = 1) %>%
   select(fn, loc)
 
-# TODO: add warning if the locs are not the same as the expected list
+# add warning if the locs are not the same as the expected list
+missing_localities <- setdiff(EXPECTED_LOCALITIES, unique(file_paths$loc))
+extra_localities <- setdiff(unique(file_paths$loc), EXPECTED_LOCALITIES)
+
+if (length(missing_localities) > 0) {
+  warning("Expected localities not found: ", paste(missing_localities, collapse = ", "))
+}
+if (length(extra_localities) > 0) {
+  warning("Unexpected localities found: ", paste(extra_localities, collapse = ", "))
+}
 
 # function to process each locality
 preprocess_locs <- function(fl, loc, fld = data_folder) {
