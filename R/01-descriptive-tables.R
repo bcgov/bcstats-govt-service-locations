@@ -28,7 +28,7 @@
 # and dissemination block level. Population statistics from
 # Statistics Canada are appended
 
-source("R/configuration.R") # load libraries and other settings
+source("R/settings.R")  # load constants and other settings (including libraries)
 
 
 fls <- list.files(src_data_folder, full.names = TRUE, pattern = "address_with_da.*", recursive = TRUE)

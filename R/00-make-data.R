@@ -18,25 +18,10 @@
 # and loads the data into R.  The data is lightly pre-processed and
 # then written to "data/source" for further analytics.
 
-# Context:
-# GeoData team has prepared drive times to nearest service bc facility for
-# all addresses within a municipality, for four municipalities.
-# The municipalities are defined by "locality id" (more clarification needed)
-# and mapped to municipality:
-# Langford: locality 909
-# Smithers: locality 227
-# Dawson Creek: locality 213
-# Kamploops: Locality 420
-# Each row in the data is identified by a unique id in place of civic address;
-# geodata team has removed duplicate rows.
-
-# The data is provided as a series of .zik files, partitioned into a subfolder
-# in the project directory by date of provision.
-# .zik files are extracted manually into same folder ("data/raw").
 
 #------------------------------------------------------------------------------
 
-source("R/configuration.R") # load libraries and other settings
+source("R/settings.R")  # load constants and other settings (including libraries)
 
 # get the most recent drive time files for each locality
 # TODO: Make more robust to handle different file structures and patterns.

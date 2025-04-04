@@ -16,7 +16,7 @@
 # municipality of interest in BC (loc). It produces maps at the dissemination block level 
 # displaying quantitative information on basic descriptive statisics
 
-source("configuration.R") # load libraries and other settings
+source("R/settings.R")  # load constants and other settings (including libraries)
 source("fxns/maps.R") # functions for plotting maps
 
 #------------------------------------------------------------------------------
