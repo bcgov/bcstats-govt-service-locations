@@ -4,52 +4,77 @@
 
 ## Project Description
 
+This repository houses R code for analyzing the current geographic location of essential public services (e.g., Service BC locations, hospitals and schools) in British Columbia. Using spatial analysis techniques, it calculates accessibility metrics, aggregated at both the municipal level and by smaller geographic units like Statistics Canada Dissemination Areas (DAs) or Dissemination Blocks (DBs).  Accessibility metrics are based on factors like population density distribution, facility locations, and travel times (initially by car).
+
+The primary goal is to identify potential geographic disparities in service access – highlighting potentially underserved populations or underutilized facilities. The outputs aim to provide quantitative insights to support service planning, resource allocation, and equitable service delivery strategies, allowing for analysis focused on specific targeted municipalities or regions of interest.
+
+The first phase of the project focuses on the drive times to Service BC locations for four municipalities (Smithers, Langford, Kamloops and Dawson Creek), with plans to expand to other public services in future phases. The analysis will be conducted at the Dissemination Block (DB) level, with the option to aggregate results to larger geographic units as needed.
+
+*Note: The code and analytical methodology are currently under development.*
  
+## Secure Data Access
+
+Accessing project files and data requires the [`safepaths`](https://github.com/bcgov/safepaths) R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure `safepaths` as well as the LAN location of all data files. 
+
+## Installation
+
+**R:** This project requires a recent version of R (4.0.0 or later).
+
+**R Packages:** Install required packages using:
+
+```R
+# Manually install packages:
+install.packages(c("sf", "tidyverse", "glue", "janitor", "e1071", "remotes"))
+remotes::install_github("bcgov/safepaths")
+```
+
+**Safepaths Configuration:** Follow the [safepaths package documentation](https://github.com/bcgov/safepaths) for initial setup. You will need the project's specific LAN path key from the project maintainers to configure access to the required datasets.
 
 ## Data Sources
 
-This project uses data from the following sources:
+This analysis relies on the following primary data sources:
 
-**Geocoder/NFA data output (incomplete)** 
+**Geocoded Address Points (via BC Geocoder API)**
 
-Includes the Dissemintaion Block id but can add any admin boundary id if requested 
-Addresses that did not have valid coordinates or are not connected to the road network were (fixed/removed - confirm). 
+Geographic coordinates for project-relevant addresses were generated using the British Columbia Physical Address Geocoder REST API service ([https://geocoder.api.gov.bc.ca/](https://geocoder.api.gov.bc.ca/)). This API performs address validation and returns point location data (latitude/longitude or projected coordinates). The output dataset utilized in this project includes these derived coordinates along with the corresponding Statistics Canada Dissemination Block (DB) identifier (blockID field from the API response), enabling spatial linkage. Records returned by the geocoder that lacked valid coordinates were excluded from the analysis dataset.
 
+While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates used the analysis are open. 
 
-The original address data used by the geocoder is restricted under licencing, however the output is open source. As such, we have not included any of the source data in this project.  
+**NFA Data:** 
 
-**Dissemination Geographies Relationship File (not used yet)**
+(Description pending - this dataset represents output from the Nearest Facility Analysis pipeline, details to be added.)
 
-A mapping file was (along with related correspondence files) was used to cross-reference and integrate data across different geographic hierarchy. In particular from CSD to DA's. The files were sourced from Statistics Canada and downloaded from: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21
+**Geographic Concordance File**
 
-**Dissemination Area Boundary Files**
+A geographic concordance file was acquired from Statistics Canada ([statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21](statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21)) to facilitate data linkage across disparate census geographic hierarchies (e.g., linking Dissemination Areas to Census Subdivisions). This file enables the aggregation or translation of data between administrative or statistical units. Note: This dataset has been acquired but not yet implemented in the current analysis workflow.
 
-Boundary Shape Files (.shp) for Dissemination Areas (DAs) and Dissemination Blocks (DBs) were sourced from Statistics Canada.  These files were used to create maps and perform spatial analysis.  The shape files were downloaded from: https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21
+**Digital Boundary Files**
 
-**Population Data**
+Digital boundary files in Shapefile format (.shp), defining the geographic extents of Population Centers (PC), Dissemination Areas (DAs) and Dissemination Blocks (DBs), were obtained from Statistics Canada ([https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21](https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21)). These vector datasets served as the geometric base for cartographic visualization and underpinning geospatial operations within the analysis.
 
-Population and dwelling counts for selected dissemination areas were sourced from Statistics Canada’s 2021 Census.  This data was used to calculate population density and other demographic statistics.  The data was downloaded from: https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259 
+**Census Population and Dwelling Counts**
 
-Statistics Canada. Table 98-10-0015-02  Population and dwelling counts: Canada, provinces and territories and dissemination areas. DOI: https://doi.org/10.25318/9810001501-eng
+Aggregate population and dwelling count data at the Dissemination Area (DA) level were extracted from the Statistics Canada 2021 Census profile tables ([https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259) - Table 98-10-0015-02]. This dataset provided the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study regions.
 
-## Sample Data Assets
+## Guiding Principles
 
-## How We Work
+This project operates under the following guidelines:
 
-The project team has been given permission to do this work under the following conditions:
+1.  This GitHub repository stores only code. All data resides on secure LAN storage accessed via `safepaths`.
+2.  The analysis utilizes data that contain no Personal Information (PI) or other sensitive information.  
+3.  In line with BC Government digital principles, the analytic code is developed openly to promote transparency and reproducibility.
 
-1. No data is stored in GitHub
-2. The data used for this analysis step has no personal identifiers and is not sensitive (i.e. no PI)
-3. Defaulting to the open follows our digital principles
-4. This will enable transparency and reproducibility of the analysis
 
 ## How to Contribute
 
-If you would like to contribute to the guide, please see our [CONTRIBUTING](CONTRIBUTING.md) guideleines.
+If you would like to contribute to the guide, please see our [CONTRIBUTING](CONTRIBUTING.md) guidelines.
 
-Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
+Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms and conform to the project Guiding Principles.
 
-In addition, no contributor will push data to this repository as no data will be stored in this repository. 
+
+## Contact 
+
+For questions about this project or to obtain the necessary `safepaths` configuration, please contact Bonnie Ashcroft at bonnie.ashcroft@gov.bc.ca or open an issue in this repository.
 
 ## License
 
@@ -59,10 +84,11 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-   http://www.apache.org/licenses/LICENSE-2.0
+  [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
