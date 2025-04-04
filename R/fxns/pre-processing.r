@@ -61,7 +61,7 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
   # Check if the file already exists and warn if overwriting
   if (file.exists(output_filename)) {
-  message(glue::glue("Overwriting existing file for locality {loc}: {output_filename}")) # nolint
+  message(glue::glue("Overwriting existing file for locality {loc}: {output_filename}")) 
   }
 
   # Attempt to write the CSV file
@@ -75,6 +75,24 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
   return(TRUE)
 }
 
+# ------------------------------------------------------------------------
+# Function: read_all_locs
+#
+# Description: This function reads data from a single CSV file,
+# attempts to extract a three-digit locality identifier from the
+# filename (expected pattern: "locality_XXX"), and adds this
+# identifier as a new  'loc' column to the data frame.
+#
+# Inputs:
+#   - f: The file path (string) to a single input CSV file whose name is
+#        expected to contain the pattern "locality_XXX".
+#
+# Outputs:
+#   - Returns a data frame containing the data read from the CSV file,
+#     with an added 'loc' column for the three-digit locality ID.
+#   - Returns NULL if the locality ID cannot be extracted
+#             or if there is an error reading the file.
+# ------------------------------------------------------------------------
 
 read_all_locs <- function(f){
 
@@ -93,7 +111,7 @@ read_all_locs <- function(f){
   data <- tryCatch({
     f %>% read_csv(col_types = cols(.default = "c"), show_col_types = FALSE)
   }, error = function(e) {
-    message(glue::glue("ERROR reading file: '{f}'. Error: {e$message}"))
+    message(glue::glue("Error: {e$message}"))
     return(NULL)
   })
 
