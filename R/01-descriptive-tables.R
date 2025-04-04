@@ -44,9 +44,12 @@ source("R/settings.R")  # load constants and other settings (including temporary
 
 fls <- list.files(src_data_folder, full.names = TRUE, pattern = "address_with_da.*", recursive = TRUE)
 
-read_all_locs(fls)
+# Read and combine files, automatically handling NULLs from read_all_locs
+data <- map_dfr(fls, read_all_locs) 
 
-data <- bind_rows(lapply(fls, read_all))
+if (nrow(data) == 0) {
+  stop("No data successfully loaded. Check input files.")
+}
 
 avg_dist_drvtime_by_db_service <- data %>%
   group_by(dissemination_block_id, daid, loc) %>% # every daid belongs to a single locality
