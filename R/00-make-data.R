@@ -42,14 +42,14 @@ source("R/configuration.R") # load libraries and other settings
 #------------------------------------------------------------------------------
 
 # set paths for input (raw) and output (source) data
-data_folder <- safepaths::use_network_path()
-data_path <- glue::glue("{data_folder}/data/raw/")
+data_folder <- use_network_path()
+data_path <- glue("{data_folder}/data/raw/")
 
 
 # get the most recent files and check there is one per locality.
 file_paths <- file.info(list.files(data_path, full.names = TRUE, pattern = "no_errors.csv", recursive = TRUE)) %>%
   rownames_to_column("fn") %>%
-  mutate(loc = gsub(glue::glue("({data_path})(.*)(/locality_)([0-9][0-9][0-9])(.*)"), "\\4", fn)) %>%
+  mutate(loc = gsub(glue("({data_path})(.*)(/locality_)([0-9][0-9][0-9])(.*)"), "\\4", fn)) %>%
   group_by(loc) %>%
   dplyr::arrange(desc(mtime)) %>%
   slice(1) %>%
@@ -60,20 +60,15 @@ file_paths <- file.info(list.files(data_path, full.names = TRUE, pattern = "no_e
 # function to process each locality
 preprocess_locs <- function(fl, loc, fld = data_folder) {
 
-  out_folder <- glue::glue("{fld}/data/source/locality_{loc}")
-  if (!dir.exists(out_folder)) {
-    dir.create(out_folder)
-  }
-
   data <- read_csv(fl, col_types = cols(.default = "c")) %>%
-    janitor::clean_names()
+    clean_names()
 
   #add some data checks in here for colnames
   reqd_cols <- c("site_albers_x", "site_albers_y", "dissemination_block_id",
                  "drv_time_sec", "drv_dist", "tag")
 
   if (!all(reqd_cols %in% colnames(data))) {
-    message(glue::glue("error processing locality {loc}: not all required columns are found in data"))
+    message(glue("error processing locality {loc}: not all required columns are found in data"))
     return(NULL)
   }
 
@@ -88,10 +83,16 @@ preprocess_locs <- function(fl, loc, fld = data_folder) {
            address_albers_y = as.numeric(address_albers_y))
 
   # write to output folder TODO output warning message if overwriting files
+
+  out_folder <- src_data_folder
+  if (!dir.exists(out_folder)) {
+    dir.create(out_folder)
+  }
+
   data %>%
-    write_csv(glue::glue("{out_folder}/address_with_da_loc_{loc}.csv"))
+    write_csv(glue("{out_folder}/address_with_da_locality_{loc}.csv"))
 
 }
 
 # process each locality
-purrr::map2(.x = file_paths$fn, .y = file_paths$loc, .f = preprocess_locs)
+map2(.x = file_paths$fn, .y = file_paths$loc, .f = preprocess_locs)
