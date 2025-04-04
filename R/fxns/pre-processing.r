@@ -14,7 +14,7 @@
 
 
 # function to process each locality
-preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, facility_tag) {
+preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
   data <- read_csv(fl, col_types = cols(.default = "c")) %>%
     clean_names()
@@ -25,7 +25,7 @@ preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, faci
   }
 
   data <- data%>%
-    filter(tag == FACILITY_TAG) %>% 
+    filter(tag == facility_tag) %>% 
     rename(address_albers_x = site_albers_x,
            address_albers_y = site_albers_y) %>%
     mutate(daid = str_sub(dissemination_block_id, 1, 8),
@@ -34,22 +34,31 @@ preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, faci
            address_albers_x = as.numeric(address_albers_x),
            address_albers_y = as.numeric(address_albers_y))
 
+  # check if the data frame is empty after filtering
+  if (nrow(data) == 0) {
+    message(glue("WARNING processing locality {loc}: No data rows remaining after filtering for tag '{facility_tag}'. No file written."))
+    return(NULL) 
+  }
 
   # write output to a csv file
   output_filename <- glue("{output_folder}/address_with_da_locality_{loc}.csv") # could be passed to function
 
+  if (!dir.exists(output_folder)) {
+      message(glue("Creating output directory: {output_folder}"))
+      dir.create(output_folder, showWarnings = FALSE, recursive = TRUE)
+  }
+
   # Check if the file already exists and warn if overwriting
   if (file.exists(output_filename)) {
-  message(glue::glue("Overwriting existing file for locality {loc}: {output_filename}")) # nolint
-  }
+      message(glue("Overwriting existing file for locality {loc}: {output_filename}"))
   } else {
-    message(glue::glue("Creating new file for locality {loc}: {output_filename}")) # nolint
+      message(glue("Creating new file for locality {loc}: {output_filename}"))
   }
-}
-  data %>%
+  
+  data %>% 
     write_csv(output_filename)
-
-  return(data)
+  
+  return(TRUE)
 
 }
 
