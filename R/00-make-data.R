@@ -38,7 +38,7 @@ NO_ERRS_FILE_PATTERN <- "no_errors.csv"
 LOCALITY_REGEX_PATTERN <- "[0-9][0-9][0-9]"
 
 REQUIRED_COLS <- c("site_albers_x", "site_albers_y", "dissemination_block_id", "drv_time_sec", "drv_dist", "tag")
-FILTER_TAG <- "servicebc"
+FACILITY_TAG <- "servicebc"
 
 #------------------------------------------------------------------------------
 
@@ -65,11 +65,10 @@ FILTER_TAG <- "servicebc"
 
 
 # get the most recent files and check there is one per locality.
-# TODO: The regex below assumes a very specific path structure.
-# If the structure varies, it might fail or extract the wrong thing.
+# TODO: Make more robust to handle different file structures and patterns.
 file_paths <- file.info(list.files(RAW_DATA_FOLDER,  full.names = TRUE, pattern = NO_ERRS_FILE_PATTERN, recursive = TRUE)) %>% # nolint
   rownames_to_column("fn") %>%
-  mutate(loc = gsub(glue("({RAW_DATA_FOLDER})(.*)(/locality_){LOCALITY_REGEX_PATTERN}(.*)"), "\\4", fn)) %>% # nolint
+  mutate(loc = gsub(glue("({RAW_DATA_FOLDER})(.*)(/locality_)({LOCALITY_REGEX_PATTERN})(.*)"), "\\4", fn)) %>% # nolint
   group_by(loc) %>%
   arrange(loc, desc(mtime)) %>%
   slice_head(n = 1) %>%
@@ -87,14 +86,10 @@ if (length(extra_localities) > 0) {
 }
 
 # function to process each locality
-preprocess_locs <- function(fl, loc, fld = data_folder) {
+preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, facility_tag) {
 
   data <- read_csv(fl, col_types = cols(.default = "c")) %>%
     clean_names()
-
-  #add some data checks in here for colnames
-  reqd_cols <- c("site_albers_x", "site_albers_y", "dissemination_block_id",
-                 "drv_time_sec", "drv_dist", "tag")
 
   if (!all(reqd_cols %in% colnames(data))) {
     message(glue("error processing locality {loc}: not all required columns are found in data"))
@@ -102,7 +97,7 @@ preprocess_locs <- function(fl, loc, fld = data_folder) {
   }
 
   data <- data%>%
-    filter(tag == "servicebc") %>% 
+    filter(tag == FACILITY_TAG) %>% 
     rename(address_albers_x = site_albers_x,
            address_albers_y = site_albers_y) %>%
     mutate(daid = str_sub(dissemination_block_id, 1, 8),
@@ -111,17 +106,26 @@ preprocess_locs <- function(fl, loc, fld = data_folder) {
            address_albers_x = as.numeric(address_albers_x),
            address_albers_y = as.numeric(address_albers_y))
 
-  # write to output folder TODO output warning message if overwriting files
 
-  out_folder <- src_data_folder
-  if (!dir.exists(out_folder)) {
-    dir.create(out_folder)
-  }
+  # write output to a csv file
 
+  output_filename <- glue("{output_folder}/address_with_da_locality_{loc}.csv") # could be passed to function
+
+  # Check if the file already exists and warn if overwriting
+  if (file.exists(output_filename)) {
+  message(glue::glue("Overwriting existing file for locality {loc}: {output_filename}")) # nolint
+}
   data %>%
-    write_csv(glue("{out_folder}/address_with_da_locality_{loc}.csv"))
+    write_csv(output_filename)
 
 }
 
-# process each locality
-map2(.x = file_paths$fn, .y = file_paths$loc, .f = preprocess_locs)
+processed_files <- purrr::walk2(
+  .x = file_paths$fn,
+  .y = file_paths$loc,
+  .f = preprocess_locs,
+  data_folder = RAW_DATA_FOLDER, 
+  output_folder = SRC_DATA_FOLDER, 
+  reqd_cols = REQUIRED_COLS, 
+  facility_tag = FACILITY_TAG
+)
