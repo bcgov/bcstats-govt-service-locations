@@ -28,8 +28,8 @@ options(timeout = 600)
 EXPECTED_LOCALITIES <- c("909", "227", "213", "420")
 
 LAN_FOLDER <- use_network_path()
-SRC_DATA_FOLDER <- glue("{lan_folder}/data/source/")
-RAW_DATA_FOLDER <- glue("{lan_folder}/data/raw/")
+SRC_DATA_FOLDER <- glue("{LAN_FOLDER }/data/source/")
+RAW_DATA_FOLDER <- glue("{LAN_FOLDER }/data/raw/")
 
 NO_ERRS_FILE_PATTERN <- "no_errors.csv"
 LOCALITY_REGEX_PATTERN <- "[0-9][0-9][0-9]"
