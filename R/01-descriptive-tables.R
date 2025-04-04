@@ -99,6 +99,7 @@ avg_dist_drvtime_by_da_service <- data %>%
     n_address = n_distinct(fid)
   ) %>%
   ungroup()
+  
 #------------------------------------------------------------------------------
 # Add in population data from Statistics Canada
 #------------------------------------------------------------------------------
