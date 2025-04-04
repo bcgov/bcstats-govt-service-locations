@@ -32,7 +32,6 @@ library(sf)
 
 # library(cowplot) for aligning multiple plots # nolint
 # library(patchwork) # nolint
-# library(duckdb) # nolint
 
 # Load the rlang package for the bang-bang operator - imported by cowplot
 # library(rlang) # nolint
