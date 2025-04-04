@@ -4,7 +4,11 @@
 
 ## Project Description
 
-(Description pending)
+This repository houses R code for analyzing the geographic accessibility of essential public services (e.g., government centers, hospitals, schools) in British Columbia. Using spatial analysis techniques, it calculates accessibility scores, typically aggregated to small geographic units like Statistics Canada Dissemination Areas (DAs) or Dissemination Blocks (DBs), based on factors like population distribution (density), facility locations, and travel times (initially driving).
+
+The primary goal is to identify potential geographic disparities in service access – highlighting potentially underserved populations or underutilized facilities. The outputs aim to provide quantitative insights to support service planning, resource allocation, and equitable service delivery strategies, allowing for analysis focused on specific targeted municipalities or regions of interest.
+
+*Note: The code and analytical methodology are currently under development.*
  
 ## Secure Data Access
 
@@ -18,7 +22,7 @@ Accessing project files and data requires the [`safepaths`](https://github.com/b
 
 ```R
 # Manually install packages:
-install.packages(c("dplyr", "sf", "ggplot2", "tidyverse", "glue", "janitor", "e1071", "remotes"))
+install.packages(c("sf", "tidyverse", "glue", "janitor", "e1071", "remotes"))
 remotes::install_github("bcgov/safepaths")
 ```
 
