@@ -75,7 +75,7 @@ avg_dist_drvtime_by_db_service <- data %>%
 
   # TODO: add a check to see if the file already exists and warn if overwriting
 avg_dist_drvtime_by_db_service %>%
-  write_csv(glue::glue("{src_data_folder}/db_average_times_dist_loc_all.csv"))
+  write_csv(glue("{src_data_folder}/db_average_times_dist_loc_all.csv"))
 
 #------------------------------------------------------------------------------
 # Create a DA-level summary table with variables:
@@ -115,7 +115,7 @@ avg_dist_drvtime_by_da_service <- data %>%
 # Add in population data from Statistics Canada
 #------------------------------------------------------------------------------
 
-pop <- read_csv(glue::glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv")) %>% # nolint
+pop <- read_csv(glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv")) %>% # nolint
   janitor::clean_names() %>%
   select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
   setNames(gsub("population_and_dwelling_counts_5","",names(.))) %>%
@@ -131,4 +131,4 @@ pop <- read_csv(glue::glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv
 # TODO: add a check to see if the file already exists and warn if overwriting
 avg_dist_drvtime_by_da_service %>%
   left_join(pop, by = "daid") %>%
-  write_csv(glue::glue("{src_data_folder}/da_average_times_dist_loc_all.csv"))
+  write_csv(glue("{src_data_folder}/da_average_times_dist_loc_all.csv"))
