@@ -12,15 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ------------------------------------------------------------------------
+# Function: preprocess_locs
 
-# function to process each locality
-preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, facility_tag) {
+# Description: This function processes raw data for a specific locality,
+# validates that required columns are present, and performs preprocessing steps.
+# It writes the processed data to a new CSV file in a specified output directory
+# named using the locality identifier.
+
+# Inputs:
+#   - The file path to the input CSV data for the locality.
+#   - An identifier for the locality being processed.
+#   - The path to the directory where the processed output file should be saved.
+#   - A vector of required column names that must be present in the input file.
+#   - The specific tag value used to filter for facility records.
+
+# Outputs:
+#   - Writes a CSV file containing the processed data (side effect).
+#   - Returns TRUE if the input file was successfully read, processed,
+#     and the output file written;
+#   - Returns NULL if required columns were missing or if there was an error
+#     writing the output file.
+# ------------------------------------------------------------------------
+
+preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
   data <- read_csv(fl, col_types = cols(.default = "c")) %>%
     clean_names()
 
   if (!all(reqd_cols %in% colnames(data))) {
-    message(glue("error processing locality {loc}: not all required columns are found in data"))
+    message(glue("Error: Required columns missing in data (locality {loc})"))
     return(NULL)
   }
 
@@ -36,7 +57,7 @@ preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, faci
 
 
   # write output to a csv file
-  output_filename <- glue("{output_folder}/address_with_da_locality_{loc}.csv") # could be passed to function
+  output_filename <- glue("{output_folder}/address_with_da_locality_{loc}.csv")
 
   # Check if the file already exists and warn if overwriting
   if (file.exists(output_filename)) {
@@ -47,7 +68,7 @@ preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, faci
   tryCatch({
     write_csv(data, output_filename)
   }, error = function(e) {
-    message(glue("Error writing file for locality {loc}: '{output_filename}'. Error: {e$message}"))
+    message(glue("Error: {e$message}"))
     return(NULL)
   })
 
