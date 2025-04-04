@@ -16,7 +16,29 @@
 # a defined municipality in BC (loc).  The datasets are processed to be ready
 # for use for data analytics.
 
-source("R/configuration.R") # load libraries and other settings
+library(tidyverse)
+library(safepaths)
+library(glue)
+library(janitor)
+library(e1071)
+library(sf)
+
+# set timeout on file load process
+getOption("timeout")
+options(timeout = 600)
+
+# --- Constants ---
+LOC_LIST <- c("909", "227", "213", "420")
+
+LAN_FOLDER <- use_network_path()
+SRC_DATA_FOLDER <- glue("{lan_folder}/data/source/")
+RAW_DATA_FOLDER <- glue("{lan_folder}/data/raw/")
+
+NO_ERRS_FILE_PATTERN <- "no_errors.csv"
+LOCALITY_REGEX_PATTERN <- "[0-9][0-9][0-9]"
+
+REQUIRED_COLS <- c("site_albers_x", "site_albers_y", "dissemination_block_id", "drv_time_sec", "drv_dist", "tag")
+FILTER_TAG <- "servicebc"
 
 #------------------------------------------------------------------------------
 
@@ -41,18 +63,16 @@ source("R/configuration.R") # load libraries and other settings
 
 #------------------------------------------------------------------------------
 
-# set paths for input (raw) and output (source) data
-data_folder <- use_network_path()
-data_path <- glue("{data_folder}/data/raw/")
-
 
 # get the most recent files and check there is one per locality.
-file_paths <- file.info(list.files(data_path, full.names = TRUE, pattern = "no_errors.csv", recursive = TRUE)) %>%
+# TODO: The regex below assumes a very specific path structure.
+# If the structure varies, it might fail or extract the wrong thing.
+file_paths <- file.info(list.files(RAW_DATA_FOLDER,  full.names = TRUE, pattern = NO_ERRS_FILE_PATTERN, recursive = TRUE)) %>% # nolint
   rownames_to_column("fn") %>%
-  mutate(loc = gsub(glue("({data_path})(.*)(/locality_)([0-9][0-9][0-9])(.*)"), "\\4", fn)) %>%
+  mutate(loc = gsub(glue("({RAW_DATA_FOLDER})(.*)(/locality_){LOCALITY_REGEX_PATTERN}(.*)"), "\\4", fn)) %>% # nolint
   group_by(loc) %>%
-  dplyr::arrange(desc(mtime)) %>%
-  slice(1) %>%
+  arrange(loc, desc(mtime)) %>%
+  slice_head(n = 1) %>%
   select(fn, loc)
 
 # TODO: add warning if the locs are not the same as the expected list
