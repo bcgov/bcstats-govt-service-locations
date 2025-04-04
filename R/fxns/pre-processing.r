@@ -1,3 +1,18 @@
+# Copyright 2025 Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 # function to process each locality
 preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, facility_tag) {
 
@@ -36,4 +51,14 @@ preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, faci
 
   return(data)
 
+}
+
+
+read_all_locs <- function(f){
+# function reads in a file, f and returns a modified version.
+# Locality_id is extracted from the file name and added to the data frame.
+  loc <- gsub("(.*locality_)([0-9][0-9][0-9])(.*)", "\\2", f)
+  data <- read_csv(f) %>%
+    mutate(loc = loc) 
+  return(data)
 }
