@@ -33,58 +33,47 @@ source("R/configuration.R") # load libraries and other settings
 
 #TODO: check if the available locs are the same as the expected list
 
+fls <- list.files(src_data_folder, full.names = TRUE, pattern = "address_with_da.*", recursive = TRUE)
 
-stats_by_db <- function(loc, src_data_folder) {
-#------------------------------------------------------------------------------
-# Create a DB-level summary table with variables:
-# average drive time
-# distance
-# number of addresses
-# quartiles, etc.
-# TODO: missing data checks - should this be done in 00-make-data?
-#------------------------------------------------------------------------------
-
-  fl = glue::glue("{src_data_folder}/locality_{loc}/address_with_da_loc_{loc}.csv")
-  # TODO: # replace with tryCatch
-  if (!file.exists(fl)) {
-    message(glue::glue("File {fl} does not exist"))
-    return(NULL)
-  }
-
-  data <- read_csv(fl)
-
-  avg_dist_drvtime_by_db_service <- data %>%
-    group_by(dissemination_block_id, daid) %>%
-    summarise(
-      mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
-      mn_drv_dist = mean(drv_dist, na.rm = TRUE),
-      qnt0_drv_time_sec = quantile(drv_time_sec, probs = 0, na.rm = TRUE),
-      qnt1_drv_time_sec = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),
-      qnt2_drv_time_sec = quantile(drv_time_sec, probs = 0.5, na.rm = TRUE),
-      qnt3_drv_time_sec = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),
-      qnt4_drv_time_sec = quantile(drv_time_sec, probs = 1, na.rm = TRUE),
-      qnt0_drv_dist = quantile(drv_dist, probs = 0, na.rm = TRUE),
-      qnt1_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),
-      qnt2_drv_dist = quantile(drv_dist, probs = 0.5, na.rm = TRUE),
-      qnt3_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),
-      qnt4_drv_dist = quantile(drv_dist, probs = 1, na.rm = TRUE),
-      var_drv_time_sec = var(drv_time_sec, na.rm = TRUE),
-      var_drv_dist = var(drv_dist, na.rm = TRUE),
-      skw_drv_time_sec = skewness(drv_time_sec, na.rm = TRUE, type = 1),
-      skw_drv_dist = skewness(drv_dist, na.rm = TRUE, type = 1),
-      kurt_drv_time_sec = kurtosis(drv_time_sec, na.rm = TRUE, type = 1),
-      kurt_drv_dist = kurtosis(drv_dist, na.rm = TRUE, type = 1),
-      n_address = n_distinct(fid)
-    ) %>%
-    ungroup()
-
-  # TODO: add a check to see if the file already exists and warn if overwriting
-  avg_dist_drvtime_by_db_service %>%
-    write_csv(glue::glue("{src_data_folder}/locality_{loc}/db_average_times_dist_loc_{loc}.csv"))
-
+read_all <- function(f){
+# function reads in a file, f and returns a modified version.
+# Locality_id is extracted from the file name and added to the data frame.
+  loc <- gsub("(.*locality_)([0-9][0-9][0-9])(.*)", "\\2", f)
+  data <- read_csv(f) %>%
+    mutate(loc = loc) 
+  return(data)
 }
 
-stats_by_da <- function(loc, src_data_folder, raw_data_folder) {
+data <- bind_rows(lapply(fls, read_all))
+
+avg_dist_drvtime_by_db_service <- data %>%
+  group_by(dissemination_block_id, daid, loc) %>% # every daid belongs to a single locality
+  summarise(
+    mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
+    mn_drv_dist = mean(drv_dist, na.rm = TRUE),
+    qnt0_drv_time_sec = quantile(drv_time_sec, probs = 0, na.rm = TRUE),
+    qnt1_drv_time_sec = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),
+    qnt2_drv_time_sec = quantile(drv_time_sec, probs = 0.5, na.rm = TRUE),
+    qnt3_drv_time_sec = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),
+    qnt4_drv_time_sec = quantile(drv_time_sec, probs = 1, na.rm = TRUE),
+    qnt0_drv_dist = quantile(drv_dist, probs = 0, na.rm = TRUE),
+    qnt1_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),
+    qnt2_drv_dist = quantile(drv_dist, probs = 0.5, na.rm = TRUE),
+    qnt3_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),
+    qnt4_drv_dist = quantile(drv_dist, probs = 1, na.rm = TRUE),
+    var_drv_time_sec = var(drv_time_sec, na.rm = TRUE),
+    var_drv_dist = var(drv_dist, na.rm = TRUE),
+    skw_drv_time_sec = skewness(drv_time_sec, na.rm = TRUE, type = 1),
+    skw_drv_dist = skewness(drv_dist, na.rm = TRUE, type = 1),
+    kurt_drv_time_sec = kurtosis(drv_time_sec, na.rm = TRUE, type = 1),
+    kurt_drv_dist = kurtosis(drv_dist, na.rm = TRUE, type = 1),
+    n_address = n_distinct(fid)
+  ) %>%
+  ungroup()
+
+  # TODO: add a check to see if the file already exists and warn if overwriting
+avg_dist_drvtime_by_db_service %>%
+  write_csv(glue::glue("{src_data_folder}/db_average_times_dist_loc_all.csv"))
 
 #------------------------------------------------------------------------------
 # Create a DA-level summary table with variables:
@@ -95,64 +84,48 @@ stats_by_da <- function(loc, src_data_folder, raw_data_folder) {
 # TODO: missing data checks - should this be done in 00-make-data?
 #------------------------------------------------------------------------------
 
-  fil = glue::glue("{src_data_folder}/locality_{loc}/address_with_da_loc_{loc}.csv")
-  # TODO: # replace with tryCatch
-  if (!file.exists(fil)) {
-    message(glue::glue("File {fil} does not exist"))
-    return(NULL)
-  }
+avg_dist_drvtime_by_da_service <- data %>%
+  group_by(daid, loc) %>% # every daid belongs to a single locality
+  summarise(
+    mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
+    mn_drv_dist = mean(drv_dist, na.rm = TRUE),
+    qnt0_drv_time_sec = quantile(drv_time_sec, probs = 0, na.rm = TRUE),
+    qnt1_drv_time_sec = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),
+    qnt2_drv_time_sec = quantile(drv_time_sec, probs = 0.5, na.rm = TRUE),
+    qnt3_drv_time_sec = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),
+    qnt4_drv_time_sec = quantile(drv_time_sec, probs = 1, na.rm = TRUE),
+    qnt0_drv_dist = quantile(drv_dist, probs = 0, na.rm = TRUE),
+    qnt1_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),
+    qnt2_drv_dist = quantile(drv_dist, probs = 0.5, na.rm = TRUE),
+    qnt3_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),
+    qnt4_drv_dist = quantile(drv_dist, probs = 1, na.rm = TRUE),
+    var_drv_time_sec = var(drv_time_sec, na.rm = TRUE),
+    var_drv_dist = var(drv_dist, na.rm = TRUE),
+    skw_drv_time_sec = skewness(drv_time_sec, na.rm = TRUE, type = 1),
+    skw_drv_dist = skewness(drv_dist, na.rm = TRUE, type = 1),
+    kurt_drv_time_sec = kurtosis(drv_time_sec, na.rm = TRUE, type = 1),
+    kurt_drv_dist = kurtosis(drv_dist, na.rm = TRUE, type = 1),
+    n_address = n_distinct(fid)
+  ) %>%
+  ungroup()
+#------------------------------------------------------------------------------
+# Add in population data from Statistics Canada
+#------------------------------------------------------------------------------
 
-  data <- read_csv(fil)
+pop <- read_csv(glue::glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv")) %>% # nolint
+  janitor::clean_names() %>%
+  select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
+  setNames(gsub("population_and_dwelling_counts_5","",names(.))) %>%
+  setNames(gsub("_[0-9]$","",names(.))) %>%
+  mutate(daid = as.numeric(gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid))) %>%
+  #FIXME: logic introduced NA's which are removed in the next subsequent step.
+  filter(grepl("^2021S", dguid)) %>%
+  filter(grepl("^59", daid))
 
-  avg_dist_drvtime_by_da_service <- data %>%
-    group_by(daid) %>%
-    summarise(
-      mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
-      mn_drv_dist = mean(drv_dist, na.rm = TRUE),
-      qnt0_drv_time_sec = quantile(drv_time_sec, probs = 0, na.rm = TRUE),
-      qnt1_drv_time_sec = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),
-      qnt2_drv_time_sec = quantile(drv_time_sec, probs = 0.5, na.rm = TRUE),
-      qnt3_drv_time_sec = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),
-      qnt4_drv_time_sec = quantile(drv_time_sec, probs = 1, na.rm = TRUE),
-      qnt0_drv_dist = quantile(drv_dist, probs = 0, na.rm = TRUE),
-      qnt1_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),
-      qnt2_drv_dist = quantile(drv_dist, probs = 0.5, na.rm = TRUE),
-      qnt3_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),
-      qnt4_drv_dist = quantile(drv_dist, probs = 1, na.rm = TRUE),
-      var_drv_time_sec = var(drv_time_sec, na.rm = TRUE),
-      var_drv_dist = var(drv_dist, na.rm = TRUE),
-      skw_drv_time_sec = skewness(drv_time_sec, na.rm = TRUE, type = 1),
-      skw_drv_dist = skewness(drv_dist, na.rm = TRUE, type = 1),
-      kurt_drv_time_sec = kurtosis(drv_time_sec, na.rm = TRUE, type = 1),
-      kurt_drv_dist = kurtosis(drv_dist, na.rm = TRUE, type = 1),
-      n_address = n_distinct(fid)
-    ) %>%
-    ungroup()
-
-  #------------------------------------------------------------------------------
-  # Add in population data from Statistics Canada
-  #------------------------------------------------------------------------------
-
-  pop <- read_csv(glue::glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv")) %>% # nolint
-    janitor::clean_names() %>%
-    select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
-    setNames(gsub("population_and_dwelling_counts_5","",names(.))) %>%
-    setNames(gsub("_[0-9]$","",names(.))) %>%
-    mutate(daid = as.numeric(gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid))) %>%
-    #FIXME: logic introduced NA's which are removed in the next subsequent step.
-    filter(grepl("^2021S", dguid)) %>%
-    filter(grepl("^59", daid))
-
-  #------------------------------------------------------------------------------
-  # write prepared data files to source folder
-  #------------------------------------------------------------------------------
-
-  # TODO: add a check to see if the file already exists and warn if overwriting
-  avg_dist_drvtime_by_da_service %>%
-    left_join(pop, by = "daid") %>%
-    write_csv(glue::glue("{src_data_folder}/locality_{loc}/da_average_times_dist_loc_{loc}.csv"))
-}
-
-
-purrr::map(.x = loc_list, .f = stats_by_db, src_data_folder = src_data_folder)
-purrr::map(.x = loc_list, .f = stats_by_da, src_data_folder = src_data_folder, raw_data_folder = raw_data_folder)
+#------------------------------------------------------------------------------
+# write prepared data files to source folder
+#------------------------------------------------------------------------------
+# TODO: add a check to see if the file already exists and warn if overwriting
+avg_dist_drvtime_by_da_service %>%
+  left_join(pop, by = "daid") %>%
+  write_csv(glue::glue("{src_data_folder}/da_average_times_dist_loc_all.csv"))
