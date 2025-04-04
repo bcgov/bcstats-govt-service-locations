@@ -44,15 +44,14 @@ preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, faci
   }
 
   # Attempt to write the CSV file
-  write_success <- tryCatch({
+  tryCatch({
     write_csv(data, output_filename)
-    TRUE 
   }, error = function(e) {
-    message(glue::glue("ERROR writing file for locality {loc}: '{output_filename}'. Error: {e$message}"))
-    FALSE 
+    message(glue("Error writing file for locality {loc}: '{output_filename}'. Error: {e$message}"))
+    return(NULL)
   })
 
-  return(write_success)
+  return(TRUE)
 }
 
 
@@ -62,12 +61,11 @@ read_all_locs <- function(f){
   match_result <- stringr::str_match(f, "locality_([0-9]{3})")
 
   # Extract the locality ID if the pattern matched
-  locality_id <- if (!is.na(match_result[1, 1])) { # Check if pattern matched at all
-    match_result[1, 2] # Extract the captured digits (group 1)
+  locality_id <- if (!is.na(match_result[1, 1])) {
+    match_result[1, 2]
   } else {
-    # Handle cases where the filename doesn't match the expected pattern
-    message(glue::glue("WARNING: Could not extract locality ID (locality_XXX) from filename: '{f}'. Skipping file."))
-    return(NULL) # Return NULL to signal failure
+    message(glue("Warning: Could not extract locality from filename: '{f}'. Skipping file."))
+    return(NULL)
   }
 
   # Attempt to read the CSV file with error handling
@@ -75,7 +73,7 @@ read_all_locs <- function(f){
     f %>% read_csv(col_types = cols(.default = "c"), show_col_types = FALSE)
   }, error = function(e) {
     message(glue::glue("ERROR reading file: '{f}'. Error: {e$message}"))
-    return(NULL) 
+    return(NULL)
   })
 
   if (is.null(data)) {
@@ -83,7 +81,7 @@ read_all_locs <- function(f){
   }
 
   data <- data %>%
-    dplyr::mutate(loc = locality_id) # Add the verified ID
+    dplyr::mutate(loc = locality_id)
 
   return(data)
 }
