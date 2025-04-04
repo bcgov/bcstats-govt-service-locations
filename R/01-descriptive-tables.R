@@ -31,18 +31,9 @@
 source("R/configuration.R") # load libraries and other settings
 
 
-#TODO: check if the available locs are the same as the expected list
-
 fls <- list.files(src_data_folder, full.names = TRUE, pattern = "address_with_da.*", recursive = TRUE)
 
-read_all <- function(f){
-# function reads in a file, f and returns a modified version.
-# Locality_id is extracted from the file name and added to the data frame.
-  loc <- gsub("(.*locality_)([0-9][0-9][0-9])(.*)", "\\2", f)
-  data <- read_csv(f) %>%
-    mutate(loc = loc) 
-  return(data)
-}
+read_all_locs(fls)
 
 data <- bind_rows(lapply(fls, read_all))
 
