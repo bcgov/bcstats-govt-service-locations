@@ -17,11 +17,9 @@
 # This script finds the most recent drive time data file for each locality
 # and loads the data into R.  The data is lightly pre-processed and
 # then written to "data/source" for further analytics.
-
-
 #------------------------------------------------------------------------------
 
-source("R/settings.R")  # load constants and other settings (including libraries)
+source("R/settings.R")  # load constants and other settings (including temporary placement of library calls)
 
 # get the most recent drive time files for each locality
 # TODO: Make more robust to handle different file structures and patterns.

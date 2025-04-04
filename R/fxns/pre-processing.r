@@ -37,8 +37,14 @@
 
 preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
+#TODO: addadd error handling for missing files and other issues
+tryCatch({
   data <- read_csv(fl, col_types = cols(.default = "c")) %>%
     clean_names()
+  }, error = function(e) {
+    message(glue("Error reading file {fl}: {e$message}"))
+    return(NULL)
+  })
 
   if (!all(reqd_cols %in% colnames(data))) {
     message(glue("Error: Required columns missing in data (locality {loc})"))
@@ -68,7 +74,7 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
   tryCatch({
     write_csv(data, output_filename)
   }, error = function(e) {
-    message(glue("Error: {e$message}"))
+    message(glue("Error writing file {fl}:  {e$message}"))
     return(NULL)
   })
 
@@ -111,7 +117,7 @@ read_all_locs <- function(f){
   data <- tryCatch({
     f %>% read_csv(col_types = cols(.default = "c"), show_col_types = FALSE)
   }, error = function(e) {
-    message(glue::glue("Error: {e$message}"))
+    message(glue::glue("Error reading file {f}: {e$message}"))
     return(NULL)
   })
 
@@ -124,3 +130,5 @@ read_all_locs <- function(f){
 
   return(data)
 }
+
+
