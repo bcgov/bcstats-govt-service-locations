@@ -28,6 +28,17 @@
 # and dissemination block level. Population statistics from
 # Statistics Canada are appended
 
+#------------------------------------------------------------------------------
+# Load Reqd Libraries
+#------------------------------------------------------------------------------
+
+library(tidyverse)
+library(safepaths)
+library(glue)
+library(janitor)
+library(e1071)
+library(sf)
+
 source("R/settings.R")  # load constants and other settings (including temporary placement of library calls)
 
 

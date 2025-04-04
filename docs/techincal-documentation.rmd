@@ -18,7 +18,6 @@ Eventually, it will be techincal documentation for the project but for now is **
 
 ## settings.R 
 This file contains the settings for the project, inclusding global constants (written in all caps) and the paths to the data files.
-libraries calls are also in this file for now, until a renv.lock file is created.
 
 ## 00-make-data.R
 
@@ -34,3 +33,4 @@ The municipalities are defined by "locality id" (more clarification needed) and 
 The data is provided as a series of .zik files, partitioned into a subfolder in the project directory by date of provision. 
 .zik files are extracted manually into same folder ("data/raw"). 
 Each row in the data is identified by a unique id in place of civic address; geodata team has removed duplicate rows.
+

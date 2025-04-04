@@ -20,6 +20,28 @@ source("R/settings.R")  # load constants and other settings (including libraries
 source("fxns/maps.R") # functions for plotting maps
 
 #------------------------------------------------------------------------------
+# Load Reqd Libraries
+#------------------------------------------------------------------------------
+
+library(tidyverse)
+library(safepaths)
+library(glue)
+library(janitor)
+library(e1071)
+library(sf)
+
+## some of these 
+# library(cancensus) 
+# library(cansim)
+# library(bcmaps) 
+# library(geojsonsf) 
+# library(jsonlite) imported by bcmap
+# library(cowplot) for aligning multiple plots 
+# library(patchwork)
+# Load the rlang package for the bang-bang operator - imported by cowplot
+# library(rlang) 
+
+#------------------------------------------------------------------------------
 # load aggregated data average drive time and distance by DA and DB 
 # Langford: locality 909
 # Smithers: locality 227

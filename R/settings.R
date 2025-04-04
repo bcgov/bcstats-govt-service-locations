@@ -13,31 +13,6 @@
 # limitations under the License.
 
 # This script is used for defining variables global to the project.
-# required libraries are defined here as well.
-
-#------------------------------------------------------------------------------
-# Load Reqd Libraries
-#------------------------------------------------------------------------------
-
-library(tidyverse)
-library(safepaths)
-library(glue)
-library(janitor)
-library(e1071)
-library(sf)
-
-# library(cancensus) # nolint
-# library(cansim) # nolint
-
-# library(bcmaps) # nolint
-# library(geojsonsf) # nolint
-# library(jsonlite) imported by bcmaps
-
-# library(cowplot) for aligning multiple plots # nolint
-# library(patchwork) # nolint
-
-# Load the rlang package for the bang-bang operator - imported by cowplot
-# library(rlang) # nolint
 
 #------------------------------------------------------------------------------
 # Set Options

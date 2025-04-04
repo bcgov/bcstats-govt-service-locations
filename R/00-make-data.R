@@ -21,6 +21,19 @@
 
 source("R/settings.R")  # load constants and other settings (including temporary placement of library calls)
 
+
+#------------------------------------------------------------------------------
+# Load Reqd Libraries
+#------------------------------------------------------------------------------
+
+library(tidyverse)
+library(safepaths)
+library(glue)
+library(janitor)
+library(e1071)
+library(sf)
+
+
 # get the most recent drive time files for each locality
 # TODO: Make more robust to handle different file structures and patterns.
 file_paths <- file.info(list.files(RAW_DATA_FOLDER,  full.names = TRUE, pattern = NO_ERRS_FILE_PATTERN, recursive = TRUE)) %>% # nolint
@@ -52,3 +65,4 @@ processed_files <- purrr::walk2(
   reqd_cols = REQUIRED_COLS,
   facility_tag = FACILITY_TAG
 )
+
