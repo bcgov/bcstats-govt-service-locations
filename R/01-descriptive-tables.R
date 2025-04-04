@@ -116,7 +116,7 @@ avg_dist_drvtime_by_da_service <- data %>%
 #------------------------------------------------------------------------------
 
 pop <- read_csv(glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv")) %>% # nolint
-  janitor::clean_names() %>%
+  clean_names() %>%
   select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
   setNames(gsub("population_and_dwelling_counts_5","",names(.))) %>%
   setNames(gsub("_[0-9]$","",names(.))) %>%
