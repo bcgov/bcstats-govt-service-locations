@@ -12,40 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script loads raw csv data files containing spatial data for addresses in
-# a defined municipality in BC (loc).  The datasets are processed to be ready
-# for use for data analytics.
-
-library(tidyverse)
-library(safepaths)
-library(glue)
-library(janitor)
-library(e1071)
-library(sf)
-
-# set timeout on file load process
-getOption("timeout")
-options(timeout = 600)
-
-# --- Constants ---
-EXPECTED_LOCALITIES <- c("909", "227", "213", "420")
-
-LAN_FOLDER <- use_network_path()
-SRC_DATA_FOLDER <- glue("{lan_folder}/data/source/")
-RAW_DATA_FOLDER <- glue("{lan_folder}/data/raw/")
-
-NO_ERRS_FILE_PATTERN <- "no_errors.csv"
-LOCALITY_REGEX_PATTERN <- "[0-9][0-9][0-9]"
-
-REQUIRED_COLS <- c("site_albers_x", "site_albers_y", "dissemination_block_id", "drv_time_sec", "drv_dist", "tag")
-FACILITY_TAG <- "servicebc"
-
 #------------------------------------------------------------------------------
-
+# Description:
 # This script finds the most recent drive time data file for each locality
 # and loads the data into R.  The data is lightly pre-processed and
 # then written to "data/source" for further analytics.
 
+# Context:
 # GeoData team has prepared drive times to nearest service bc facility for
 # all addresses within a municipality, for four municipalities.
 # The municipalities are defined by "locality id" (more clarification needed)
@@ -63,8 +36,9 @@ FACILITY_TAG <- "servicebc"
 
 #------------------------------------------------------------------------------
 
+source("R/configuration.R") # load libraries and other settings
 
-# get the most recent files and check there is one per locality.
+# get the most recent drive time files for each locality
 # TODO: Make more robust to handle different file structures and patterns.
 file_paths <- file.info(list.files(RAW_DATA_FOLDER,  full.names = TRUE, pattern = NO_ERRS_FILE_PATTERN, recursive = TRUE)) %>% # nolint
   rownames_to_column("fn") %>%
@@ -85,47 +59,13 @@ if (length(extra_localities) > 0) {
   warning("Unexpected localities found: ", paste(extra_localities, collapse = ", "))
 }
 
-# function to process each locality
-preprocess_locs <- function(fl, loc, data_folder, output_folder, reqd_cols, facility_tag) {
-
-  data <- read_csv(fl, col_types = cols(.default = "c")) %>%
-    clean_names()
-
-  if (!all(reqd_cols %in% colnames(data))) {
-    message(glue("error processing locality {loc}: not all required columns are found in data"))
-    return(NULL)
-  }
-
-  data <- data%>%
-    filter(tag == FACILITY_TAG) %>% 
-    rename(address_albers_x = site_albers_x,
-           address_albers_y = site_albers_y) %>%
-    mutate(daid = str_sub(dissemination_block_id, 1, 8),
-           drv_time_sec = as.numeric(drv_time_sec),
-           drv_dist = as.numeric(drv_dist),
-           address_albers_x = as.numeric(address_albers_x),
-           address_albers_y = as.numeric(address_albers_y))
-
-
-  # write output to a csv file
-
-  output_filename <- glue("{output_folder}/address_with_da_locality_{loc}.csv") # could be passed to function
-
-  # Check if the file already exists and warn if overwriting
-  if (file.exists(output_filename)) {
-  message(glue::glue("Overwriting existing file for locality {loc}: {output_filename}")) # nolint
-}
-  data %>%
-    write_csv(output_filename)
-
-}
-
+# Run the preprocessing function for each file
 processed_files <- purrr::walk2(
   .x = file_paths$fn,
   .y = file_paths$loc,
   .f = preprocess_locs,
-  data_folder = RAW_DATA_FOLDER, 
-  output_folder = SRC_DATA_FOLDER, 
-  reqd_cols = REQUIRED_COLS, 
+  data_folder = RAW_DATA_FOLDER,
+  output_folder = SRC_DATA_FOLDER,
+  reqd_cols = REQUIRED_COLS,
   facility_tag = FACILITY_TAG
 )
