@@ -18,12 +18,9 @@
 
 # Helper function to calculate summary statistics
 calculate_drivetime_stats <- function(df, group_cols) {
+
   df %>%
     group_by(across(all_of(group_cols))) %>%
-    mutate(
-      drv_time_sec = as.numeric(drv_time_sec),
-      drv_dist = as.numeric(drv_dist) 
-    ) %>%
     summarise(
       mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
       mn_drv_dist = mean(drv_dist, na.rm = TRUE),

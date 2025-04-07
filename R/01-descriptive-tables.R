@@ -54,6 +54,32 @@ if (nrow(data) == 0) {
   stop("No data successfully loaded. Check input files.")
 }
 
+
+# -------------------------------------------------------------------------------
+# explicit checks for datatypes, missing values - could be moved to process_locs?
+# ------------------------------------------------------------------------------
+data <- data %>%
+  mutate(
+    drv_time_sec = as.numeric(drv_time_sec),
+    drv_dist = as.numeric(drv_dist)
+  )
+
+nas <- data %>% filter(if_any(everything(), is.na))
+if (nrow(nas) > 0) {
+  warning("NA's in drive time data.")
+}
+
+invalid <- data %>% filter(if_any(c("drv_time_sec", "drv_dist"), ~ .x < 0))
+if (nrow(invalid) > 0) {
+  warning("Negative values in drive time data.")
+}
+
+data <- data %>%
+  filter(drv_time_sec >= 0, drv_dist >= 0)
+
+drivetime_stats_db <- calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id"))
+drivetime_stats_da <- calculate_drivetime_stats(data, group_cols = c("loc", "daid"))
+
 #------------------------------------------------------------------------------
 # Read in population data from Statistics Canada
 #------------------------------------------------------------------------------
@@ -82,7 +108,7 @@ if (file.exists(outfile)) {
   warning(glue("Overwriting existing file: {outfile}"))
 }
 
-calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id")) %>%
+drivetime_stats_db %>%
   write_csv(outfile)
 
 #------------------------------------------------------------------------------
@@ -94,6 +120,7 @@ outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DA_STATS_FILENAME}")
 if (file.exists(outfile)) {
   warning(glue("Overwriting existing file: {outfile}"))
 }
-calculate_drivetime_stats(data, group_cols = c("loc", "daid")) %>%
+
+drivetime_stats_da %>%
   left_join(pop, by = "daid") %>%
   write_csv(outfile)
