@@ -76,15 +76,25 @@ if (nrow(pop) == 0) {
 # Create a DB-level summary statistics table with variables:
 #------------------------------------------------------------------------------
 # TODO: missing data checks - should this be done in 00-make-data?
-# TODO: add a check to see if the file already exists and warn if overwriting
+out_file <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DB_STATS_FILENAME}")
+
+if (file.exists(out_file)) {
+  warning(glue("Overwriting existing file: {output_file}"))
+}
+
 calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id")) %>%
-  write_csv(glue("{src_data_folder}/drivetime_stats_by_loc_db.csv"))
+  write_csv(out_file)
 
 #------------------------------------------------------------------------------
 # Create a DA-level summary statistics table with variables
 #------------------------------------------------------------------------------
 # TODO: missing data checks - should this be done in 00-make-data?
 # TODO: add a check to see if the file already exists and warn if overwriting
+out_file <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DA_STATS_FILENAME}")
+
+if (file.exists(out_file)) {
+  warning(glue("Overwriting existing file: {output_file}"))
+}
 calculate_drivetime_stats(data, group_cols = c("loc", "daid")) %>%
   left_join(pop, by = "daid") %>%
-  write_csv(glue("{src_data_folder}/drivetime_stats_by_loc_da.csv"))
+  write_csv(out_file)

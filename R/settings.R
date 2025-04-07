@@ -44,7 +44,6 @@ POP_COL_STRIP_PATTERN2 <- "_[0-9]$"
 LOCALITY_REGEX_PATTERN <- "[0-9][0-9][0-9]"
 POP_COL_SELECT_PATTERN <- "symbols"
 
-
 # file patterns
 INPUT_ADDR_DA_PATTERN <- "address_with_da.*"
 NO_ERRS_FILE_PATTERN <- "no_errors.csv"
