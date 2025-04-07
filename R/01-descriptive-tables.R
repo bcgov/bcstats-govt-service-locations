@@ -59,34 +59,26 @@ if (nrow(data) == 0) {
 # Read in population data from Statistics Canada
 #------------------------------------------------------------------------------
 
-pop <- read_csv(glue("{RAW_POP_FILEPATH}")) %>%
+pop <- read_csv(glue("{RAW_POP_FILEPATH}"), show_col_types = FALSE) %>%
   clean_names() %>%
   select(-c(geo, ref_date, coordinate, starts_with(POP_COL_SELECT_PATTERN))) %>%
-  setNames(gsub(POP_COL_STRIP_PATTERN1, "", names(.))) %>%
-  setNames(gsub(POP_COL_STRIP_PATTERN2, "", names(.))) %>%
+  rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN1), matches(POP_COL_REMOVE_PATTERN1)) %>%
+  rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN2), matches(POP_COL_REMOVE_PATTERN2)) %>%
   filter(str_detect(dguid, POP_DAID_BC_PATTERN)) %>%
   mutate(daid = str_replace(dguid, POP_DAID_BC_PREFIX_PATTERN, ""))
 
 #------------------------------------------------------------------------------
-# Create a DB-level summary table with variables:
-# average drive time
-# distance
-# number of addresses
-# quartiles, etc.
-# TODO: missing data checks - should this be done in 00-make-data?
+# Create a DB-level summary statistics table with variables:
 #------------------------------------------------------------------------------
+# TODO: missing data checks - should this be done in 00-make-data?
 # TODO: add a check to see if the file already exists and warn if overwriting
 calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id")) %>%
   write_csv(glue("{src_data_folder}/drivetime_stats_by_loc_db.csv"))
 
 #------------------------------------------------------------------------------
-# Create a DA-level summary table with variables:
-# average drive time
-# distance
-# number of addresses
-# quartiles, etc.
-# TODO: missing data checks - should this be done in 00-make-data?
+# Create a DA-level summary statistics table with variables
 #------------------------------------------------------------------------------
+# TODO: missing data checks - should this be done in 00-make-data?
 # TODO: add a check to see if the file already exists and warn if overwriting
 calculate_drivetime_stats(data, group_cols = c("loc", "daid")) %>%
   left_join(pop, by = "daid") %>%
