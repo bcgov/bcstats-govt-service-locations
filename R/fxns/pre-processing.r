@@ -38,14 +38,21 @@
 preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
 
+  # ------------------------------------------------------------------------
+  # Try to read the CSV file.  Check for file read errors, missing data
+  # ------------------------------------------------------------------------
 
-#  Error handling for missing files and other issues
-tryCatch({
-  data <- read_csv(fl, col_types = cols(.default = "c")) %>%
-    clean_names()
-  }, error = function(e) {
-    message(glue("Error reading file {fl}: {e$message}"))
+  if (!file.exists(fl)) {
+    message(glue("Error: File {fl} does not exist."))
     return(NULL)
+  }
+
+  tryCatch({
+    data <- read_csv(fl, col_types = cols(.default = "c")) %>%
+      clean_names()
+    }, error = function(e) {
+      message(glue("Error reading file {fl}: {e$message}"))
+      return(NULL)
   })
 
   if (!all(reqd_cols %in% colnames(data))) {
@@ -53,6 +60,10 @@ tryCatch({
     return(NULL)
   }
 
+
+  # ------------------------------------------------------------------------
+# do light data cleaning and filtering
+  # ------------------------------------------------------------------------
   data <- data%>%
     filter(tag == facility_tag) %>% 
     rename(address_albers_x = site_albers_x,
@@ -63,8 +74,9 @@ tryCatch({
            address_albers_x = as.numeric(address_albers_x),
            address_albers_y = as.numeric(address_albers_y))
 
-
+  # ------------------------------------------------------------------------
   # write output to a csv file
+  # ------------------------------------------------------------------------
   outfile <- glue("{output_folder}/address_with_da_locality_{loc}.csv")
 
   # Check if the file already exists and warn if overwriting
