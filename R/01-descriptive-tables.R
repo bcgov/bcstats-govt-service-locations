@@ -47,10 +47,10 @@ source("R/fxns/pre-processing.R")
 #------------------------------------------------------------------------------
 # Read drive time data from source folder
 #------------------------------------------------------------------------------
-fls <- list.files(SRC_DATA_FOLDER , full.names = TRUE, pattern = "address_with_da.*", recursive = TRUE)
+fls <- list.files(SRC_DATA_FOLDER, full.names = TRUE, pattern = "address_with_da.*", recursive = TRUE)
 
 # map_dfr automatically handles NULLs from read_all_locs
-data <- map_dfr(fls, read_all_locs) 
+data <- map_dfr(fls, read_all_locs)
 
 if (nrow(data) == 0) {
   stop("No data successfully loaded. Check input files.")
@@ -63,8 +63,8 @@ if (nrow(data) == 0) {
 pop <- read_csv(glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv")) %>% # nolint
   clean_names() %>%
   select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
-  setNames(gsub("population_and_dwelling_counts_5","",names(.))) %>%
-  setNames(gsub("_[0-9]$","",names(.))) %>%
+  setNames(gsub("population_and_dwelling_counts_5", "", names(.))) %>%
+  setNames(gsub("_[0-9]$", "", names(.))) %>%
   mutate(daid = as.numeric(gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid))) %>%
   #FIXME: logic introduced NA's which are removed in the next subsequent step.
   filter(grepl("^2021S", dguid)) %>%
@@ -78,8 +78,8 @@ pop <- read_csv(glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv")) %>
 # quartiles, etc.
 # TODO: missing data checks - should this be done in 00-make-data?
 #------------------------------------------------------------------------------
-  # TODO: add a check to see if the file already exists and warn if overwriting
-calculate_drivetime_stats(data, group_cols = c('loc', 'dissemination_block_id')) %>%
+# TODO: add a check to see if the file already exists and warn if overwriting
+calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id")) %>%
   write_csv(glue("{src_data_folder}/drivetime_stats_by_loc_db.csv"))
 
 #------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ calculate_drivetime_stats(data, group_cols = c('loc', 'dissemination_block_id'))
 # TODO: missing data checks - should this be done in 00-make-data?
 #------------------------------------------------------------------------------
 # TODO: add a check to see if the file already exists and warn if overwriting
-calculate_drivetime_stats(data, group_cols = c('loc', 'daid')) %>%
+calculate_drivetime_stats(data, group_cols = c("loc", "daid")) %>%
   left_join(pop, by = "daid") %>%
   write_csv(glue("{src_data_folder}/drivetime_stats_by_loc_da.csv"))
 
