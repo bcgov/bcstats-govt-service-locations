@@ -28,12 +28,27 @@ options(timeout = 600)
 EXPECTED_LOCALITIES <- c("909", "227", "213", "420")
 
 LAN_FOLDER <- use_network_path()
-SRC_DATA_FOLDER <- glue("{LAN_FOLDER }/data/source/")
-RAW_DATA_FOLDER <- glue("{LAN_FOLDER }/data/raw/")
+SRC_DATA_FOLDER <- glue("{LAN_FOLDER}/data/source/")
+RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/data/raw/")
+RAW_POP_FILEPATH <- glue("{RAW_DATA_FOLDER }/statscan/98100015-eng/98100015.csv")
 
-NO_ERRS_FILE_PATTERN <- "no_errors.csv"
+# Output filenames
+OUTPUT_DB_STATS_FILENAME <- "db_average_times_dist_loc_all.csv"
+OUTPUT_DA_STATS_FILENAME <- "da_average_times_dist_loc_all.csv"
+
+# Patterns for cleaning
+POP_GUI_PREFIX_PATTERN <- "^2021S[0-9]{4}"
+POP_GUI_BC_PATTERN <- glue("{POP_GUI_PREFIX_PATTERN}59")
+POP_COL_STRIP_PATTERN1 <- "population_and_dwelling_counts_5"
+POP_COL_STRIP_PATTERN2 <- "_[0-9]$"
 LOCALITY_REGEX_PATTERN <- "[0-9][0-9][0-9]"
+POP_COL_SELECT_PATTERN <- "symbols"
 
+
+# file patterns
+INPUT_ADDR_DA_PATTERN <- "address_with_da.*"
+NO_ERRS_FILE_PATTERN <- "no_errors.csv"
+
+# columns
 REQUIRED_COLS <- c("site_albers_x", "site_albers_y", "dissemination_block_id", "drv_time_sec", "drv_dist", "tag")
 FACILITY_TAG <- "servicebc"
-

@@ -40,14 +40,13 @@ library(e1071)
 library(sf)
 
 source("R/settings.R")  # load constants and other settings (including temporary placement of library calls)
-source("R/fxns/calculate-stats.R") 
-source("R/fxns/pre-processing.R") 
-
+source("R/fxns/calculate-stats.R")
+source("R/fxns/pre-processing.R")
 
 #------------------------------------------------------------------------------
 # Read drive time data from source folder
 #------------------------------------------------------------------------------
-fls <- list.files(SRC_DATA_FOLDER, full.names = TRUE, pattern = "address_with_da.*", recursive = TRUE)
+fls <- list.files(SRC_DATA_FOLDER, full.names = TRUE, pattern = INPUT_ADDR_DA_PATTERN, recursive = TRUE)
 
 # map_dfr automatically handles NULLs from read_all_locs
 data <- map_dfr(fls, read_all_locs)
@@ -60,15 +59,13 @@ if (nrow(data) == 0) {
 # Read in population data from Statistics Canada
 #------------------------------------------------------------------------------
 
-pop <- read_csv(glue("{raw_data_folder}/statscan/98100015-eng/98100015.csv")) %>% # nolint
+pop <- read_csv(glue("{RAW_POP_FILEPATH}")) %>%
   clean_names() %>%
-  select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
-  setNames(gsub("population_and_dwelling_counts_5", "", names(.))) %>%
-  setNames(gsub("_[0-9]$", "", names(.))) %>%
-  mutate(daid = as.numeric(gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid))) %>%
-  #FIXME: logic introduced NA's which are removed in the next subsequent step.
-  filter(grepl("^2021S", dguid)) %>%
-  filter(grepl("^59", daid))
+  select(-c(geo, ref_date, coordinate, starts_with(POP_COL_SELECT_PATTERN))) %>%
+  setNames(gsub(POP_COL_STRIP_PATTERN1, "", names(.))) %>%
+  setNames(gsub(POP_COL_STRIP_PATTERN2, "", names(.))) %>%
+  filter(str_detect(dguid, POP_DAID_BC_PATTERN)) %>%
+  mutate(daid = str_replace(dguid, POP_DAID_BC_PREFIX_PATTERN, ""))
 
 #------------------------------------------------------------------------------
 # Create a DB-level summary table with variables:
@@ -94,6 +91,3 @@ calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id"))
 calculate_drivetime_stats(data, group_cols = c("loc", "daid")) %>%
   left_join(pop, by = "daid") %>%
   write_csv(glue("{src_data_folder}/drivetime_stats_by_loc_da.csv"))
-
-
-
