@@ -37,7 +37,6 @@ library(safepaths)
 library(glue)
 library(janitor)
 library(e1071)
-library(sf)
 
 source("R/settings.R")  # load constants and other settings (including temporary placement of library calls)
 source("R/fxns/calculate-stats.R")
@@ -62,10 +61,11 @@ if (nrow(data) == 0) {
 pop <- read_csv(glue("{RAW_POP_FILEPATH}"), show_col_types = FALSE) %>%
   clean_names() %>%
   select(-c(geo, ref_date, coordinate, starts_with(POP_COL_SELECT_PATTERN))) %>%
-  rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN1), matches(POP_COL_REMOVE_PATTERN1)) %>%
-  rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN2), matches(POP_COL_REMOVE_PATTERN2)) %>%
+  rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN1), matches(POP_COL_STRIP_PATTERN1)) %>%
+  rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN2), matches(POP_COL_STRIP_PATTERN2)) %>%
   filter(str_detect(dguid, POP_DAID_BC_PATTERN)) %>%
-  mutate(daid = as.numeric(str_replace(dguid, POP_DAID_BC_PREFIX_PATTERN, "")))
+  mutate(daid = as.numeric(str_replace(dguid, POP_DAID_BC_PREFIX_PATTERN, ""))) %>%
+  filter(!is.na(daid))
 
 # Check if pop data frame is valid
 if (nrow(pop) == 0) {
@@ -76,25 +76,24 @@ if (nrow(pop) == 0) {
 # Create a DB-level summary statistics table with variables:
 #------------------------------------------------------------------------------
 # TODO: missing data checks - should this be done in 00-make-data?
-out_file <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DB_STATS_FILENAME}")
+outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DB_STATS_FILENAME}")
 
-if (file.exists(out_file)) {
-  warning(glue("Overwriting existing file: {output_file}"))
+if (file.exists(outfile)) {
+  warning(glue("Overwriting existing file: {outfile}"))
 }
 
 calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id")) %>%
-  write_csv(out_file)
+  write_csv(outfile)
 
 #------------------------------------------------------------------------------
 # Create a DA-level summary statistics table with variables
 #------------------------------------------------------------------------------
 # TODO: missing data checks - should this be done in 00-make-data?
-# TODO: add a check to see if the file already exists and warn if overwriting
-out_file <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DA_STATS_FILENAME}")
+outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DA_STATS_FILENAME}")
 
-if (file.exists(out_file)) {
-  warning(glue("Overwriting existing file: {output_file}"))
+if (file.exists(outfile)) {
+  warning(glue("Overwriting existing file: {outfile}"))
 }
 calculate_drivetime_stats(data, group_cols = c("loc", "daid")) %>%
   left_join(pop, by = "daid") %>%
-  write_csv(out_file)
+  write_csv(outfile)
