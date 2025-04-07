@@ -65,7 +65,12 @@ pop <- read_csv(glue("{RAW_POP_FILEPATH}"), show_col_types = FALSE) %>%
   rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN1), matches(POP_COL_REMOVE_PATTERN1)) %>%
   rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN2), matches(POP_COL_REMOVE_PATTERN2)) %>%
   filter(str_detect(dguid, POP_DAID_BC_PATTERN)) %>%
-  mutate(daid = str_replace(dguid, POP_DAID_BC_PREFIX_PATTERN, ""))
+  mutate(daid = as.numeric(str_replace(dguid, POP_DAID_BC_PREFIX_PATTERN, "")))
+
+# Check if pop data frame is valid
+if (nrow(pop) == 0) {
+  warning("Population data is empty after cleaning.")
+}
 
 #------------------------------------------------------------------------------
 # Create a DB-level summary statistics table with variables:

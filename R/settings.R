@@ -39,7 +39,7 @@ OUTPUT_DA_STATS_FILENAME <- "da_average_times_dist_loc_all.csv"
 # Patterns for cleaning
 POP_GUI_PREFIX_PATTERN <- "^2021S[0-9]{4}"
 POP_GUI_BC_PATTERN <- glue("{POP_GUI_PREFIX_PATTERN}59")
-POP_COL_STRIP_PATTERN1 <- "population_and_dwelling_counts_5"
+POP_COL_STRIP_PATTERN1 <- "population_and_dwelling_counts_5_"
 POP_COL_STRIP_PATTERN2 <- "_[0-9]$"
 LOCALITY_REGEX_PATTERN <- "[0-9][0-9][0-9]"
 POP_COL_SELECT_PATTERN <- "symbols"
