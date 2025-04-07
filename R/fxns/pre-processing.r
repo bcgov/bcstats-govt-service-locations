@@ -60,17 +60,13 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
   }
 
   # ------------------------------------------------------------------------
-# do light data cleaning and filtering
+# do light data cleaning and filtering - may wnat to check for missing data
   # ------------------------------------------------------------------------
   data <- data %>%
     filter(tag == facility_tag) %>%
     rename(address_albers_x = site_albers_x,
            address_albers_y = site_albers_y) %>%
-    mutate(daid = str_sub(dissemination_block_id, 1, 8),
-           drv_time_sec = as.numeric(drv_time_sec),
-           drv_dist = as.numeric(drv_dist),
-           address_albers_x = as.numeric(address_albers_x),
-           address_albers_y = as.numeric(address_albers_y))
+    mutate(daid = str_sub(dissemination_block_id, 1, 8))
 
   # ------------------------------------------------------------------------
   # write output to a csv file
@@ -116,24 +112,24 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 # are returned as numeric values, no data is explicitly converted.
 # ------------------------------------------------------------------------
 
-read_all_locs <- function(f){
+read_all_locs <- function(fn){
 
   # Extract the locality ID from the filename using regex
-  match_result <- stringr::str_match(f, "locality_([0-9]{3})")
+  match_result <- stringr::str_match(fn, "locality_([0-9]{3})")
 
   # Extract the locality ID if the pattern matched
   locality_id <- if (!is.na(match_result[1, 1])) {
     match_result[1, 2]
   } else {
-    message(glue("Warning: Could not extract locality from filename: '{f}'. Skipping file."))
+    message(glue("Warning: Could not extract locality from filename: '{fn}'. Skipping file."))
     return(NULL)
   }
 
   # Attempt to read the CSV file with error handling
   data <- tryCatch({
-    f %>% read_csv(col_types = cols(.default = "c"), show_col_types = FALSE)
+     read_csv(fn, col_types = cols(.default = "c"), show_col_types = FALSE)
   }, error = function(e) {
-    message(glue::glue("Error reading file {f}: {e$message}"))
+    message(glue::glue("Error reading file {fn}: {e$message}"))
     return(NULL)
   })
 
@@ -142,21 +138,32 @@ read_all_locs <- function(f){
   }
 
 # -------------------------------------------------------------------------------
-# explicitly convert datatypes here-
+# explicitly convert datatypes and check for invalid/missing data
 # ------------------------------------------------------------------------------
 # Convert drivetime cols to numeric
 data <- data %>%
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
+  mutate(drv_time_sec = as.numeric(drv_time_sec), 
+         drv_dist = as.numeric(drv_dist),
+         daid = as.character(daid),
+         loc = as.character(locality_id))
 
 # broadly check for missing data and throw a warning
-nas <- data %>% filter(if_any(everything(), is.na))
+nas <- data %>% 
+  filter(if_any(everything(), ~ is.na(.x)))
 
 if (nrow(nas) > 0) {
   warning("Warning: NA's in drive time data.")
 }
 
-  data <- data %>%
-    dplyr::mutate(loc = locality_id)
+# Check for negative values in drive time data
+invalid <- data %>% 
+  filter(if_any(c("drv_time_sec", "drv_dist"), ~ .x < 0))
+
+if (nrow(invalid) > 0) {
+  warning("Warning: negative values in drive time data.")
+}
+
+
 
   return(data)
 }

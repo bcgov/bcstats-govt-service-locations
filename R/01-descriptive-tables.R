@@ -55,23 +55,10 @@ source("R/fxns/calculations.R")
 fls <- list.files(SRC_DATA_FOLDER, full.names = TRUE, pattern = INPUT_ADDR_DA_PATTERN, recursive = TRUE)
 
 # map_dfr automatically handles NULLs from read_all_locs
-data <- map_dfr(fls, read_all_locs)
+data <- map_dfr(.x = fls, .f = read_all_locs)
 
 if (nrow(data) == 0) {
   stop("No data successfully loaded. Check input files.")
-}
-
-
-# -------------------------------------------------------------------------------
-# explicit checks for invalid values
-# ------------------------------------------------------------------------------
-
-# Check for negative values in drive time data
-invalid <- data %>% filter(if_any(c("drv_time_sec", "drv_dist"), ~ .x < 0))
-if (nrow(invalid) > 0) {
-  warning("Removing negative values in drive time data.")
-  data <- data %>%
-    filter(drv_time_sec >= 0, drv_dist >= 0)
 }
 
 #------------------------------------------------------------------------------
@@ -89,7 +76,7 @@ pop <- read_csv(glue("{RAW_POP_FILEPATH}"), show_col_types = FALSE) %>%
   rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN1), matches(POP_COL_STRIP_PATTERN1)) %>%
   rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN2), matches(POP_COL_STRIP_PATTERN2)) %>%
   filter(str_detect(dguid, POP_GUI_BC_PATTERN)) %>%
-  mutate(daid = as.numeric(str_replace(dguid, POP_GUI_PREFIX_PATTERN, ""))) %>%
+  mutate(daid = str_replace(dguid, POP_GUI_PREFIX_PATTERN, "")) %>%
   filter(!is.na(daid))
 
 # Check if pop data frame is empty after filtering
