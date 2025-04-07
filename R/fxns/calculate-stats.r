@@ -35,6 +35,7 @@
 # Helper function to calculate summary statistics
 calculate_drivetime_stats <- function(df, group_cols) {
 
+  # define stats to calculate
   numeric_stats <- list(
     mean    = ~ mean(.x, na.rm = TRUE),
     var     = ~ var(.x, na.rm = TRUE),
