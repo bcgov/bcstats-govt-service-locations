@@ -41,13 +41,13 @@
 #------------------------------------------------------------------------------
 
 library(tidyverse)
-library(safepaths)
 library(glue)
 library(janitor)
 library(e1071)
 
-source("R/settings.R")  
+source("R/settings.R")
 source("R/fxns/pre-processing.R")
+source("R/fxns/calculations.R")
 
 #------------------------------------------------------------------------------
 # Read drive time data from source folder
@@ -63,20 +63,8 @@ if (nrow(data) == 0) {
 
 
 # -------------------------------------------------------------------------------
-# explicit checks for datatypes, missing values - could be moved to process_locs?
+# explicit checks for invalid values
 # ------------------------------------------------------------------------------
-# Check if drivetime cols are numeric - convert if not
-data <- data %>%
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
-
-# broadly check for missing data and remove these rows with a warning
-# this could be more targeted to specific columns.
-nas <- data %>% filter(if_any(everything(), is.na))
-if (nrow(nas) > 0) {
-  warning("Removing NA's in drive time data.")
-  data <- data %>%
-    filter(!if_any(everything(), is.na))
-}
 
 # Check for negative values in drive time data
 invalid <- data %>% filter(if_any(c("drv_time_sec", "drv_dist"), ~ .x < 0))
@@ -95,17 +83,16 @@ drivetime_stats_da <- calculate_drivetime_stats(data, group_cols = c("loc", "dai
 #------------------------------------------------------------------------------
 # Read in population data from Statistics Canada
 #------------------------------------------------------------------------------
-
 pop <- read_csv(glue("{RAW_POP_FILEPATH}"), show_col_types = FALSE) %>%
   clean_names() %>%
   select(-c(geo, ref_date, coordinate, starts_with(POP_COL_SELECT_PATTERN))) %>%
   rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN1), matches(POP_COL_STRIP_PATTERN1)) %>%
   rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN2), matches(POP_COL_STRIP_PATTERN2)) %>%
-  filter(str_detect(dguid, POP_DAID_BC_PATTERN)) %>%
-  mutate(daid = as.numeric(str_replace(dguid, POP_DAID_BC_PREFIX_PATTERN, ""))) %>%
+  filter(str_detect(dguid, POP_GUI_BC_PATTERN)) %>%
+  mutate(daid = as.numeric(str_replace(dguid, POP_GUI_PREFIX_PATTERN, ""))) %>%
   filter(!is.na(daid))
 
-# Check if pop data frame is valid
+# Check if pop data frame is empty after filtering
 if (nrow(pop) == 0) {
   warning("Population data is empty after cleaning.")
 }
@@ -133,3 +120,8 @@ if (file.exists(outfile)) {
 drivetime_stats_da %>%
   left_join(pop, by = "daid") %>%
   write_csv(outfile)
+
+
+# clean up the environment
+rm(list = ls())
+gc()

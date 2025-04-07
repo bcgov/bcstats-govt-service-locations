@@ -110,6 +110,10 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 #     with an added 'loc' column for the three-digit locality ID.
 #   - Returns NULL if the locality ID cannot be extracted
 #             or if there is an error reading the file.
+# 
+# Notes: coordinates and geographic unit identifiers are
+#  returned as character strings.  Drive time and distance
+# are returned as numeric values, no data is explicitly converted.
 # ------------------------------------------------------------------------
 
 read_all_locs <- function(f){
@@ -136,6 +140,20 @@ read_all_locs <- function(f){
   if (is.null(data)) {
     return(NULL)
   }
+
+# -------------------------------------------------------------------------------
+# explicitly convert datatypes here-
+# ------------------------------------------------------------------------------
+# Convert drivetime cols to numeric
+data <- data %>%
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
+
+# broadly check for missing data and throw a warning
+nas <- data %>% filter(if_any(everything(), is.na))
+
+if (nrow(nas) > 0) {
+  warning("Warning: NA's in drive time data.")
+}
 
   data <- data %>%
     dplyr::mutate(loc = locality_id)

@@ -37,23 +37,25 @@
 #------------------------------------------------------------------------------
 # Load Reqd Libraries and source constants and other settings
 #------------------------------------------------------------------------------
+source("R/settings.R")
+source("R/fxns/pre-processing.R")
 
 library(tidyverse)
-library(safepaths)
 library(glue)
 library(janitor)
 library(e1071)
 library(sf)
 
-source("R/settings.R")
-
 #------------------------------------------------------------------------------
 # get the most recent drive time files for each locality
 #------------------------------------------------------------------------------
 # TODO: Make more robust to handle different file structures and patterns.
-file_paths <- file.info(list.files(RAW_DATA_FOLDER,  full.names = TRUE, pattern = NO_ERRS_FILE_PATTERN, recursive = TRUE)) %>% # nolint
+file_paths <- file.info(list.files(RAW_DATA_FOLDER,
+                                   full.names = TRUE,
+                                   pattern = NO_ERRS_FILE_PATTERN,
+                                   recursive = TRUE)) %>%
   rownames_to_column("fn") %>%
-  mutate(loc = gsub(glue("({RAW_DATA_FOLDER})(.*)(/locality_)({LOCALITY_REGEX_PATTERN})(.*)"), "\\4", fn)) %>% # nolint
+  mutate(loc = gsub(glue("({RAW_DATA_FOLDER})(.*)(/locality_)({LOCALITY_REGEX_PATTERN})(.*)"), "\\4", fn)) %>%
   group_by(loc) %>%
   arrange(loc, desc(mtime)) %>%
   slice_head(n = 1) %>%
@@ -82,3 +84,7 @@ processed_files <- purrr::walk2(
   reqd_cols = REQUIRED_COLS,
   facility_tag = FACILITY_TAG
 )
+
+# clean up the environment
+rm(list = ls())
+gc()
