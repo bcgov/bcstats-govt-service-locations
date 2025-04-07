@@ -12,18 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#------------------------------------------------------------------------------
-# Description:
-# This script finds the most recent drive time data file for each locality
-# and loads the data into R.  The data is lightly pre-processed and
-# then written to "data/source" for further analytics.
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------
+# Script: 00-make-data.R
 
-source("R/settings.R")  # load constants and other settings (including temporary placement of library calls)
+# Description: Finds the most recent drive time data file for each locality,
+# and loads the data into R. It relies on the `preprocess_locs` function
+# to perform preprocessing steps, including filtering for facility records.
+# The cleaned data is written back to the source data directory for use in 
+# further analytics.
 
+# Requirements:
+#   - Requires necessary R packages (e.g., `tidyverse`, `purrr`, `glue`).
+#   - Depends on `settings.R` for configuration constants.
+#   - Depends on the `preprocess_locs` function to perform preprocessing steps.
+#   - Requires appropriately named input files in the raw data folder and
+#     read/write access to the relevant data folders.
+
+# Side Effects/Outputs:
+#   - Writes processed CSV files (one per locality) to the source data folder.
+#   - Prints status messages, warnings (e.g., locality mismatches, overwrites),
+#     or errors to the console during execution.
+# ------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-# Load Reqd Libraries
+# Load Reqd Libraries and source constants and other settings
 #------------------------------------------------------------------------------
 
 library(tidyverse)
@@ -33,8 +45,11 @@ library(janitor)
 library(e1071)
 library(sf)
 
+source("R/settings.R")
 
+#------------------------------------------------------------------------------
 # get the most recent drive time files for each locality
+#------------------------------------------------------------------------------
 # TODO: Make more robust to handle different file structures and patterns.
 file_paths <- file.info(list.files(RAW_DATA_FOLDER,  full.names = TRUE, pattern = NO_ERRS_FILE_PATTERN, recursive = TRUE)) %>% # nolint
   rownames_to_column("fn") %>%
@@ -55,14 +70,15 @@ if (length(extra_localities) > 0) {
   warning("Unexpected localities found: ", paste(extra_localities, collapse = ", "))
 }
 
-# Run the preprocessing function for each file
+#------------------------------------------------------------------------------
+# Run the preprocessing function to perform data cleaning steps for each file
+#------------------------------------------------------------------------------
+
 processed_files <- purrr::walk2(
   .x = file_paths$fn,
   .y = file_paths$loc,
   .f = preprocess_locs,
-  data_folder = RAW_DATA_FOLDER,
   output_folder = SRC_DATA_FOLDER,
   reqd_cols = REQUIRED_COLS,
   facility_tag = FACILITY_TAG
 )
-
