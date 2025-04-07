@@ -37,7 +37,9 @@
 
 preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
-#TODO: addadd error handling for missing files and other issues
+
+
+#  Error handling for missing files and other issues
 tryCatch({
   data <- read_csv(fl, col_types = cols(.default = "c")) %>%
     clean_names()
@@ -52,7 +54,7 @@ tryCatch({
   }
 
   data <- data%>%
-    filter(tag == FACILITY_TAG) %>% 
+    filter(tag == facility_tag) %>% 
     rename(address_albers_x = site_albers_x,
            address_albers_y = site_albers_y) %>%
     mutate(daid = str_sub(dissemination_block_id, 1, 8),
@@ -63,18 +65,18 @@ tryCatch({
 
 
   # write output to a csv file
-  output_filename <- glue("{output_folder}/address_with_da_locality_{loc}.csv")
+  outfile <- glue("{output_folder}/address_with_da_locality_{loc}.csv")
 
   # Check if the file already exists and warn if overwriting
-  if (file.exists(output_filename)) {
-  message(glue::glue("Overwriting existing file for locality {loc}: {output_filename}")) 
+  if (file.exists(outfile)) {
+  message(glue("Overwriting existing file for locality {loc}: {outfile}"))
   }
 
   # Attempt to write the CSV file
   tryCatch({
-    write_csv(data, output_filename)
+    write_csv(data, outfile)
   }, error = function(e) {
-    message(glue("Error writing file {fl}:  {e$message}"))
+    message(glue("Error writing file {outfile}:  {e$message}"))
     return(NULL)
   })
 
@@ -130,5 +132,3 @@ read_all_locs <- function(f){
 
   return(data)
 }
-
-
