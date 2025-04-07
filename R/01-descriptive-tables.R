@@ -58,25 +58,29 @@ if (nrow(data) == 0) {
 # -------------------------------------------------------------------------------
 # explicit checks for datatypes, missing values - could be moved to process_locs?
 # ------------------------------------------------------------------------------
+# Check if drivetime cols are numeric - convert if not
 data <- data %>%
-  mutate(
-    drv_time_sec = as.numeric(drv_time_sec),
-    drv_dist = as.numeric(drv_dist)
-  )
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
+# Check for missing data in any column - remove these rows with a warning
 nas <- data %>% filter(if_any(everything(), is.na))
 if (nrow(nas) > 0) {
-  warning("NA's in drive time data.")
+  warning("Removing NA's in drive time data.")
+  data <- data %>%
+    filter(!if_any(everything(), is.na))
 }
 
+# Check for negative values in drive time data
 invalid <- data %>% filter(if_any(c("drv_time_sec", "drv_dist"), ~ .x < 0))
 if (nrow(invalid) > 0) {
-  warning("Negative values in drive time data.")
+  warning("Removing negative values in drive time data.")
+  data <- data %>%
+    filter(drv_time_sec >= 0, drv_dist >= 0)
 }
 
-data <- data %>%
-  filter(drv_time_sec >= 0, drv_dist >= 0)
-
+#------------------------------------------------------------------------------
+# Create DA and DB-level summary statistics table
+#------------------------------------------------------------------------------
 drivetime_stats_db <- calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id"))
 drivetime_stats_da <- calculate_drivetime_stats(data, group_cols = c("loc", "daid"))
 
@@ -99,22 +103,19 @@ if (nrow(pop) == 0) {
 }
 
 #------------------------------------------------------------------------------
-# Create a DB-level summary statistics table with variables:
+# Write output files to source folder
 #------------------------------------------------------------------------------
-# TODO: missing data checks - should this be done in 00-make-data?
+# DB-level stats
 outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DB_STATS_FILENAME}")
 
 if (file.exists(outfile)) {
   warning(glue("Overwriting existing file: {outfile}"))
 }
 
-drivetime_stats_db %>%
+drivetime_stats_db %>% 
   write_csv(outfile)
 
-#------------------------------------------------------------------------------
-# Create a DA-level summary statistics table with variables
-#------------------------------------------------------------------------------
-# TODO: missing data checks - should this be done in 00-make-data?
+# DA-level stats
 outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DA_STATS_FILENAME}")
 
 if (file.exists(outfile)) {
