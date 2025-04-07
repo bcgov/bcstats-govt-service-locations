@@ -12,22 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#------------------------------------------------------------------------------
-# This script loads csv files containing drive times to nearest service bc
-# facility for all addresses within a municipality, for four municipalities.
-# The municipalities are defined by "locality id" (more clarification needed)
-# and mapped to municipality:
-# Langford: locality 909
-# Smithers: locality 227
-# Dawson Creek: locality 213
-# Kamploops: Locality 420
-# Each row in the data is identified by a unique id in place of civic address;
-# geodata team has removed duplicate rows.
-
-# Basic descriptive statisics are calculated at the dissemination area
-# and dissemination block level. Population statistics from
-# Statistics Canada are appended
-
 # ------------------------------------------------------------------------
 # Script: 01-descriptive-tables.R
 
@@ -53,7 +37,7 @@
 
 
 #------------------------------------------------------------------------------
-# Load Reqd Libraries
+# Load Reqd Libraries and source constants and other settings
 #------------------------------------------------------------------------------
 
 library(tidyverse)
@@ -62,8 +46,7 @@ library(glue)
 library(janitor)
 library(e1071)
 
-source("R/settings.R")  # load constants and other settings (including temporary placement of library calls)
-source("R/fxns/calculate-stats.R")
+source("R/settings.R")  
 source("R/fxns/pre-processing.R")
 
 #------------------------------------------------------------------------------

@@ -15,20 +15,24 @@
 # ------------------------------------------------------------------------
 # Function: calculate_drivetime_stats
 
-# Description: Calculates various summary statistics such as
-# mean, variance, quantiles, skewness, kurtosis for drive distance
-# time, grouped by specified grouping columns.
-
+# Description: Calculates various summary statistics such as mean, variance,
+# quantiles, skewness, kurtosis for drive distance time, grouped by specified 
+# grouping columns.
+#
 # Inputs:
 #   - A data frame with numeric columns `drv_dist`, `drv_time_sec`
 #     and an identifier column `fid`.
 #   - A character vector specifying column names present in `df`
 #     to use for grouping the summary calculations.
-
+#
 # Outputs:
 #   - Returns a data frame containing the calculated statistics
 #     for `drv_dist` and `drv_time_sec`, aggregated by specified grouping
 #     variables.  Also includes the count of distinct addresses.
+# 
+# Assumptions:
+#   - Each row in the data is identified by a unique id in place of civic address
+#   - Geodata team has removed duplicate rows.
 # ------------------------------------------------------------------------
 
 

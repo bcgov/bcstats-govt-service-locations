@@ -34,3 +34,5 @@ The data is provided as a series of .zik files, partitioned into a subfolder in 
 .zik files are extracted manually into same folder ("data/raw"). 
 Each row in the data is identified by a unique id in place of civic address; geodata team has removed duplicate rows.
 
+# 01-descriptive-tables.raw
+This script loads csv files containing drive times to nearest service bc facility for all addresses within a municipality.
