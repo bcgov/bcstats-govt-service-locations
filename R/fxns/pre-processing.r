@@ -37,7 +37,6 @@
 
 preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
-
   # ------------------------------------------------------------------------
   # Try to read the CSV file.  Check for file read errors, missing data
   # ------------------------------------------------------------------------
@@ -60,12 +59,11 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
     return(NULL)
   }
 
-
   # ------------------------------------------------------------------------
 # do light data cleaning and filtering
   # ------------------------------------------------------------------------
-  data <- data%>%
-    filter(tag == facility_tag) %>% 
+  data <- data %>%
+    filter(tag == facility_tag) %>%
     rename(address_albers_x = site_albers_x,
            address_albers_y = site_albers_y) %>%
     mutate(daid = str_sub(dissemination_block_id, 1, 8),

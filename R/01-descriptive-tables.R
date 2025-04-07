@@ -28,6 +28,30 @@
 # and dissemination block level. Population statistics from
 # Statistics Canada are appended
 
+# ------------------------------------------------------------------------
+# Script: 01-descriptive-tables.R
+
+# Description: Reads previously processed drive time data files for multiple
+# localities, performs data quality checks (type conversion, NA handling,
+# negative value removal), calculates summary statistics at the
+# Dissemination Block (DB) and Dissemination Area (DA) level.
+# Merges DA stats with population data, and writes the final DB and DA summary files.
+
+# Requirements:
+#   - Requires R packages: `tidyverse`, `glue`, `janitor`, `e1071`, etc.
+#   - Depends on `settings.R` for configuration constants.
+#   - Depends on `calculate_drivetime_stats` to calculate various statistics.
+#   - Depends on functions `read_all_locs` to read drive time data files.
+#   - Requires appropriately named input files in the raw and source data folders
+#     and read/write access to the relevant data folders.
+
+# Side Effects/Outputs:
+#   - Writes CSV files with DB-level and DA-level summary statistics to source data folder.
+#   - Prints status messages, warnings (e.g., data quality issues,
+#     overwriting files), or errors to the console.
+# ------------------------------------------------------------------------
+
+
 #------------------------------------------------------------------------------
 # Load Reqd Libraries
 #------------------------------------------------------------------------------
@@ -62,7 +86,8 @@ if (nrow(data) == 0) {
 data <- data %>%
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
-# Check for missing data in any column - remove these rows with a warning
+# broadly check for missing data and remove these rows with a warning
+# this could be more targeted to specific columns.
 nas <- data %>% filter(if_any(everything(), is.na))
 if (nrow(nas) > 0) {
   warning("Removing NA's in drive time data.")
