@@ -35,7 +35,7 @@
 # ------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-# Load Reqd Libraries and source constants and other settings
+# Load req'd libraries and source constants and other settings
 #------------------------------------------------------------------------------
 source("R/settings.R")
 source("R/fxns/pre-processing.R")
@@ -47,7 +47,7 @@ library(e1071)
 library(sf)
 
 #------------------------------------------------------------------------------
-# get the most recent drive time files for each locality
+# Get the most recent drive time files for each locality
 #------------------------------------------------------------------------------
 # TODO: Make more robust to handle different file structures and patterns.
 file_paths <- file.info(list.files(RAW_DATA_FOLDER,
@@ -61,7 +61,7 @@ file_paths <- file.info(list.files(RAW_DATA_FOLDER,
   slice_head(n = 1) %>%
   select(fn, loc)
 
-# add warning if the locs are not the same as the expected list
+# Warn if localities are not as expected
 missing_localities <- setdiff(EXPECTED_LOCALITIES, unique(file_paths$loc))
 extra_localities <- setdiff(unique(file_paths$loc), EXPECTED_LOCALITIES)
 
