@@ -4,9 +4,9 @@
 
 ## Project Description
 
-This repository houses R code for analyzing the current geographic location of essential public services (e.g., Service BC locations, hospitals and schools) in British Columbia. Using spatial analysis techniques, it calculates accessibility metrics, aggregated at both the municipal level and by smaller geographic units like Statistics Canada Dissemination Areas (DAs) or Dissemination Blocks (DBs).  Accessibility metrics are based on factors like population density distribution, facility locations, and travel times (initially by car).
+This repository houses R code for analyzing the current geographic location of essential public services (e.g., Service BC locations, hospitals and schools) in British Columbia. Using spatial analysis techniques, the code scripts calculate accessibility metrics, aggregated at both the municipal level and by smaller geographic units (i.e. Census Dissemination Areas (DAs) or Dissemination Blocks (DBs)).  Accessibility metrics are based on factors such as population density distribution, facility locations, and travel times (initially by car).
 
-The primary goal is to identify potential geographic disparities in service access – highlighting potentially underserved populations or underutilized facilities. The outputs aim to provide quantitative insights to support service planning, resource allocation, and equitable service delivery strategies, allowing for analysis focused on specific targeted municipalities or regions of interest.
+The primary goal is to identify potential geographic disparities in service access, highlighting potentially underserved populations or underutilized facilities. The derived data tables and visualizations provide quantitative insights to support service planning, resource allocation, and equitable service delivery strategies.  They allow for for analysis focused on specific targeted municipalities or regions of interest.
 
 The first phase of the project focuses on the drive times to Service BC locations for four municipalities (Smithers, Langford, Kamloops and Dawson Creek), with plans to expand to other public services in future phases. The analysis will be conducted at the Dissemination Block (DB) level, with the option to aggregate results to larger geographic units as needed.
 
@@ -16,7 +16,7 @@ The first phase of the project focuses on the drive times to Service BC location
 
 Accessing project files and data requires the [`safepaths`](https://github.com/bcgov/safepaths) R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure `safepaths` as well as the LAN location of all data files. 
 
-## Installation
+## Installation and Usage
 
 **R:** This project requires a recent version of R (4.0.0 or later).
 
