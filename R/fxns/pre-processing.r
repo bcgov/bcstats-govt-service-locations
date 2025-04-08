@@ -21,11 +21,11 @@
 # named using the locality identifier.
 
 # Inputs:
-#   - The file path to the input CSV data for the locality.
-#   - An identifier for the locality being processed.
-#   - The path to the directory where the processed output file should be saved.
-#   - A vector of required column names that must be present in the input file.
-#   - The specific tag value used to filter for facility records.
+#   - fl: The file path to the input CSV data for the locality.
+#   - loc: An identifier for the locality being processed.
+#   - output_folder: The path to the directory where the processed output file should be saved.
+#   - reqd_cols: A vector of required column names that must be present in the input file.
+#   - facility tag: The specific tag value used to filter for facility records.
 
 # Outputs:
 #   - Writes a CSV file containing the processed data (side effect).
@@ -37,9 +37,9 @@
 
 preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
-  # ------------------------------------------------------------------------
+  # -----------------------------------------------------------------------------------------
   # Try to read the CSV file.  Check for file read errors, missing data
-  # ------------------------------------------------------------------------
+  # -----------------------------------------------------------------------------------------
 
   if (!file.exists(fl)) {
     message(glue("Error: File {fl} does not exist."))
@@ -59,18 +59,18 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
     return(NULL)
   }
 
-  # ------------------------------------------------------------------------
-  # do light data cleaning and filtering - may wnat to check for missing data
-  # ------------------------------------------------------------------------
+  # -----------------------------------------------------------------------------------------
+  # Do light data cleaning and filtering - may wnat to check for missing data
+ # -----------------------------------------------------------------------------------------
   data <- data %>%
     filter(tag == facility_tag) %>%
     rename(address_albers_x = site_albers_x,
            address_albers_y = site_albers_y) %>%
     mutate(daid = str_sub(dissemination_block_id, 1, 8))
 
-  # ------------------------------------------------------------------------
-  # write output to a csv file
-  # ------------------------------------------------------------------------
+  # -----------------------------------------------------------------------------------------
+  # Write output to a csv file, warn and return on error
+  # -----------------------------------------------------------------------------------------
   outfile <- glue("{output_folder}/address_with_da_locality_{loc}.csv")
 
   # Check if the file already exists and warn if overwriting
@@ -114,9 +114,9 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
 read_all_locs <- function(fn){
 
-  # ------------------------------------------------------------------------
-  # Extract the locality ID from filename and attmept to read the CSV file. 
-  # ------------------------------------------------------------------------
+  # -----------------------------------------------------------------------------------------
+  # Extract the locality ID from filename and read corresponding CSV file, warn on error.
+  # -----------------------------------------------------------------------------------------
   
   match_result <- stringr::str_match(fn, "locality_([0-9]{3})")
 
@@ -138,9 +138,9 @@ read_all_locs <- function(fn){
     return(NULL)
   }
 
-  # -------------------------------------------------------------------------------
-  # explicitly convert datatypes and check for invalid/missing data
-  # ------------------------------------------------------------------------------
+  # -----------------------------------------------------------------------------------------
+  # Explicitly convert datatypes and check for invalid/missing data
+  # -----------------------------------------------------------------------------------------
 
   data <- data %>%
     mutate(drv_time_sec = as.numeric(drv_time_sec), 
