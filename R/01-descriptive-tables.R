@@ -12,110 +12,112 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ------------------------------------------------------------------------
+# Script: 01-descriptive-tables.R
 
-# This script loads csv data files containing spatial data for addresses in 
-# a defined municipality in BC (loc).  Basic descriptive statisics are calculated
-# at the dissemination area and dissemination block level. Population statistics 
-# from Statistics Canada are appended
+# Description: Reads previously processed drive time data files for multiple
+# localities, performs data quality checks (type conversion, NA handling,
+# negative value removal), calculates summary statistics at the
+# Dissemination Block (DB) and Dissemination Area (DA) level.
+# Merges DA stats with population data, and writes the final DB and DA summary files.
 
-source("R/configuration.R") # load libraries and other settings
+# Requirements:
+#   - Requires R packages: `tidyverse`, `glue`, `janitor`, `e1071`, etc.
+#   - Depends on `settings.R` for configuration constants.
+#   - Depends on `calculate_drivetime_stats` to calculate various statistics.
+#   - Depends on functions `read_all_locs` to read drive time data files.
+#   - Requires appropriately named input files in the raw and source data folders
+#     and read/write access to the relevant data folders.
 
-#------------------------------------------------------------------------------
-# load prepared data for service bc with unique id
-# Langford: locality 909
-# Smithers: locality 227
-# Dawson Creek: locality 213
-# Kamploops: locality 420
-#------------------------------------------------------------------------------
+# Side Effects/Outputs:
+#   - Writes CSV files with DB-level and DA-level summary statistics to source data folder.
+#   - Prints status messages, warnings (e.g., data quality issues,
+#     overwriting files), or errors to the console.
+# ------------------------------------------------------------------------
 
-loc <- "227" # hard coded for now
-data_folder <- safepaths::use_network_path()
-in_folder <- glue::glue("{data_folder}/data/source/locality_{loc}")
-out_folder <- in_folder
-
-data_file <- read_csv(glue::glue("{in_folder}/address_with_da_loc_{loc}.csv"))
-
-#------------------------------------------------------------------------------
-# Create a DA level summary table: average drive time and distance
-# and number of address. No row missing distance value
-# all the addresses and DA information are from geodata team by sampling,
-# therefore not full picture.
-# To do: is this the full sample of data?
-#------------------------------------------------------------------------------
-
-avg_dist_drvtime_by_db_service <- address_sf_with_da %>%
-  group_by(dissemination_block_id, daid) %>%
-  summarise(
-    mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
-    mn_drv_dist = mean(drv_dist, na.rm = TRUE),
-    qnt0_drv_time_sec = quantile(drv_time_sec, probs = 0, na.rm = TRUE),
-    qnt1_drv_time_sec = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),
-    qnt2_drv_time_sec = quantile(drv_time_sec, probs = 0.5, na.rm = TRUE),
-    qnt3_drv_time_sec = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),
-    qnt4_drv_time_sec = quantile(drv_time_sec, probs = 1, na.rm = TRUE),
-    qnt0_drv_dist = quantile(drv_dist, probs = 0, na.rm = TRUE),
-    qnt1_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),
-    qnt2_drv_dist = quantile(drv_dist, probs = 0.5, na.rm = TRUE),
-    qnt3_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),
-    qnt4_drv_dist = quantile(drv_dist, probs = 1, na.rm = TRUE),
-    var_drv_time_sec = var(drv_time_sec, na.rm = TRUE),
-    var_drv_dist = var(drv_dist, na.rm = TRUE),
-    skw_drv_time_sec = skewness(drv_time_sec, na.rm = TRUE, type = 1),
-    skw_drv_dist = skewness(drv_dist, na.rm = TRUE, type = 1),
-    kurt_drv_time_sec = kurtosis(drv_time_sec, na.rm = TRUE, type = 1),
-    kurt_drv_dist = kurtosis(drv_dist, na.rm = TRUE, type = 1),
-    n_address = n_distinct(fid)
-  ) %>%
-  ungroup()
-
-avg_dist_drvtime_by_da_service <- address_sf_with_da %>%
-  group_by(daid) %>%
-  summarise(
-    mn_drv_time_sec = mean(drv_time_sec, na.rm = TRUE),
-    mn_drv_dist = mean(drv_dist, na.rm = TRUE),
-    qnt0_drv_time_sec = quantile(drv_time_sec, probs = 0, na.rm = TRUE),
-    qnt1_drv_time_sec = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),
-    qnt2_drv_time_sec = quantile(drv_time_sec, probs = 0.5, na.rm = TRUE),
-    qnt3_drv_time_sec = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),
-    qnt4_drv_time_sec = quantile(drv_time_sec, probs = 1, na.rm = TRUE),
-    qnt0_drv_dist = quantile(drv_dist, probs = 0, na.rm = TRUE),
-    qnt1_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),
-    qnt2_drv_dist = quantile(drv_dist, probs = 0.5, na.rm = TRUE),
-    qnt3_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),
-    qnt4_drv_dist = quantile(drv_dist, probs = 1, na.rm = TRUE),
-    var_drv_time_sec = var(drv_time_sec, na.rm = TRUE),
-    var_drv_dist = var(drv_dist, na.rm = TRUE),
-    skw_drv_time_sec = skewness(drv_time_sec, na.rm = TRUE, type = 1),
-    skw_drv_dist = skewness(drv_dist, na.rm = TRUE, type = 1),
-    kurt_drv_time_sec = kurtosis(drv_time_sec, na.rm = TRUE, type = 1),
-    kurt_drv_dist = kurtosis(drv_dist, na.rm = TRUE, type = 1),
-    n_address = n_distinct(fid)
-  ) %>%
-  ungroup()
 
 #------------------------------------------------------------------------------
-# Add in population data from statistics Canada
+# Load req'd libraries and source constants and other settings
 #------------------------------------------------------------------------------
 
-pop <- read_csv(glue::glue("{data_folder}/data/raw/statscan/98100015-eng/98100015.csv")) %>% # nolint
-  janitor::clean_names() %>%
-  select(-c(geo, ref_date, coordinate, starts_with("symbols"))) %>%
-  filter(grepl("^2021S", dguid)) %>%
-  mutate(daid = as.numeric(gsub("^2021S[0-9][0-9][0-9][0-9]", "", dguid))) %>%
-  filter(grepl("^59", daid)) %>%
-  rename("population_2021" = "population_and_dwelling_counts_5_population_2021_1",
-    "total_private_dwellings_2021" = "population_and_dwelling_counts_5_total_private_dwellings_2021_2",
-    "private_dwellings_occupied_by_usual_residents_2021" = "population_and_dwelling_counts_5_private_dwellings_occupied_by_usual_residents_2021_3",
-    "land_area_in_sq_km_2021" = "population_and_dwelling_counts_5_land_area_in_square_kilometres_2021_4",
-    "population_density_per_square_kilometre_2021" = "population_and_dwelling_counts_5_population_density_per_square_kilometre_2021_5")
+library(tidyverse)
+library(glue)
+library(janitor)
+library(e1071)
+
+source("R/settings.R")
+source("R/fxns/pre-processing.R")
+source("R/fxns/calculations.R")
 
 #------------------------------------------------------------------------------
-# write prepared data files to source folder
+# Read drive time data from source folder
 #------------------------------------------------------------------------------
+fls <- list.files(SRC_DATA_FOLDER, full.names = TRUE, pattern = INPUT_ADDR_DA_PATTERN, recursive = TRUE)
 
-avg_dist_drvtime_by_db_service %>%
-  write_csv(glue::glue("{out_folder}/db_average_times_dist_loc_{loc}.csv"))
+# map_dfr automatically handles NULLs from read_all_locs
+data <- map_dfr(.x = fls, .f = read_all_locs)
 
-avg_dist_drvtime_by_da_service %>%
-  left_join(pop, by = "daid") %>%
-  write_csv(glue::glue("{out_folder}/da_average_times_dist_loc_{loc}.csv"))
+if (nrow(data) == 0) {
+  stop("No data successfully loaded. Check input files.")
+}
+
+#------------------------------------------------------------------------------
+# Create DA and DB-level summary statistics table
+#------------------------------------------------------------------------------
+drivetime_stats_db <- calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id"))
+drivetime_stats_da <- calculate_drivetime_stats(data, group_cols = c("loc", "daid"))
+
+#------------------------------------------------------------------------------
+# Read in population data from Statistics Canada
+#------------------------------------------------------------------------------
+pop <- read_csv(glue("{RAW_POP_FILEPATH}"), show_col_types = FALSE) %>%
+  clean_names() %>%
+  select(-c(geo, ref_date, coordinate, starts_with(POP_COL_SELECT_PATTERN))) %>%
+  rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN1), matches(POP_COL_STRIP_PATTERN1)) %>%
+  rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN2), matches(POP_COL_STRIP_PATTERN2)) %>%
+  filter(str_detect(dguid, POP_GUI_BC_PATTERN)) %>%
+  mutate(daid = str_replace(dguid, POP_GUI_PREFIX_PATTERN, "")) %>%
+  filter(!is.na(daid))
+
+# Check if pop data frame is empty after filtering
+if (nrow(pop) == 0) {
+  warning("Population data is empty after cleaning.")
+}
+
+#------------------------------------------------------------------------------
+# Write DB-level statistics data to source folder
+#------------------------------------------------------------------------------
+outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DB_STATS_FILENAME}")
+
+if (file.exists(outfile)) {
+  warning(glue("Overwriting existing file: {outfile}"))
+}
+
+tryCatch({
+  write_csv(drivetime_stats_db, outfile)
+}, error = function(e) {
+  message(glue("Error writing file {outfile}:  {e$message}"))
+})
+
+
+#------------------------------------------------------------------------------
+# Write DB-level statistics data to source folder
+#------------------------------------------------------------------------------
+outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DA_STATS_FILENAME}")
+
+if (file.exists(outfile)) {
+  warning(glue("Overwriting existing file: {outfile}"))
+}
+
+drivetime_stats_da <- drivetime_stats_da %>%
+  left_join(pop, by = "daid")
+
+tryCatch({
+  write_csv(drivetime_stats_da, outfile)
+}, error = function(e) {
+  message(glue("Error writing file {outfile}:  {e$message}"))
+})
+
+# clean up the environment
+rm(list = ls())
+gc()
