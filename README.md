@@ -105,7 +105,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 ## Contact 
 
-For questions about this project or to obtain the necessary `safepaths` configuration, please contact Bonnie Ashcroft (@BonnieJRobert) or open an issue in this repository.
+For questions about this project or to obtain the necessary `safepaths` configuration, please contact [Bonnie Ashcroft](https://github.com/BonnieJRobert) or open an issue in this repository.
 
 ## License
 

@@ -66,6 +66,7 @@ if (nrow(data) == 0) {
 #------------------------------------------------------------------------------
 drivetime_stats_db <- calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id"))
 drivetime_stats_da <- calculate_drivetime_stats(data, group_cols = c("loc", "daid"))
+drivetime_stats_loc <- calculate_drivetime_stats(data, group_cols = c("loc"))
 
 #------------------------------------------------------------------------------
 # Read in population data from Statistics Canada
