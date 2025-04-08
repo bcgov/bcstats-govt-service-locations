@@ -35,11 +35,12 @@
 #   - Geodata team has removed duplicate rows.
 # ------------------------------------------------------------------------
 
-
-# Helper function to calculate summary statistics
 calculate_drivetime_stats <- function(df, group_cols) {
-
-  # define stats to calculate
+  
+  # ------------------------------------------------------------------------
+  # define drive time statistics to calculate
+  # ------------------------------------------------------------------------
+  
   numeric_stats <- list(
     mean    = ~ mean(.x, na.rm = TRUE),
     var     = ~ var(.x, na.rm = TRUE),
@@ -52,10 +53,14 @@ calculate_drivetime_stats <- function(df, group_cols) {
     qnt100  = ~ quantile(.x, probs = 1.00, na.rm = TRUE) # or max(.x, na.rm = TRUE)
   )
 
+  # ------------------------------------------------------------------------
+  # aggregate and apply calculations as defined above
+  # ------------------------------------------------------------------------
+  
   df %>%
     group_by(across(all_of(group_cols))) %>%
-    # Apply stats to specified numeric variables
     summarise(
+      # Apply stats to specified numeric variables
       across(c(drv_dist, drv_time_sec), numeric_stats, .names = "{col}_{fn}"),
       # add calculations that apply to the whole group
       n_address = n_distinct(fid),
