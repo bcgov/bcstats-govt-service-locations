@@ -31,7 +31,7 @@
 # ------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
-# Set Options
+# Set options
 #------------------------------------------------------------------------------
 
 # set timeout on file load process
@@ -42,10 +42,11 @@ library(safepaths)
 library(glue)
 
 #------------------------------------------------------------------------------
-# Declare Global Constants
+# Constants declaration
 #------------------------------------------------------------------------------
 EXPECTED_LOCALITIES <- c("909", "227", "213", "420")
 
+# File paths
 LAN_FOLDER <- use_network_path()
 SRC_DATA_FOLDER <- glue("{LAN_FOLDER}/data/source/")
 RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/data/raw/")
@@ -63,10 +64,10 @@ POP_COL_STRIP_PATTERN2 <- "_[0-9]$"
 LOCALITY_REGEX_PATTERN <- "[0-9][0-9][0-9]"
 POP_COL_SELECT_PATTERN <- "symbols"
 
-# file patterns
+# File patterns
 INPUT_ADDR_DA_PATTERN <- "address_with_da.*"
 NO_ERRS_FILE_PATTERN <- "no_errors.csv"
 
-# columns
+# Columns
 REQUIRED_COLS <- c("site_albers_x", "site_albers_y", "dissemination_block_id", "drv_time_sec", "drv_dist", "tag")
 FACILITY_TAG <- "servicebc"
