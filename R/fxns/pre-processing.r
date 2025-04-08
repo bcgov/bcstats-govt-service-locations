@@ -75,7 +75,7 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
   # Check if the file already exists and warn if overwriting
   if (file.exists(outfile)) {
-  message(glue("Overwriting existing file for locality {loc}: {outfile}"))
+  message(glue("Warning: Overwriting existing file {loc}: {outfile}"))
   }
 
   # Attempt to write the CSV file
