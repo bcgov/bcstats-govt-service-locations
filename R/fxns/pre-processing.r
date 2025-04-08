@@ -60,7 +60,7 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
   }
 
   # ------------------------------------------------------------------------
-# do light data cleaning and filtering - may wnat to check for missing data
+  # do light data cleaning and filtering - may wnat to check for missing data
   # ------------------------------------------------------------------------
   data <- data %>%
     filter(tag == facility_tag) %>%
@@ -114,10 +114,12 @@ preprocess_locs <- function(fl, loc, output_folder, reqd_cols, facility_tag) {
 
 read_all_locs <- function(fn){
 
-  # Extract the locality ID from the filename using regex
+  # ------------------------------------------------------------------------
+  # Extract the locality ID from filename and attmept to read the CSV file. 
+  # ------------------------------------------------------------------------
+  
   match_result <- stringr::str_match(fn, "locality_([0-9]{3})")
 
-  # Extract the locality ID if the pattern matched
   locality_id <- if (!is.na(match_result[1, 1])) {
     match_result[1, 2]
   } else {
@@ -125,7 +127,6 @@ read_all_locs <- function(fn){
     return(NULL)
   }
 
-  # Attempt to read the CSV file with error handling
   data <- tryCatch({
      read_csv(fn, col_types = cols(.default = "c"), show_col_types = FALSE)
   }, error = function(e) {
@@ -137,33 +138,31 @@ read_all_locs <- function(fn){
     return(NULL)
   }
 
-# -------------------------------------------------------------------------------
-# explicitly convert datatypes and check for invalid/missing data
-# ------------------------------------------------------------------------------
-# Convert drivetime cols to numeric
-data <- data %>%
-  mutate(drv_time_sec = as.numeric(drv_time_sec), 
-         drv_dist = as.numeric(drv_dist),
-         daid = as.character(daid),
-         loc = as.character(locality_id))
+  # -------------------------------------------------------------------------------
+  # explicitly convert datatypes and check for invalid/missing data
+  # ------------------------------------------------------------------------------
 
-# broadly check for missing data and throw a warning
-nas <- data %>% 
-  filter(if_any(everything(), ~ is.na(.x)))
+  data <- data %>%
+    mutate(drv_time_sec = as.numeric(drv_time_sec), 
+           drv_dist = as.numeric(drv_dist),
+           daid = as.character(daid),
+           loc = as.character(locality_id))
 
-if (nrow(nas) > 0) {
-  warning("Warning: NA's in drive time data.")
-}
+  # broadly check for missing data and throw a warning
+  nas <- data %>% 
+    filter(if_any(everything(), ~ is.na(.x)))
 
-# Check for negative values in drive time data
-invalid <- data %>% 
-  filter(if_any(c("drv_time_sec", "drv_dist"), ~ .x < 0))
+  if (nrow(nas) > 0) {
+    warning("Warning: NA's in drive time data.")
+  }
 
-if (nrow(invalid) > 0) {
-  warning("Warning: negative values in drive time data.")
-}
+  # Check for negative values in drive time data
+  invalid <- data %>% 
+    filter(if_any(c("drv_time_sec", "drv_dist"), ~ .x < 0))
 
-
+  if (nrow(invalid) > 0) {
+    warning("Warning: negative values in drive time data.")
+  }
 
   return(data)
 }
