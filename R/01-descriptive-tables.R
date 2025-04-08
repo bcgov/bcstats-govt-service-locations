@@ -85,29 +85,38 @@ if (nrow(pop) == 0) {
 }
 
 #------------------------------------------------------------------------------
-# Write output files to source folder
+# Write DB-level statistics data to source folder
 #------------------------------------------------------------------------------
-# DB-level stats
 outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DB_STATS_FILENAME}")
 
 if (file.exists(outfile)) {
   warning(glue("Overwriting existing file: {outfile}"))
 }
 
-drivetime_stats_db %>% 
-  write_csv(outfile)
+tryCatch({
+  write_csv(drivetime_stats_db, outfile)
+}, error = function(e) {
+  message(glue("Error writing file {outfile}:  {e$message}"))
+})
 
-# DA-level stats
+
+#------------------------------------------------------------------------------
+# Write DB-level statistics data to source folder
+#------------------------------------------------------------------------------
 outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DA_STATS_FILENAME}")
 
 if (file.exists(outfile)) {
   warning(glue("Overwriting existing file: {outfile}"))
 }
 
-drivetime_stats_da %>%
-  left_join(pop, by = "daid") %>%
-  write_csv(outfile)
+drivetime_stats_da <- drivetime_stats_da %>%
+  left_join(pop, by = "daid")
 
+tryCatch({
+  write_csv(drivetime_stats_da, outfile)
+}, error = function(e) {
+  message(glue("Error writing file {outfile}:  {e$message}"))
+})
 
 # clean up the environment
 rm(list = ls())
