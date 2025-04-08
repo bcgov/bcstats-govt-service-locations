@@ -20,9 +20,9 @@
 # grouping columns.
 #
 # Inputs:
-#   - A data frame with numeric columns `drv_dist`, `drv_time_sec`
+#   - df: A data frame with numeric columns `drv_dist`, `drv_time_sec`
 #     and an identifier column `fid`.
-#   - A character vector specifying column names present in `df`
+#   - group_cols: A character vector specifying column names present in `df`
 #     to use for grouping the summary calculations.
 #
 # Outputs:
