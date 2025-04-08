@@ -57,7 +57,7 @@ calculate_drivetime_stats <- function(df, group_cols) {
   # aggregate and apply calculations as defined above
   # ------------------------------------------------------------------------
   
-  df %>%
+  data <- df %>%
     group_by(across(all_of(group_cols))) %>%
     summarise(
       # Apply stats to specified numeric variables
@@ -65,4 +65,6 @@ calculate_drivetime_stats <- function(df, group_cols) {
       # add calculations that apply to the whole group
       n_address = n_distinct(fid),
       .groups = "drop")
+
+  return(data)
 }
