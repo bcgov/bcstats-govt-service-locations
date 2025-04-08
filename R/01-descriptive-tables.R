@@ -37,7 +37,7 @@
 
 
 #------------------------------------------------------------------------------
-# Load Reqd Libraries and source constants and other settings
+# Load req'd libraries and source constants and other settings
 #------------------------------------------------------------------------------
 
 library(tidyverse)
