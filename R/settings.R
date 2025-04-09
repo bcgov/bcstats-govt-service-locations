@@ -71,4 +71,5 @@ NO_ERRS_FILE_PATTERN <- "no_errors.csv"
 
 # Columns
 REQUIRED_COLS <- c("site_albers_x", "site_albers_y", "dissemination_block_id", "drv_time_sec", "drv_dist", "tag")
+POP_COLS <- c("region_name", "area_sq_km", "population", "dwellings", "households")
 FACILITY_TAG <- "servicebc"

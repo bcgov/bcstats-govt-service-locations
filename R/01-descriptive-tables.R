@@ -77,7 +77,7 @@ pop_da <- cancensus::get_census(
     level = 'DA' # at dissemination block level ( 'DA' for dissemination area' )
   ) %>%
   clean_names() %>%
-  select(c("region_name", "area_sq_km", "population", "dwellings", "households")) %>%
+  select(all_of(POP_COLS)) %>%
   rename(daid = region_name)
 
 #add locality to population data, assumes daid is a variable in pop
@@ -96,7 +96,7 @@ pop_db <- cancensus::get_census(
     level = 'DB' # at dissemination block level ( 'DA' for dissemination area' )
   ) %>%
   clean_names() %>%
-  select(c("region_name", "area_sq_km", "population", "dwellings", "households")) %>%
+  select(all_of(POP_COLS)) %>%
   rename(dissemination_block_id = region_name)
 
 #add locality to population data, assumes daid is a variable in pop
@@ -112,7 +112,6 @@ if (nrow(pop_db) == 0) {
 pop_loc <- pop_da %>%
   group_by(loc)  %>%
   summarise(across(is.numeric, ~ sum(.x, na.rm = TRUE)))
-
 
 #------------------------------------------------------------------------------
 # Write DB-level statistics data to source folder
@@ -131,7 +130,6 @@ tryCatch({
 }, error = function(e) {
   message(glue("Error writing file {outfile}:  {e$message}"))
 })
-
 
 #------------------------------------------------------------------------------
 # Write DA-level statistics data to source folder
@@ -168,7 +166,6 @@ tryCatch({
 }, error = function(e) {
   message(glue("Error writing file {outfile}:  {e$message}"))
 })
-
 
 # clean up the environment
 rm(list = ls())
