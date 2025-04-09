@@ -53,8 +53,9 @@ RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw
 RAW_POP_FILEPATH <- glue("{RAW_DATA_FOLDER}/statscan/98100015-eng/98100015.csv")
 
 # Output filenames
-OUTPUT_DB_STATS_FILENAME <- "db_average_times_dist_loc_all.csv"
-OUTPUT_DA_STATS_FILENAME <- "da_average_times_dist_loc_all.csv"
+OUTPUT_DB_STATS_FILENAME  <- "db_average_times_dist_all_locs.csv"
+OUTPUT_DA_STATS_FILENAME  <- "da_average_times_dist_all_locs.csv"
+OUTPUT_LOC_STATS_FILENAME <- "loc_average_times_dist_all_locs.csv"
 
 # Patterns for cleaning
 POP_GUI_PREFIX_PATTERN <- "^2021S[0-9]{4}"

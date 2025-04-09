@@ -71,19 +71,48 @@ drivetime_stats_loc <- calculate_drivetime_stats(data, group_cols = c("loc"))
 #------------------------------------------------------------------------------
 # Read in population data from Statistics Canada
 #------------------------------------------------------------------------------
-pop <- read_csv(glue("{RAW_POP_FILEPATH}"), show_col_types = FALSE) %>%
+pop_da <- cancensus::get_census(
+    dataset = "CA21", # 2021 census
+    regions = list(PR = "59"), # grab only BC
+    level = 'DA' # at dissemination block level ( 'DA' for dissemination area' )
+  ) %>%
   clean_names() %>%
-  select(-c(geo, ref_date, coordinate, starts_with(POP_COL_SELECT_PATTERN))) %>%
-  rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN1), matches(POP_COL_STRIP_PATTERN1)) %>%
-  rename_with(~ str_remove(.x, POP_COL_STRIP_PATTERN2), matches(POP_COL_STRIP_PATTERN2)) %>%
-  filter(str_detect(dguid, POP_GUI_BC_PATTERN)) %>%
-  mutate(daid = str_replace(dguid, POP_GUI_PREFIX_PATTERN, "")) %>%
-  filter(!is.na(daid))
+  select(c("region_name", "area_sq_km", "population", "dwellings", "households")) %>%
+  rename(daid = region_name)
+
+#add locality to population data, assumes daid is a variable in pop
+pop_da <- pop_da %>% 
+  left_join(data %>% distinct(daid, loc), by = c("daid")) %>%
+  filter(!is.na(loc))
 
 # Check if pop data frame is empty after filtering
-if (nrow(pop) == 0) {
+if (nrow(pop_da) == 0) {
   warning("Population data is empty after cleaning.")
 }
+
+pop_db <- cancensus::get_census(
+    dataset = "CA21", # 2021 census
+    regions = list(PR = "59"), # grab only BC
+    level = 'DB' # at dissemination block level ( 'DA' for dissemination area' )
+  ) %>%
+  clean_names() %>%
+  select(c("region_name", "area_sq_km", "population", "dwellings", "households")) %>%
+  rename(dissemination_block_id = region_name)
+
+#add locality to population data, assumes daid is a variable in pop
+pop_db <- pop_db %>%
+  left_join(data %>% distinct(dissemination_block_id, loc), by = c("dissemination_block_id")) %>%
+  filter(!is.na(loc))
+
+# Check if pop data frame is empty after filtering
+if (nrow(pop_db) == 0) {
+  warning("Population data is empty after cleaning.")
+}
+
+pop_loc <- pop_da %>%
+  group_by(loc)  %>%
+  summarise(across(is.numeric, ~ sum(.x, na.rm = TRUE)))
+
 
 #------------------------------------------------------------------------------
 # Write DB-level statistics data to source folder
@@ -94,6 +123,9 @@ if (file.exists(outfile)) {
   warning(glue("Overwriting existing file: {outfile}"))
 }
 
+drivetime_stats_db <- drivetime_stats_db %>%
+  left_join(pop_db, by = c("dissemination_block_id", "loc"))
+
 tryCatch({
   write_csv(drivetime_stats_db, outfile)
 }, error = function(e) {
@@ -102,7 +134,7 @@ tryCatch({
 
 
 #------------------------------------------------------------------------------
-# Write DB-level statistics data to source folder
+# Write DA-level statistics data to source folder
 #------------------------------------------------------------------------------
 outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DA_STATS_FILENAME}")
 
@@ -111,13 +143,32 @@ if (file.exists(outfile)) {
 }
 
 drivetime_stats_da <- drivetime_stats_da %>%
-  left_join(pop, by = "daid")
+  left_join(pop_da, by = c("daid", "loc"))
 
 tryCatch({
   write_csv(drivetime_stats_da, outfile)
 }, error = function(e) {
   message(glue("Error writing file {outfile}:  {e$message}"))
 })
+
+#------------------------------------------------------------------------------
+# Write loc-level statistics data to source folder
+#------------------------------------------------------------------------------
+outfile <- glue("{SRC_DATA_FOLDER}/{OUTPUT_LOC_STATS_FILENAME}")
+
+if (file.exists(outfile)) {
+  warning(glue("Overwriting existing file: {outfile}"))
+}
+
+drivetime_stats_loc <- drivetime_stats_loc %>%
+  left_join(pop_loc, by = c("loc"))
+
+tryCatch({
+  write_csv(drivetime_stats_loc, outfile)
+}, error = function(e) {
+  message(glue("Error writing file {outfile}:  {e$message}"))
+})
+
 
 # clean up the environment
 rm(list = ls())
