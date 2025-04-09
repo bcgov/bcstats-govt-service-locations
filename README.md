@@ -67,9 +67,9 @@ This analysis relies on the following primary data sources:
 
 **Geocoded Address Points (via BC Geocoder API)**
 
-Geographic coordinates for project-relevant addresses were generated using the British Columbia Physical Address Geocoder REST API service ([https://geocoder.api.gov.bc.ca/](https://geocoder.api.gov.bc.ca/)). This API performs address validation and returns point location data (latitude/longitude or projected coordinates). The output dataset utilized in this project includes these derived coordinates along with the corresponding Statistics Canada Dissemination Block (DB) identifier (blockID field from the API response), enabling spatial linkage. Records returned by the geocoder that lacked valid coordinates were excluded from the analysis dataset.
+Geographic coordinates for project-relevant addresses were generated using the British Columbia Physical Address Geocoder REST API service ([https://www2.gov.bc.ca/gov/content/data/geographic-data-services/location-services/geocoder](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/location-services/geocoder)). This API performs address validation and returns point location data (latitude/longitude or projected coordinates). The output dataset utilized in this project includes these derived coordinates along with the corresponding Statistics Canada Dissemination Block (DB) identifier (blockID field from the API response), enabling spatial linkage. Records returned by the geocoder that lacked valid coordinates were excluded from the analysis dataset.
 
-While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates used the analysis are open. 
+While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates used for the analysis are open. 
 
 **NFA Data:** 
 
@@ -105,7 +105,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 ## Contact 
 
-For questions about this project or to obtain the necessary `safepaths` configuration, please contact Bonnie Ashcroft at bonnie.ashcroft@gov.bc.ca or open an issue in this repository.
+For questions about this project or to obtain the necessary `safepaths` configuration, please contact [Bonnie Ashcroft](https://github.com/BonnieJRobert) or open an issue in this repository.
 
 ## License
 
