@@ -82,6 +82,6 @@ if (nrow(da_with_location) == 0) {
 # -----------------------------------------------------------------------------------------
 # write processed da/db shapefiles to source folder
 # -----------------------------------------------------------------------------------------
+# TODO - add tryCatch logic
 st_write(da_with_location, glue("{SHAPEFILE_OUT}/processed_da_with_location.shp"))
 st_write(db_with_location, glue("{SHAPEFILE_OUT}/processed_db_with_location.shp"))
-
