@@ -16,37 +16,49 @@ build_map <- function(
     data,
     varname,
     loc_id,
-    loc_col = "loc", 
-    plot_title = NULL,
-    legend_title = NULL,
-    map_theme = map_theme, 
-    geo_level = "DA",
+    loc_col = "loc",
+    plot_title = "",
+    legend_title = "",
+    map_theme = theme_classic(),
     fill_scale = scale_fill_viridis_c(option = "viridis"),
     missing_color = "grey80"
 ) {
 
+  # --- Prepare dynamic arguments as symbols ---
+  varname_sym <- rlang::sym(varname)
+  loc_col_sym <- rlang::sym(loc_col)
 
-  # Handle titles
-  default_title <- glue::glue("{varname} for Locality {loc_id} by {geo_level}")
-  plot_title <- plot_title %||% default_title # Use custom title if provided
-  legend_title <- legend_title %||% varname # Use custom legend title if provided
-  varname <- rlang::as_string(rlang::ensym(varname)) # Get varname as string
+  # --- Prepare titles as strings --
+  default_title <- glue::glue("{varname} for Locality {loc_id}")
+  plot_title <- plot_title %||% default_title
+  legend_title <- legend_title %||% varname
+
+  map_data <- data %>%
+  filter(!!loc_col_sym == loc_id)
+
+  # Check if filtering resulted in data
+  if (nrow(map_data) == 0) {
+    warning(glue("Warning: No data found for loc_id '{loc_id}'"))
+    return(ggplot() + theme_void() + labs(title = glue("No data for {loc_id}")))
+  }
 
   ## Build the ggplot object
- data %>%
-  filter(location_id == "227") %>%
-  ggplot() +
-  geom_sf(
-    aes(fill = landarea),
-    color = "gray50",
-    lwd = 0.1
-  ) +
-  #  fill_scale() + # Apply the chosen fill scale
+  map <-  map_data %>%
+    ggplot() +
+    geom_sf(
+        aes(fill = !!varname_sym),
+        color = "gray50",
+        lwd = 0.1
+    ) +
+   # fill_scale + # Apply the chosen fill scale
     labs(
       title = plot_title,
-      fill = legend_title, # Set legend title via labs()
-      x = "Longitude", # Default axis labels
-      y = "Latitude"
+      fill = legend_title,
+      x = "\nLongitude",
+      y = "Latitude\n"
     ) +
     map_theme
+
+  return(map)
+
 }

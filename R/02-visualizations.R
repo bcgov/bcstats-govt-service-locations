@@ -49,8 +49,10 @@ db_drivetime_map_data <- db_shapefile %>%
 # Map average drive distance by DA for locality "909"
 build_map(
   data = db_drivetime_map_data,
-  varname = "landarea",
+  varname = "dwellings",
   loc_id = "909",
   loc_col = "loc",
   map_theme = MAP_THEME
 )
+
+# test for missing loc, remove MAP_THEME, varname not in data
