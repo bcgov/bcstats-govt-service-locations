@@ -12,6 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ------------------------------------------------------------------------
+# Script: [Replace with your script's filename, e.g., 04-prepare-filtered-shapes.R]
+
+# Description: Loads and processes provincial DA and DB shapefiles.
+# To reduce disk space and load time for development, specific localities are kept,
+# based on a crosswalk file. The processeed shapefiles are written to to disk.
+
+# Requirements:
+#   - Requires R packages: `tidyverse`, `glue`, `janitor`, `sf`.
+#   - Depends on `settings.R` for paths and constants.
+#   - Requires input DA/DB shapefiles and the crosswalk CSV file.
+#   - Requires read/write access to relevant data folders.
+
+# Side Effects/Outputs:
+#   - Writes shapefiles containing filtered DA/DB geometries
+#     with location IDs to disk.
+#   - Prints errors and stops execution if inputs are missing/invalid or
+#     joins yield no results.
+# ------------------------------------------------------------------------
+
 library(tidyverse)
 library(glue)
 library(janitor)
