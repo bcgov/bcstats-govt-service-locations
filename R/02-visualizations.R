@@ -51,7 +51,6 @@ build_map(
   data = db_drivetime_map_data,
   varname = "dwellings",
   loc_id = "909",
-  loc_col = "loc",
   map_theme = MAP_THEME
 )
 

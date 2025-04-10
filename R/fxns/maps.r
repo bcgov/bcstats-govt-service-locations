@@ -19,9 +19,8 @@ build_map <- function(
     loc_col = "loc",
     plot_title = "",
     legend_title = "",
-    map_theme = theme_classic(),
-    fill_scale = scale_fill_viridis_c(option = "viridis"),
-    missing_color = "grey80"
+    map_theme = theme_minimal(),
+    fill_scale = scale_fill_viridis_c(option = "viridis")
 ) {
 
   # --- Prepare dynamic arguments as symbols ---
@@ -50,7 +49,7 @@ build_map <- function(
         color = "gray50",
         lwd = 0.1
     ) +
-   # fill_scale + # Apply the chosen fill scale
+   fill_scale + 
     labs(
       title = plot_title,
       fill = legend_title,
