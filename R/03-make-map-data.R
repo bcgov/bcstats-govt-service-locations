@@ -5,20 +5,15 @@ library(sf)
 
 source("R/settings.R")
 
-crosswalk_file_path <- glue("{SRC_DATA_FOLDER}/da-db-loc-crosswalk.csv")
-da_shapefile_path <-  glue("{RAW_DATA_FOLDER}/statscan/lda_000b21a_e/lda_000b21a_e.shp")
-db_shapefile_path <-  glue("{RAW_DATA_FOLDER}/statscan/ldb_000b21a_e/ldb_000b21a_e.shp")
-shapefile_out <- glue("{SRC_DATA_FOLDER}/shapefiles/")
-
 
 # -----------------------------------------------------------------------------------------
 # Load and prepare da-db-location crosswalk file
 # -----------------------------------------------------------------------------------------
 
 crosswalk <- tryCatch({
-  read_csv(crosswalk_file_path, col_types = cols(.default = "c"))
+  read_csv(CROSSWALK_FILEPATH, col_types = cols(.default = "c"))
 }, error = function(e) {
-  stop(glue("Failed to read or process crosswalk file '{crosswalk_file_path}': {e$message}"))
+  stop(glue("Failed to read or process crosswalk file '{CROSSWALK_FILEPATH}': {e$message}"))
 })
 
 if (nrow(crosswalk) == 0) {
@@ -30,13 +25,13 @@ if (nrow(crosswalk) == 0) {
 # -----------------------------------------------------------------------------------------
 
 da_shapefiles_processed <- tryCatch({
-    st_read(da_shapefile_path) %>%
+    st_read(DA_SHAPE_FILEPATH) %>%
     filter(PRUID == "59") %>%
     st_transform(crs = 3005) %>%
     clean_names() %>%
     select(daid = dauid, landarea, geometry)
 }, error = function(e) {
-  stop(glue("Failed to read or process da shapefile '{da_shapefile_path}': {e$message}"))
+  stop(glue("Failed to read or process da shapefile '{DA_SHAPE_FILEPATH}': {e$message}"))
 })
 
 if (nrow(da_shapefiles_processed) == 0) {
@@ -48,18 +43,18 @@ if (nrow(da_shapefiles_processed) == 0) {
 # -----------------------------------------------------------------------------------------
 
 db_shapefiles_processed <- tryCatch({
-    st_read(db_shapefile_path) %>%
+    st_read(DB_SHAPE_FILEPATH) %>%
     filter(PRUID == "59") %>%
     st_transform(crs = 3005) %>%
     clean_names() %>%
     select(dissemination_block_id = dbuid, landarea, geometry)
 
 }, error = function(e) {
-  stop(glue("Failed to read or process da shapefile '{da_shapefile_path}': {e$message}"))
+  stop(glue("Failed to read or process da shapefile '{DB_SHAPE_FILEPATH}': {e$message}"))
 })
 
 if (nrow(db_shapefiles_processed) == 0) {
-  stop("DA shapefile data is empty after filtering for BC.")
+  stop("DB shapefile data is empty after filtering for BC.")
 }
 
 
@@ -69,7 +64,7 @@ if (nrow(db_shapefiles_processed) == 0) {
 # location to da/db (locality is still not definded and we don't have shapefiles for those)
 # -----------------------------------------------------------------------------------------
 
-da_with_location  <- db_shapefiles_processed  %>%
+db_with_location  <- db_shapefiles_processed  %>%
    inner_join(crosswalk %>% distinct(daid, dissemination_block_id, location_id), by = "dissemination_block_id")
 
 if (nrow(db_with_location) == 0) {
@@ -87,6 +82,6 @@ if (nrow(da_with_location) == 0) {
 # -----------------------------------------------------------------------------------------
 # write processed da/db shapefiles to source folder
 # -----------------------------------------------------------------------------------------
-st_write(da_with_location, glue("{shapefile_out}/processed_da_with_location.shp"))
-st_write(da_with_location, glue("{shapefile_out}/processed_db_with_location.shp"))
+st_write(da_with_location, glue("{SHAPEFILE_OUT}/processed_da_with_location.shp"))
+st_write(db_with_location, glue("{SHAPEFILE_OUT}/processed_db_with_location.shp"))
 
