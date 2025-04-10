@@ -7,9 +7,8 @@ source("R/settings.R")
 
 crosswalk_file_path <- glue("{SRC_DATA_FOLDER}/da-db-loc-crosswalk.csv")
 da_shapefile_path <-  glue("{RAW_DATA_FOLDER}/statscan/lda_000b21a_e/lda_000b21a_e.shp")
-da_shapefile_out <- glue("{SRC_DATA_FOLDER}/processed_da_shapefiles.shp")
-# db_file_path <-  glue("{RAW_DATA_FOLDER}/statscan/ldb_000b21a_e/ldb_000b21a_e.shp") lets do da only for now
-
+db_shapefile_path <-  glue("{RAW_DATA_FOLDER}/statscan/ldb_000b21a_e/ldb_000b21a_e.shp")
+shapefile_out <- glue("{SRC_DATA_FOLDER}/shapefiles/")
 
 
 # -----------------------------------------------------------------------------------------
@@ -17,8 +16,7 @@ da_shapefile_out <- glue("{SRC_DATA_FOLDER}/processed_da_shapefiles.shp")
 # -----------------------------------------------------------------------------------------
 
 crosswalk <- tryCatch({
-  read_csv(crosswalk_file_path, col_types = cols(.default = "c")) %>%
-    distinct(daid, location_id)
+  read_csv(crosswalk_file_path, col_types = cols(.default = "c"))
 }, error = function(e) {
   stop(glue("Failed to read or process crosswalk file '{crosswalk_file_path}': {e$message}"))
 })
@@ -46,16 +44,49 @@ if (nrow(da_shapefiles_processed) == 0) {
 }
 
 # -----------------------------------------------------------------------------------------
-# Filter da shapefile to include only those da's in our localities of interest
+# Load and prepare db shapefile - check for invalid data
+# -----------------------------------------------------------------------------------------
+
+db_shapefiles_processed <- tryCatch({
+    st_read(db_shapefile_path) %>%
+    filter(PRUID == "59") %>%
+    st_transform(crs = 3005) %>%
+    clean_names() %>%
+    select(dissemination_block_id = dbuid, landarea, geometry)
+
+}, error = function(e) {
+  stop(glue("Failed to read or process da shapefile '{da_shapefile_path}': {e$message}"))
+})
+
+if (nrow(db_shapefiles_processed) == 0) {
+  stop("DA shapefile data is empty after filtering for BC.")
+}
+
+
+# -----------------------------------------------------------------------------------------
+# Filter shapefile to include only those da/db's in our localities of interest
 # could do some light error checking here, but we don't have a true mapping from
-# location to da (since locality is still undefinded and we don't have shapefiles for those)
+# location to da/db (locality is still not definded and we don't have shapefiles for those)
 # -----------------------------------------------------------------------------------------
 
-test <- da_shapefiles_processed  %>%
-   inner_join(crosswalk, by = "daid")
+da_with_location  <- db_shapefiles_processed  %>%
+   inner_join(crosswalk %>% distinct(daid, dissemination_block_id, location_id), by = "dissemination_block_id")
+
+if (nrow(db_with_location) == 0) {
+  stop("No DAs after joining with the crosswalk.")
+}
+
+da_with_location  <- da_shapefiles_processed  %>%
+   inner_join(crosswalk %>% distinct(daid, location_id), by = "daid")
+
+if (nrow(da_with_location) == 0) {
+  stop("No DAs after joining with the crosswalk.")
+}
+
 
 # -----------------------------------------------------------------------------------------
-# write processed da shapefiles to source folder
+# write processed da/db shapefiles to source folder
 # -----------------------------------------------------------------------------------------
-st_write(da_with_location, output_gpkg_path, delete_layer = TRUE)
+st_write(da_with_location, glue("{shapefile_out}/processed_da_with_location.shp"))
+st_write(da_with_location, glue("{shapefile_out}/processed_db_with_location.shp"))
 
