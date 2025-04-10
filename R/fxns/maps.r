@@ -125,7 +125,7 @@ plot_csd_avg_map_fn <- function(
     ggsave(
       use_network_path(
         glue::glue(
-          "2024 SES Index/data/output/remoteness/csd_{fill_var_name}_{facility_name}.png"
+          ""
         )
       ),
       csd_p,
