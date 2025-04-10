@@ -79,3 +79,14 @@ NO_ERRS_FILE_PATTERN <- "no_errors.csv"
 REQUIRED_COLS <- c("site_albers_x", "site_albers_y", "dissemination_block_id", "drv_time_sec", "drv_dist", "tag")
 POP_COLS <- c("region_name", "area_sq_km", "population", "dwellings", "households")
 FACILITY_TAG <- "servicebc"
+
+# Constants for visualizations
+MAP_THEME <- theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 10),
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 9)
+  )
