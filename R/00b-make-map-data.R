@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # ------------------------------------------------------------------------
-# Script: [Replace with your script's filename, e.g., 04-prepare-filtered-shapes.R]
+# Script: 00b-make-map-data.R
 
 # Description: Loads and processes provincial DA and DB shapefiles.
 # To reduce disk space and load time for development, specific localities are kept,
