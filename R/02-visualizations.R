@@ -16,73 +16,41 @@
 # municipality of interest in BC (loc). It produces maps at the dissemination block level 
 # displaying quantitative information on basic descriptive statisics
 
-source("R/settings.R")  # load constants and other settings (including libraries)
-source("fxns/maps.R") # functions for plotting maps
-
-#------------------------------------------------------------------------------
-# Load Reqd Libraries
-#------------------------------------------------------------------------------
-
 library(tidyverse)
-library(safepaths)
 library(glue)
 library(janitor)
-library(e1071)
 library(sf)
 
-## some of these 
-# library(cancensus) 
-# library(cansim)
-# library(bcmaps) 
-# library(geojsonsf) 
-# library(jsonlite) imported by bcmap
-# library(cowplot) for aligning multiple plots 
-# library(patchwork)
-# Load the rlang package for the bang-bang operator - imported by cowplot
-# library(rlang) 
+source("R/settings.R")
 
-#------------------------------------------------------------------------------
-# load aggregated data average drive time and distance by DA and DB 
-# Langford: locality 909
-# Smithers: locality 227
-# Dawson Creek: locality 213
-# Kamploops: locality 420
-#------------------------------------------------------------------------------
+da_shapefile <- st_read(glue("{SHAPEFILE_DIR}/processed_da_with_location.shp"))
 
-data_folder <- safepaths::use_network_path()
-loc <- "213" # Dawson Creek: locality 213
-outfolder_da <- glue::glue("{data_folder}/data/da_average_times_dist_loc_{loc}")
-outfolder_db <- glue::glue("{data_folder}/data/db_average_times_dist_loc_{loc}")
+# TO DO: assign proper column names in earlier save
+db_shapefile <- st_read(glue("{SHAPEFILE_DIR}/processed_db_with_location.shp")) %>%
+  rename("dissemination_block_id" = "dssmn__",
+         "landarea" = "landare",
+         "location_id" = "loctn_d")
 
-#------------------------------------------------------------------------------
-# DA shp file
-#------------------------------------------------------------------------------
-download.file("https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/files-fichiers/lda_000b21a_e.zip", # nolint: line_length_linter.
-              destfile = glue::glue("{data_folder}/data/raw/boundaries/lda_000a21a_e.zip")) # nolint: line_length_linter.
+da_drivetime_data <- read_csv(glue("{SRC_DATA_FOLDER}/da_average_times_dist_all_locs.csv")) %>%
+  clean_names() %>%
+  mutate(across(c(daid, loc), as.character))
 
-# file_path <- glue::glue("{data_folder}/data/raw/lda_000a21a_e/lda_000b21a_e.shp") # nolint
-file_path <- "data/lda_000a21a_e/lda_000b21a_e.shp"
+db_drivetime_data <- read_csv(glue("{SRC_DATA_FOLDER}/db_average_times_dist_all_locs.csv")) %>%
+  clean_names() %>%
+  mutate(across(c(dissemination_block_id, loc), as.character))
 
-# Load the dissemination area shapefile
-da_shapefile <- st_read(file_path)
-da_shapefile <- da_shapefile %>%
-  filter(PRUID == "59") %>%
-  st_transform(crs = 3005)
+da_drivetime_map_data <- da_shapefile %>%
+  left_join(da_drivetime_data, by = join_by(daid))
 
-#------------------------------------------------------------------------------
-# DB shp file
-#------------------------------------------------------------------------------
+# sample map
+db_drivetime_map_data <- db_shapefile %>%
+  left_join(db_drivetime_data, by = join_by(dissemination_block_id))
 
-plot.dat <- da_shapefile %>% 
-  inner_join(avg_dist_drvtime_by_db_service %>%
-               distinct(daid), by = c("DAUID" = "daid")) # nolint: line_length_linter.
-
-ggplot(plot.dat) +
-  geom_sf() +
-  geom_sf(aes(address_sf_with_da))
-
-ggplot() +
-  geom_sf(data = plot.dat, fill = "white") +
-  geom_sf(data = address_sf_with_da,
-          aes(color = drv_dist, alpha = 0.1)) +
-  theme_minimal()
+# Map average drive distance by DA for locality "909"
+build_map(
+  data = db_drivetime_map_data,
+  varname = "landarea",
+  loc_id = "909",
+  loc_col = "loc",
+  map_theme = MAP_THEME
+)
