@@ -12,6 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# ------------------------------------------------------------------------
+# Function: build_map
+
+# Description: Generates a thematic map (ggplot object) from an input spatial
+# data frame (`sf` object).  Allows customization of titles, theme, and 
+# fill color scale.
+
+# Inputs:
+#   - data: An sf data frame containing geometries and associated data,
+#   - varname: Character string specifying the name of the column in `data`
+#     to use for the map's fill aesthetic.
+#   - loc_id: The specific locality which we are mapping. 
+#   - loc_col: The name of the column in `data` that contains the locality identifiers. 
+#     Defaults to "loc".
+#   - plot_title: Optional character string for the main plot title. Defaults
+#     to empty string.
+#   - legend_title: Optional character string for the fill legend title.
+#     Defaults to empty string.
+#   - map_theme: Optional ggplot theme object. Defaults to `theme_minimal()`.
+#   - fill_scale: Optional ggplot continuous fill scale function. Defaults
+#                 to `scale_fill_viridis_c(option = "viridis")`.
+
+# Outputs:
+#   - Returns a ggplot object representing the thematic map for the specified
+#     locality and variable.
+#   - If no data remains after filtering by `loc_id`, returns an empty ggplot
+#     object with a title indicating no data, and prints a warning.
+# ------------------------------------------------------------------------
+
 build_map <- function(
     data,
     varname,
