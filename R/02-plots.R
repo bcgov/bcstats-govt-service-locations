@@ -28,28 +28,24 @@ source("R/fxns/plots.R")
 # Read shape file data from source folder
 # Note: saving shapeiles truncates the column names, reassignment needed
 #------------------------------------------------------------------------------
-da_shapefile <- tryCatch({
-  fn <- glue("{SHAPEFILE_OUT}/processed_da_with_location.shp")
 
+fn <- glue("{SHAPEFILE_OUT}/processed_da_with_location.shp")
+da_shapefile <- tryCatch({
   st_read(fn) %>%
   rename("landarea" = "landare",
          "loc" = "loctn_d") %>%
   mutate(across(c(daid, loc), as.character)) # Explictly declare data types on join columns
-
 }, error = function(e) {
    message(glue("Error reading file {fn}:  {e$message}"))
 })
 
-
+fn <- glue("{SHAPEFILE_OUT}/processed_db_with_location.shp")
 db_shapefile <- tryCatch({
-  fn <- glue("{SHAPEFILE_OUT}/processed_db_with_location.shp")
-
   st_read(fn) %>%
   rename("dissemination_block_id" = "dssmn__",
          "landarea" = "landare",
          "loc" = "loctn_d") %>% 
   mutate(across(c(dissemination_block_id, loc), as.character)) # Explictly declare data types on join columns
-
 }, error = function(e) {
    message(glue("Error reading file {fn}:  {e$message}"))
 })
@@ -59,9 +55,8 @@ db_shapefile <- tryCatch({
 # Read drive time data from source folder an
 # eep all shapes and potentially colour the missing ones differently
 #------------------------------------------------------------------------------
-
+fn <- glue("{SRC_DATA_FOLDER}/da_average_times_dist_all_locs.csv")
 da_drivetime_data <- tryCatch({
-  fn <- glue("{SRC_DATA_FOLDER}/da_average_times_dist_all_locs.csv")
   read_csv(fn) %>%
   clean_names() %>%
   mutate(across(c(daid, loc), as.character)) # Explictly declare data types on join columns
@@ -69,15 +64,14 @@ da_drivetime_data <- tryCatch({
    message(glue("Error reading file {fn}:  {e$message}"))
 })
 
+fn <- glue("{SRC_DATA_FOLDER}/db_average_times_dist_all_locs.csv")
 db_drivetime_data <-  tryCatch({
-  fn <- glue("{SRC_DATA_FOLDER}/db_average_times_dist_all_locs.csv")
   read_csv(fn) %>%
   clean_names() %>%
   mutate(across(c(dissemination_block_id, loc), as.character)) # Explictly declare data types on join columns
 }, error = function(e) {
    message(glue("Error reading file {fn}:  {e$message}"))
 })
-
 
 #------------------------------------------------------------------------------
 # Join shapefiles to data for mapping
@@ -89,7 +83,6 @@ da_drivetime_map_data <- da_shapefile %>%
 if (nrow(da_drivetime_map_data) == 0)  {
   stop("No DA map data after joining with shapefiles")
 }
-
 
 db_drivetime_map_data <- db_shapefile %>%
   left_join(db_drivetime_data, by = join_by(dissemination_block_id))
