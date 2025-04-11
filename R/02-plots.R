@@ -36,8 +36,13 @@ da_shapefile <- tryCatch({
          "loc" = "loctn_d") %>%
   mutate(across(c(daid, loc), as.character)) # Explictly declare data types on join columns
 }, error = function(e) {
-   message(glue("Error reading file {fn}:  {e$message}"))
+   message(glue("Error reading or processing file {fn}: {e$message}"))
+   return(NULL) # Return NULL on error
 })
+
+if (is.null(da_shapefile)) {
+  stop("Failed to load or process DA shapefile. Stopping script.")
+}
 
 fn <- glue("{SHAPEFILE_OUT}/processed_db_with_location.shp")
 db_shapefile <- tryCatch({
@@ -47,9 +52,13 @@ db_shapefile <- tryCatch({
          "loc" = "loctn_d") %>% 
   mutate(across(c(dissemination_block_id, loc), as.character)) # Explictly declare data types on join columns
 }, error = function(e) {
-   message(glue("Error reading file {fn}:  {e$message}"))
+   message(glue("Error reading or processing file {fn}: {e$message}"))
+   return(NULL) # Return NULL on error
 })
 
+if (is.null(db_shapefile)) {
+  stop("Failed to load or process DB shapefile. Stopping script.")
+}
 
 #------------------------------------------------------------------------------
 # Read drive time data from source folder an
@@ -61,8 +70,13 @@ da_drivetime_data <- tryCatch({
   clean_names() %>%
   mutate(across(c(daid, loc), as.character)) # Explictly declare data types on join columns
 }, error = function(e) {
-   message(glue("Error reading file {fn}:  {e$message}"))
+   message(glue("Error reading or processing file {fn}: {e$message}"))
+   return(NULL) # Return NULL on error
 })
+
+if (is.null(da_drivetime_data)) {
+  stop("Failed to load or process DA drivetime data. Stopping script.")
+}
 
 fn <- glue("{SRC_DATA_FOLDER}/db_average_times_dist_all_locs.csv")
 db_drivetime_data <-  tryCatch({
@@ -70,8 +84,13 @@ db_drivetime_data <-  tryCatch({
   clean_names() %>%
   mutate(across(c(dissemination_block_id, loc), as.character)) # Explictly declare data types on join columns
 }, error = function(e) {
-   message(glue("Error reading file {fn}:  {e$message}"))
+   message(glue("Error reading or processing file {fn}: {e$message}"))
+   return(NULL) # Return NULL on error
 })
+
+if (is.null(db_drivetime_data)) {
+  stop("Failed to load or process DB drivetime data. Stopping script.")
+}
 
 #------------------------------------------------------------------------------
 # Join shapefiles to data for mapping
@@ -99,5 +118,6 @@ build_map(
   data = db_drivetime_map_data,
   varname = "dwellings",
   loc_id = "909",
-  map_theme = MAP_THEME
-)
+  map_theme = MAP
+  
+
