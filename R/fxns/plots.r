@@ -33,7 +33,7 @@ build_map <- function(
   legend_title <- legend_title %||% varname
 
   map_data <- data %>%
-  filter(!!loc_col_sym == loc_id)
+    filter(!!loc_col_sym == loc_id)
 
   # Check if filtering resulted in data
   if (nrow(map_data) == 0) {

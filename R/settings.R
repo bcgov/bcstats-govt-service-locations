@@ -45,6 +45,7 @@ library(glue)
 # Constants declaration
 #------------------------------------------------------------------------------
 EXPECTED_LOCALITIES <- c("909", "227", "213", "420")
+LOC_LIST <- setNames(as.list(c("Langford", "Dawson Creek", "Smithers", "Kamloops")), c("909", "227", "213", "420"))
 
 # File paths
 LAN_FOLDER <- use_network_path()
@@ -62,6 +63,8 @@ OUTPUT_DB_STATS_FILENAME  <- "db_average_times_dist_all_locs.csv"
 OUTPUT_DA_STATS_FILENAME  <- "da_average_times_dist_all_locs.csv"
 OUTPUT_LOC_STATS_FILENAME <- "loc_average_times_dist_all_locs.csv"
 SHAPEFILE_OUT <- glue("{SRC_DATA_FOLDER}/shapefiles/")
+MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
+
 
 # Patterns for cleaning
 POP_GUI_PREFIX_PATTERN <- "^2021S[0-9]{4}"
@@ -90,3 +93,5 @@ MAP_THEME <- theme_minimal() +
     axis.text = element_text(size = 8),
     axis.title = element_text(size = 9)
   )
+ FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.75)
+
