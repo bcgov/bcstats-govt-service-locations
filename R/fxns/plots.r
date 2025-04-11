@@ -23,7 +23,7 @@ build_map <- function(
     fill_scale = scale_fill_viridis_c(option = "viridis")
 ) {
 
-  # --- Prepare dynamic arguments as symbols ---
+  # --- Prepare arguments as symbols ---
   varname_sym <- rlang::sym(varname)
   loc_col_sym <- rlang::sym(loc_col)
 
@@ -49,7 +49,7 @@ build_map <- function(
         color = "gray50",
         lwd = 0.1
     ) +
-   fill_scale + 
+   fill_scale +
     labs(
       title = plot_title,
       fill = legend_title,
