@@ -98,7 +98,7 @@ if (nrow(data) == 0) {
 }
 
 sbc_locs <- data |> 
-  distinct(nearest_facility, coord_x, coord_y) |> 
+  distinct(loc, nearest_facility, coord_x, coord_y) |> 
   st_as_sf(
     coords = c('coord_x', 'coord_y'),
     crs = 3005
