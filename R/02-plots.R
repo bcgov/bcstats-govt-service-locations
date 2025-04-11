@@ -16,6 +16,29 @@
 # municipality of interest in BC (loc). It produces maps at the dissemination block level 
 # displaying quantitative information on basic descriptive statisics
 
+# ------------------------------------------------------------------------
+# Script: 02-plots.R
+
+# Description: Loads previously processed DA and DB shapefiles (containing location IDs)
+# and corresponding processed drive time summary statistics CSV files. Prepares the final 
+# spatial data frames ready for mapping.  A sample map visualization is generated and saved to disk.
+
+# Requirements:
+#   - Requires R packages: `tidyverse`, `glue`, `janitor`, `sf`.
+#   - Depends on `settings.R` for configuration constants (paths, `MAP_THEME`).
+#   - Requires shapefiles in `SHAPEFILE_DIR`.
+#   - Requires drive time summary CSV files in `SRC_DATA_FOLDER` containing variables (numeric type) to map
+#   - Requires the `build_map` function to be defined and available.
+#   - Requires read access to input files/paths.
+
+# Side Effects/Outputs:
+#   - Calls the `build_map` function, which prints a ggplot map object to
+#     the default graphics device.
+#   - Prints errors and stops execution if input files are missing.
+#   - (Currently does not write any new files to disk unless `build_map` is modified to do so).
+# ------------------------------------------------------------------------
+
+
 library(tidyverse)
 library(glue)
 library(janitor)
@@ -115,7 +138,6 @@ if (nrow(db_drivetime_map_data) == 0)  {
 #------------------------------------------------------------------------------
 map_data <- db_drivetime_map_data # or da_drivetime_map_data
 
-
 var <- "drv_dist_mean"  # colnames(map_data) for other options
 var_title <- "Average Driving Distance (km)"
 
@@ -132,12 +154,12 @@ build_map(
   legend_title = var_title
 )
 
-# Save the plot
-ggsave(
-   filename = glue("{var}_locality_{loc}.png"),
-   path = MAP_OUT,
-   plot = map_plot,
-   width = 8,
-   height = 7,
-   dpi = 300
-)
+# Save the plot - ** to be done still
+# ggsave(
+#    filename = glue("{var}_locality_{loc}.png"),
+#    path = MAP_OUT,
+#    plot = map_plot,
+#    width = 8,
+#    height = 7,
+#  dpi = 300
+#)
