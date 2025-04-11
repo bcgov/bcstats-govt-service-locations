@@ -67,13 +67,7 @@ localities <- da_shapefile |>
   summarize(geometry = st_union(geometry)) |> 
   ungroup() |> 
   mutate(
-    locality = case_when(
-      loc=='909'~ 'Langford (909)',
-      loc=='227' ~ 'Smithers (227)',
-      loc=='213' ~ 'Dawson Creek (213)',
-      loc=='420' ~ 'Kamloops (420)',
-      TRUE ~ loc
-      )
+    locality = paste0(LOC_LIST[loc],' (',loc,')')
   )
 
 # get centroids for labels
