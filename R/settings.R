@@ -93,5 +93,5 @@ MAP_THEME <- theme_minimal() +
     axis.text = element_text(size = 8),
     axis.title = element_text(size = 9)
   )
- FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.75)
+ FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.75, na.value="red")
 
