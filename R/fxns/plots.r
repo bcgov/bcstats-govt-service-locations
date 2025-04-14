@@ -87,7 +87,7 @@ build_map <- function(
       aes(shape = "Nearest Service BC Location"),
       fill = 'yellow',
       color = 'black',
-      size = 5,
+      size = 3,
       stroke = 1.1) +
     scale_shape_manual(
       name = NULL,

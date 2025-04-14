@@ -24,7 +24,7 @@
 # spatial data frames ready for mapping.  A sample map visualization is generated and saved to disk.
 
 # Requirements:
-#   - Requires R packages: `tidyverse`, `glue`, `janitor`, `sf`.
+#   - Requires R packages: `tidyverse`, `glue`, `janitor`, `sf`, `svglite``
 #   - Depends on `settings.R` for configuration constants (paths, `MAP_THEME`).
 #   - Requires shapefiles in `SHAPEFILE_DIR`.
 #   - Requires drive time summary CSV files in `SRC_DATA_FOLDER` containing variables (numeric type) to map
@@ -43,6 +43,7 @@ library(tidyverse)
 library(glue)
 library(janitor)
 library(sf)
+library(svglite)
 
 source("R/settings.R")
 source("R/fxns/plots.R")
@@ -190,11 +191,11 @@ map_plot <- build_map(
 
 # Save the plot - ** to be done still
 ggsave(
-    filename = glue("{var}_locality_{loc}.png"),
+    filename = glue("{var}_locality_{loc}.svg"),
     path = MAP_OUT,
     plot = map_plot,
     width = 8,
     height = 7,
-  dpi = 300
-)
+    device = "svg"
+  )
 }
