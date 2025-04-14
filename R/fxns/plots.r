@@ -65,7 +65,7 @@ build_map <- function(
   map_data <- data %>%
     filter(!!loc_col_sym == loc_id)
 
-  servicebc_data <- servicebc_data %>%
+  points_data <- servicebc_data %>%
     filter(!!loc_col_sym == loc_id)
 
   # Check if filtering resulted in data
@@ -83,7 +83,7 @@ build_map <- function(
         lwd = 0.1
     ) +
     fill_scale +
-    geom_sf(data = servicebc_data,
+    geom_sf(data = points_data,
       aes(shape = "Nearest Service BC Location"),
       fill = 'yellow',
       color = 'black',

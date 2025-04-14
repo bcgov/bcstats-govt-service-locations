@@ -58,8 +58,6 @@ DA_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/lda_000b21a_e/lda_000b21a
 DB_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/ldb_000b21a_e/ldb_000b21a_e.shp")
 SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
 
-
-
 # Output filenames
 OUTPUT_DB_STATS_FILENAME  <- "db_average_times_dist_all_locs.csv"
 OUTPUT_DA_STATS_FILENAME  <- "da_average_times_dist_all_locs.csv"
@@ -100,5 +98,5 @@ MAP_THEME <- theme_minimal() +
     legend.box = "horizontal",
     legend.title.position = "top")
 
- FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.75, na.value="red")
+ FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.75, na.value = "red")
 
