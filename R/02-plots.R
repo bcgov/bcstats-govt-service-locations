@@ -144,12 +144,24 @@ if (nrow(da_drivetime_map_data) == 0)  {
   stop("No DA map data after joining with shapefiles")
 }
 
+na_prop <- sum(is.na(da_drivetime_map_data$n_address))/ nrow(da_drivetime_map_data)
+message(glue("({scales::percent(na_prop)}) of NAs in DA map data"))
+
+low_counts_prop <- sum(da_drivetime_map_data$n_address < 5) / nrow(da_drivetime_map_data)
+message(glue("({scales::percent(low_counts_prop)}) of DA regions contain fewer than 4 observations"))
+
 db_drivetime_map_data <- db_shapefile %>%
   left_join(db_drivetime_data, by = join_by(dissemination_block_id, loc))
 
 if (nrow(db_drivetime_map_data) == 0)  {
   stop("No DB map data after joining with shapefiles")
 }
+
+na_prop <- sum(is.na(db_drivetime_map_data$n_address))/ nrow(db_drivetime_map_data)
+message(glue("({scales::percent(na_prop)}) of NAs in DB map data"))
+
+low_counts_prop <- sum(db_drivetime_map_data$n_address < 5) / nrow(db_drivetime_map_data)
+message(glue("({scales::percent(low_counts_prop)}) of DB regions have fewer than 4 observations"))
 
 #------------------------------------------------------------------------------
 # build map - this is where we provide options for build map function
