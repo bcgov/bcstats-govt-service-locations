@@ -85,7 +85,7 @@ if (is.null(db_shapefile)) {
 
 #------------------------------------------------------------------------------
 # Read drive time data from source folder and
-# eep all shapes and potentially colour the missing ones differently
+# keep all shapes and potentially colour the missing ones differently
 #------------------------------------------------------------------------------
 fn <- glue("{SRC_DATA_FOLDER}/da_average_times_dist_all_locs.csv")
 da_drivetime_data <- tryCatch({
