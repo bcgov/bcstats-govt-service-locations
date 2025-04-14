@@ -133,7 +133,6 @@ if (is.null(servicebc)) {
   stop("Failed to load or process DA shapefile. Stopping script.")
 }
 
-
 #------------------------------------------------------------------------------
 # Join shapefiles to data for mapping
 # Use left_join to color differently those da/db's missing data
@@ -155,15 +154,18 @@ if (nrow(db_drivetime_map_data) == 0)  {
 #------------------------------------------------------------------------------
 # build map - this is where we provide options for build map function
 #------------------------------------------------------------------------------
-map_data <- da_drivetime_map_data # or da_drivetime_map_data
+for (loc in names(LOC_LIST)) {
+   loc_name <- LOC_LIST[[loc]]
+   message(glue("Generating map for {loc_name} ({loc_code})..."))
 
-var <- "n_address"  # colnames(map_data) for other options
-var_title <- "Mean Distance (km)"
+  map_data <- da_drivetime_map_data # or da_drivetime_map_data
 
-loc <- names(LOC_LIST)[4] # 1,2,3, or 4
-plot_title <- glue("{var_title} by Dissemination Block, {LOC_LIST[[loc]]}")
+  var <- "drv_dist_mean"  # colnames(map_data) for other options
+  var_title <- "Mean Distance (km)"
 
-build_map(
+  plot_title <- glue("{var_title} by Dissemination Block, {loc_name}")
+
+map_plot <- build_map(
   data = map_data,
   servicebc_data = servicebc,
   varname = var,
@@ -183,4 +185,4 @@ ggsave(
     height = 7,
   dpi = 300
 )
-
+}
