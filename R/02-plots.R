@@ -116,11 +116,31 @@ if (is.null(db_drivetime_data)) {
 }
 
 #------------------------------------------------------------------------------
+# Read service bc location data from source folder
+#------------------------------------------------------------------------------
+
+fn <- SBCLOC_FILEPATH
+servicebc <- tryCatch({
+  read_csv(fn) %>%
+  mutate(across(c(loc), as.character)) %>% # Explictly declare data types on join columns
+  st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
+}, error = function(e) {
+   message(glue("Error reading or processing file {fn}: {e$message}"))
+   return(NULL) # Return NULL on error
+})
+
+if (is.null(servicebc)) {
+  stop("Failed to load or process DA shapefile. Stopping script.")
+}
+
+
+#------------------------------------------------------------------------------
 # Join shapefiles to data for mapping
 # Use left_join to color differently those da/db's missing data
 #------------------------------------------------------------------------------
 da_drivetime_map_data <- da_shapefile %>%
-  left_join(da_drivetime_data, by = join_by(daid, loc))
+  left_join(da_drivetime_data, by = join_by(daid, loc)) %>%
+  left_join(servicebc,  by = join_by(loc))
 
 if (nrow(da_drivetime_map_data) == 0)  {
   stop("No DA map data after joining with shapefiles")
@@ -136,9 +156,9 @@ if (nrow(db_drivetime_map_data) == 0)  {
 #------------------------------------------------------------------------------
 # build map - this is where we provide options for build map function
 #------------------------------------------------------------------------------
-map_data <- db_drivetime_map_data # or da_drivetime_map_data
+map_data <- da_drivetime_map_data # or da_drivetime_map_data
 
-var <- "drv_dist_mean"  # colnames(map_data) for other options
+var <- "n_address"  # colnames(map_data) for other options
 var_title <- "Average Driving Distance (km)"
 
 loc <- names(LOC_LIST)[4] # 1,2,3, or 4
@@ -146,6 +166,7 @@ plot_title <- glue("{var_title} by Dissemination Block, {LOC_LIST[[loc]]}")
 
 build_map(
   data = map_data,
+  servicebc_data = servicebc,
   varname = var,
   loc_id = loc,
   map_theme = MAP_THEME,
@@ -154,7 +175,7 @@ build_map(
   legend_title = var_title
 )
 
-# Save the plot - ** to be done still
+ #Save the plot - ** to be done still
 # ggsave(
 #    filename = glue("{var}_locality_{loc}.png"),
 #    path = MAP_OUT,
@@ -163,3 +184,4 @@ build_map(
 #    height = 7,
 #  dpi = 300
 #)
+

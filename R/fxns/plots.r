@@ -43,6 +43,7 @@
 
 build_map <- function(
     data,
+    servicebc_data,
     varname,
     loc_id,
     loc_col = "loc",
@@ -64,6 +65,9 @@ build_map <- function(
   map_data <- data %>%
     filter(!!loc_col_sym == loc_id)
 
+  servicebc_data <- servicebc_data %>%
+    filter(!!loc_col_sym == loc_id)
+
   # Check if filtering resulted in data
   if (nrow(map_data) == 0) {
     warning(glue("Warning: No data found for loc_id '{loc_id}'"))
@@ -71,13 +75,19 @@ build_map <- function(
   }
 
   ## Build the ggplot object
-  map <-  map_data %>%
-    ggplot() +
+  map <-  ggplot() +
     geom_sf(
+        data = map_data,
         aes(fill = !!varname_sym),
         color = "gray50",
         lwd = 0.1
     ) +
+    geom_sf(data = servicebc_data,     
+      shape = 23,
+      fill = 'yellow',
+      color = 'black',
+      size = 5,
+      stroke = 1.1) + 
    fill_scale +
     labs(
       title = plot_title,

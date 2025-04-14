@@ -56,12 +56,16 @@ RAW_POP_FILEPATH <- glue("{RAW_DATA_FOLDER}/statscan/98100015-eng/98100015.csv")
 CROSSWALK_FILEPATH <- glue("{SRC_DATA_FOLDER}/da-db-loc-crosswalk.csv")
 DA_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/lda_000b21a_e/lda_000b21a_e.shp")
 DB_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/ldb_000b21a_e/ldb_000b21a_e.shp")
+SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
+
 
 
 # Output filenames
 OUTPUT_DB_STATS_FILENAME  <- "db_average_times_dist_all_locs.csv"
 OUTPUT_DA_STATS_FILENAME  <- "da_average_times_dist_all_locs.csv"
 OUTPUT_LOC_STATS_FILENAME <- "loc_average_times_dist_all_locs.csv"
+
+
 SHAPEFILE_OUT <- glue("{SRC_DATA_FOLDER}/shapefiles/")
 MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
 
