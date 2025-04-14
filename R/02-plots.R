@@ -139,8 +139,7 @@ if (is.null(servicebc)) {
 # Use left_join to color differently those da/db's missing data
 #------------------------------------------------------------------------------
 da_drivetime_map_data <- da_shapefile %>%
-  left_join(da_drivetime_data, by = join_by(daid, loc)) %>%
-  left_join(servicebc,  by = join_by(loc))
+  left_join(da_drivetime_data, by = join_by(daid, loc)) 
 
 if (nrow(da_drivetime_map_data) == 0)  {
   stop("No DA map data after joining with shapefiles")
@@ -159,7 +158,7 @@ if (nrow(db_drivetime_map_data) == 0)  {
 map_data <- da_drivetime_map_data # or da_drivetime_map_data
 
 var <- "n_address"  # colnames(map_data) for other options
-var_title <- "Average Driving Distance (km)"
+var_title <- "Mean Distance (km)"
 
 loc <- names(LOC_LIST)[4] # 1,2,3, or 4
 plot_title <- glue("{var_title} by Dissemination Block, {LOC_LIST[[loc]]}")
@@ -175,13 +174,13 @@ build_map(
   legend_title = var_title
 )
 
- #Save the plot - ** to be done still
-# ggsave(
-#    filename = glue("{var}_locality_{loc}.png"),
-#    path = MAP_OUT,
-#    plot = map_plot,
-#    width = 8,
-#    height = 7,
-#  dpi = 300
-#)
+# Save the plot - ** to be done still
+ggsave(
+    filename = glue("{var}_locality_{loc}.png"),
+    path = MAP_OUT,
+    plot = map_plot,
+    width = 8,
+    height = 7,
+  dpi = 300
+)
 

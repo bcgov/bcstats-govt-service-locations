@@ -95,7 +95,10 @@ MAP_THEME <- theme_minimal() +
     legend.title = element_text(size = 10, face = "bold"),
     legend.text = element_text(size = 9),
     axis.text = element_text(size = 8),
-    axis.title = element_text(size = 9)
-  )
+    axis.title = element_text(size = 9),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.title.position = "top")
+
  FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.75, na.value="red")
 

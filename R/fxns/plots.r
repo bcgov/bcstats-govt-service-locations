@@ -82,13 +82,24 @@ build_map <- function(
         color = "gray50",
         lwd = 0.1
     ) +
-    geom_sf(data = servicebc_data,     
-      shape = 23,
+    fill_scale +
+    geom_sf(data = servicebc_data,
+      aes(shape = "Nearest Service BC Location"),
       fill = 'yellow',
       color = 'black',
       size = 5,
-      stroke = 1.1) + 
-   fill_scale +
+      stroke = 1.1) +
+    scale_shape_manual(
+      name = NULL,
+      values = c("Nearest Service BC Location" = 23) 
+    ) +
+    guides(
+      shape = guide_legend(
+        override.aes = list(
+          fill = "yellow", 
+          size = 4)
+      )
+    ) +
     labs(
       title = plot_title,
       fill = legend_title,
