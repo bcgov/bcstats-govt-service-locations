@@ -166,31 +166,45 @@ message(glue("({scales::percent(low_counts_prop)}) of DB regions have fewer than
 #------------------------------------------------------------------------------
 # build map - this is where we provide options for build map function
 #------------------------------------------------------------------------------
+
+# user-defined map parameters
+var <- "n_address"  # colnames(map_data) for other options
+var_title <- "Count of Addresses"
+region_title <- "Dissemination Area"
+plot_subtitle <- "Regions with 0-4 data points are shown in red"
+
+map_data  <- db_drivetime_map_data
+
+if(region_title == "Dissemination Area"){
+  map_data  <- da_drivetime_map_data
+}
+
+# just for checking low counts
+map_data <- map_data %>%
+  mutate(n_address = if_else(n_address < 5, NA, n_address))
+
 for (loc in names(LOC_LIST)) {
-   loc_name <- LOC_LIST[[loc]]
-   message(glue("Generating map for {loc_name} ({loc})..."))
+  loc_name <- LOC_LIST[[loc]]
+  message(glue("Generating map for {loc_name} ({loc})..."))
 
-  map_data <- db_drivetime_map_data # or da_drivetime_map_data
+  plot_title <- glue("{var_title} by {region_title}, {loc_name}")
 
-  var <- "drv_dist_mean"  # colnames(map_data) for other options
-  var_title <- "Mean Distance (km)"
+  map_plot <- build_map(
+    data = map_data,
+    servicebc_data = servicebc,
+    varname = var,
+    loc_id = loc,
+    map_theme = MAP_THEME,
+    fill_scale = FILL_THEME,
+    plot_title = plot_title,
+    plot_subtitle = plot_subtitle,
+    legend_title = var_title
+  )
 
-  plot_title <- glue("{var_title} by Dissemination Block, {loc_name}")
-
-map_plot <- build_map(
-  data = map_data,
-  servicebc_data = servicebc,
-  varname = var,
-  loc_id = loc,
-  map_theme = MAP_THEME,
-  fill_scale = FILL_THEME,
-  plot_title = plot_title,
-  legend_title = var_title
-)
-
-# Save the plot - ** to be done still
-ggsave(
-    filename = glue("{var}_locality_{loc}.svg"),
+  # Save the plot
+  fn <- snakecase::to_snake_case(glue("{var} by {region_title}, {loc_name}"))
+  ggsave(
+    filename = fn,
     path = MAP_OUT,
     plot = map_plot,
     width = 8,

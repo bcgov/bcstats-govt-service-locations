@@ -48,6 +48,7 @@ build_map <- function(
     loc_id,
     loc_col = "loc",
     plot_title = "",
+    plot_subtitle = "",
     legend_title = "",
     map_theme = theme_minimal(),
     fill_scale = scale_fill_viridis_c(option = "viridis"),
@@ -108,6 +109,7 @@ build_map <- function(
     ) +
     labs(
       title = plot_title,
+      subtitle = plot_subtitle,
       fill = legend_title,
       x = "\nLongitude",
       y = "Latitude\n"
