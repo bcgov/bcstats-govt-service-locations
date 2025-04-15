@@ -50,7 +50,8 @@ build_map <- function(
     plot_title = "",
     legend_title = "",
     map_theme = theme_minimal(),
-    fill_scale = scale_fill_viridis_c(option = "viridis")
+    fill_scale = scale_fill_viridis_c(option = "viridis"),
+    scale_limits = NULL
 ) {
 
   # --- Prepare arguments as symbols ---
@@ -61,6 +62,11 @@ build_map <- function(
   default_title <- glue::glue("{varname} for Locality {loc_id}")
   plot_title <- plot_title %||% default_title
   legend_title <- legend_title %||% varname
+
+  # dynamically set limits
+  fill_theme <- fill_scale$clone()
+  fill_theme$limits <- range(data[[varname_sym]])
+  fill_theme$oob <- scales::squish
 
   map_data <- data %>%
     filter(!!loc_col_sym == loc_id)
@@ -82,12 +88,12 @@ build_map <- function(
         color = "gray50",
         lwd = 0.1
     ) +
-    fill_scale +
+    fill_theme +
     geom_sf(data = points_data,
       aes(shape = "Nearest Service BC Location"),
       fill = 'yellow',
       color = 'black',
-      size = 3,
+      size = 2,
       stroke = 1.1) +
     scale_shape_manual(
       name = NULL,

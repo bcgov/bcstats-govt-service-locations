@@ -24,18 +24,16 @@
 # spatial data frames ready for mapping.  A sample map visualization is generated and saved to disk.
 
 # Requirements:
-#   - Requires R packages: `tidyverse`, `glue`, `janitor`, `sf`, `svglite``
+#   - Requires R packages: `tidyverse`, `glue`, `janitor`, `sf`, `svglite`, `scales`
 #   - Depends on `settings.R` for configuration constants (paths, `MAP_THEME`).
 #   - Requires shapefiles in `SHAPEFILE_DIR`.
 #   - Requires drive time summary CSV files in `SRC_DATA_FOLDER` containing variables (numeric type) to map
-#   - Requires the `build_map` function to be defined and available.
-#   - Requires read access to input files/paths.
+#   - Requires the `build_map` function in `R/fxns/plots.r`
 
 # Side Effects/Outputs:
-#   - Calls the `build_map` function, which prints a ggplot map object to
+#   - Calls `build_map` function, which prints a ggplot map object to
 #     the default graphics device.
 #   - Prints errors and stops execution if input files are missing.
-#   - (Currently does not write any new files to disk unless `build_map` is modified to do so).
 # ------------------------------------------------------------------------
 
 
@@ -44,6 +42,7 @@ library(glue)
 library(janitor)
 library(sf)
 library(svglite)
+library(scales)
 
 source("R/settings.R")
 source("R/fxns/plots.R")
@@ -146,10 +145,10 @@ if (nrow(da_drivetime_map_data) == 0)  {
 }
 
 na_prop <- sum(is.na(da_drivetime_map_data$n_address))/ nrow(da_drivetime_map_data)
-message(glue("({scales::percent(na_prop)}) of NAs in DA map data"))
+message(glue("({percent(na_prop)}) of NAs in DA map data"))
 
 low_counts_prop <- sum(da_drivetime_map_data$n_address < 5) / nrow(da_drivetime_map_data)
-message(glue("({scales::percent(low_counts_prop)}) of DA regions contain fewer than 4 observations"))
+message(glue("({percent(low_counts_prop)}) of DA regions contain fewer than 5 observations"))
 
 db_drivetime_map_data <- db_shapefile %>%
   left_join(db_drivetime_data, by = join_by(dissemination_block_id, loc))
@@ -159,10 +158,10 @@ if (nrow(db_drivetime_map_data) == 0)  {
 }
 
 na_prop <- sum(is.na(db_drivetime_map_data$n_address))/ nrow(db_drivetime_map_data)
-message(glue("({scales::percent(na_prop)}) of NAs in DB map data"))
+message(glue("({percent(na_prop)}) of NAs in DB map data"))
 
 low_counts_prop <- sum(db_drivetime_map_data$n_address < 5) / nrow(db_drivetime_map_data)
-message(glue("({scales::percent(low_counts_prop)}) of DB regions have fewer than 4 observations"))
+message(glue("({scales::percent(low_counts_prop)}) of DB regions have fewer than 5 observations"))
 
 #------------------------------------------------------------------------------
 # build map - this is where we provide options for build map function
@@ -171,7 +170,7 @@ for (loc in names(LOC_LIST)) {
    loc_name <- LOC_LIST[[loc]]
    message(glue("Generating map for {loc_name} ({loc_code})..."))
 
-  map_data <- da_drivetime_map_data # or da_drivetime_map_data
+  map_data <- db_drivetime_map_data # or da_drivetime_map_data
 
   var <- "drv_dist_mean"  # colnames(map_data) for other options
   var_title <- "Mean Distance (km)"
