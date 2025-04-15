@@ -43,6 +43,7 @@ library(janitor)
 library(sf)
 library(svglite)
 library(scales)
+library(snakecase)
 
 source("R/settings.R")
 source("R/fxns/plots.R")
@@ -161,7 +162,7 @@ na_prop <- sum(is.na(db_drivetime_map_data$n_address))/ nrow(db_drivetime_map_da
 message(glue("({percent(na_prop)}) of NAs in DB map data"))
 
 low_counts_prop <- sum(db_drivetime_map_data$n_address < 5) / nrow(db_drivetime_map_data)
-message(glue("({scales::percent(low_counts_prop)}) of DB regions have fewer than 5 observations"))
+message(glue("({percent(low_counts_prop)}) of DB regions have fewer than 5 observations"))
 
 #------------------------------------------------------------------------------
 # build map - this is where we provide options for build map function
@@ -170,8 +171,8 @@ message(glue("({scales::percent(low_counts_prop)}) of DB regions have fewer than
 # user-defined map parameters
 var <- "n_address"  # colnames(map_data) for other options
 var_title <- "Count of Addresses"
-region_title <- "Dissemination Area"
-plot_subtitle <- "Regions with 0-4 data points are shown in red"
+region_title <- "Dissemination Block"
+plot_subtitle <- "(Regions with 0-4 data points are shown in red)"
 
 map_data  <- db_drivetime_map_data
 
@@ -179,7 +180,6 @@ if(region_title == "Dissemination Area"){
   map_data  <- da_drivetime_map_data
 }
 
-# just for checking low counts
 map_data <- map_data %>%
   mutate(n_address = if_else(n_address < 5, NA, n_address))
 
@@ -202,7 +202,8 @@ for (loc in names(LOC_LIST)) {
   )
 
   # Save the plot
-  fn <- snakecase::to_snake_case(glue("{var} by {region_title}, {loc_name}"))
+  fn <- to_snake_case(glue("{var} by {region_title}, {loc_name}"))
+  fn <- glue("{fn}.svg")
   ggsave(
     filename = fn,
     path = MAP_OUT,
@@ -212,3 +213,25 @@ for (loc in names(LOC_LIST)) {
     device = "svg"
   )
 }
+
+
+# ------------------------------------------------------------------
+# testing only
+# just for checking low counts
+# ------------------------------------------------------------------
+
+da_drivetime_data$loc_name <-unlist(LOC_LIST[da_drivetime_data$loc])
+db_drivetime_data$loc_name <-unlist(LOC_LIST[db_drivetime_data$loc])
+
+da_drivetime_data %>%
+  filter(n_address < 5) %>%
+  select(!starts_with("drv")) %>%
+  sf::st_drop_geometry() %>%
+  write_csv(glue("{TABLES_OUT }/low_counts_da.csv"))
+
+db_drivetime_data %>%
+  filter(n_address < 5) %>%
+  select(!starts_with("drv")) %>%
+  sf::st_drop_geometry() %>%
+  write_csv(glue("{TABLES_OUT }/low_counts_db.csv"))
+
