@@ -168,7 +168,7 @@ message(glue("({scales::percent(low_counts_prop)}) of DB regions have fewer than
 #------------------------------------------------------------------------------
 for (loc in names(LOC_LIST)) {
    loc_name <- LOC_LIST[[loc]]
-   message(glue("Generating map for {loc_name} ({loc_code})..."))
+   message(glue("Generating map for {loc_name} ({loc})..."))
 
   map_data <- db_drivetime_map_data # or da_drivetime_map_data
 
