@@ -107,10 +107,10 @@ out <- ggplot() +
   geom_sf(
     data = sbc_locs,
     shape = 23,
-    fill = 'red',
+    fill = 'yellow',
     color = 'black',
-    size=2,
-    stroke=1.1
+    size = 2,
+    stroke = 1.1
   ) +
   geom_sf_text(
     data = locality_centroids_nudged,
