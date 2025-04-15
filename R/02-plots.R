@@ -164,6 +164,27 @@ message(glue("({percent(na_prop)}) of NAs in DB map data"))
 low_counts_prop <- sum(db_drivetime_map_data$n_address < 5) / nrow(db_drivetime_map_data)
 message(glue("({percent(low_counts_prop)}) of DB regions have fewer than 5 observations"))
 
+
+# ------------------------------------------------------------------
+# testing only
+# just for checking low counts
+# ------------------------------------------------------------------
+
+da_drivetime_data$loc_name <-unlist(LOC_LIST[da_drivetime_data$loc])
+db_drivetime_data$loc_name <-unlist(LOC_LIST[db_drivetime_data$loc])
+
+da_drivetime_data %>%
+  filter(n_address < 5) %>%
+  select(!starts_with("drv")) %>%
+  sf::st_drop_geometry() %>%
+  write_csv(glue("{TABLES_OUT }/low_counts_da.csv"))
+
+db_drivetime_data %>%
+  filter(n_address < 5) %>%
+  select(!starts_with("drv")) %>%
+  sf::st_drop_geometry() %>%
+  write_csv(glue("{TABLES_OUT }/low_counts_db.csv"))
+
 #------------------------------------------------------------------------------
 # build map - this is where we provide options for build map function
 #------------------------------------------------------------------------------
@@ -171,7 +192,7 @@ message(glue("({percent(low_counts_prop)}) of DB regions have fewer than 5 obser
 # user-defined map parameters
 var <- "n_address"  # colnames(map_data) for other options
 var_title <- "Count of Addresses"
-region_title <- "Dissemination Block"
+region_title <- "Dissemination Area"
 plot_subtitle <- "(Regions with 0-4 data points are shown in red)"
 
 map_data  <- db_drivetime_map_data
@@ -213,25 +234,4 @@ for (loc in names(LOC_LIST)) {
     device = "svg"
   )
 }
-
-
-# ------------------------------------------------------------------
-# testing only
-# just for checking low counts
-# ------------------------------------------------------------------
-
-da_drivetime_data$loc_name <-unlist(LOC_LIST[da_drivetime_data$loc])
-db_drivetime_data$loc_name <-unlist(LOC_LIST[db_drivetime_data$loc])
-
-da_drivetime_data %>%
-  filter(n_address < 5) %>%
-  select(!starts_with("drv")) %>%
-  sf::st_drop_geometry() %>%
-  write_csv(glue("{TABLES_OUT }/low_counts_da.csv"))
-
-db_drivetime_data %>%
-  filter(n_address < 5) %>%
-  select(!starts_with("drv")) %>%
-  sf::st_drop_geometry() %>%
-  write_csv(glue("{TABLES_OUT }/low_counts_db.csv"))
 
