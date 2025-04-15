@@ -82,17 +82,7 @@ locality_centroids_nudged <- locality_centroids |>
   st_set_crs(st_crs(locality_centroids))
 
 # locations of all nearby SBC locations 
-fls <- list.files(SRC_DATA_FOLDER, full.names = TRUE, pattern = INPUT_ADDR_DA_PATTERN, recursive = TRUE)
-
-# map_dfr automatically handles NULLs from read_all_locs
-data <- map_dfr(.x = fls, .f = read_all_locs)
-
-if (nrow(data) == 0) {
-  stop("No data successfully loaded. Check input files.")
-}
-
-sbc_locs <- data |> 
-  distinct(loc, nearest_facility, coord_x, coord_y) |> 
+sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")) |>
   st_as_sf(
     coords = c('coord_x', 'coord_y'),
     crs = 3005
