@@ -36,17 +36,16 @@ library(glue)
 library(janitor)
 library(sf)
 library(rmapshaper)    # simplify geometries
-library(rnaturalearth) # get BC outline
+library(bcmaps) # get BC outline
 
 source("R/settings.R")
-source("R/fxns/pre-processing.R" # for read_all_locs()
+source("R/fxns/pre-processing.R") # for read_all_locs()
 # ----------------------------------------------------------------------------
 # Load and prepare mapping data
 # ----------------------------------------------------------------------------
 
 # map of BC
-bc_map <- ne_states(country = 'canada', returnclass = 'sf') |> 
-  filter(name_en == 'British Columbia') |> 
+bc_map <- bc_bound() |> 
   st_transform(crs = 3005)
 
 # da level shapefiles for each locality
