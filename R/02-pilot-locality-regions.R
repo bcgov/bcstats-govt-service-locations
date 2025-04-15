@@ -73,12 +73,13 @@ localities <- da_shapefile |>
 # get centroids for labels
 locality_centroids <- st_centroid(localities) 
 locality_centroids_nudged <- locality_centroids |> 
-  mutate(
+mutate(
     geometry = case_when(
-      loc!= '909' ~ geometry + c(0, 70000), # move label north to not overlap 
-      TRUE ~ geometry + c(-200000, 0) # move west for langford
+      loc == '227' ~ geometry + c(-150000, 40000),
+      loc == '909' ~ geometry + c(130000, 10000), # move east for langford
+      TRUE ~ geometry + c(0, 70000)  # move label north to not overlap 
       )
-    )|>   
+    )|>  
   st_set_crs(st_crs(locality_centroids))
 
 # locations of all nearby SBC locations 
