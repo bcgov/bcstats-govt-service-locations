@@ -39,7 +39,7 @@ library(rmapshaper)    # simplify geometries
 library(rnaturalearth) # get BC outline
 
 source("R/settings.R")
-
+source("R/fxns/pre-processing.R" # for read_all_locs()
 # ----------------------------------------------------------------------------
 # Load and prepare mapping data
 # ----------------------------------------------------------------------------
