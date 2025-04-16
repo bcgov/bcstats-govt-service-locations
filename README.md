@@ -24,7 +24,11 @@ Accessing project files and data requires the [`safepaths`](https://github.com/b
 
 ```R
 # Manually install packages:
-install.packages(c("sf", "tidyverse", "glue", "janitor", "e1071", "remotes"))
+install.packages(c(
+  "sf", "tidyverse", "glue", "janitor", "e1071", "remotes",
+  "svglite", "scales", "rmapshaper", "bcmaps" # Added packages for new scripts
+))
+
 remotes::install_github("bcgov/safepaths")
 ```
 
@@ -45,11 +49,17 @@ This section describes how to run the R scripts to perform the drive time analys
 **Execution:**
 Run the following scripts in the order specified:
 
-1.  **Preprocessing:**
+1.  **Preprocessing Tabular Data:**
     *   **Script:** `00-make-data.R`.
         *   **Purpose:** This script identifies the latest raw data file for each locality, performs initial validation and preprocessing using the `preprocess_locs` function, and writes intermediate, cleaned files to the `SRC_DATA_FOLDER` (as defined in `settings.R`).
         *   **How to Run:** This script can be run from source: `source("R/00-make-data.R")`
         *   **Expected Output:** Watch the console for messages indicating which files are being processed, warnings about missing/extra localities, potential file overwrites, or errors. Upon successful completion, processed files (e.g., `address_with_da_locality_XXX.csv`) will be present in the `SRC_DATA_FOLDER`.
+
+2. **Shapefile Processing**:
+    *   **Script:** `00b-make-map-data.R`.
+        *   **Purpose**: Loads provincial DA and DB shapefiles, filters them to keep only the specific localities defined in the crosswalk file (reducing size for development/analysis), and writes these processed, filtered shapefiles to the SHAPEFILE_DIR (as defined in settings.R). This prepares the geographic data needed for mapping.
+        *   **How to Run**: This script can be run from source: `source("R/00b-make-map-data.R")`
+        *   **Expected Output**: Watch the console for messages indicating which files are being processed, warnings about invalid inputs, potential file overwrites, or errors. Upon success, filtered shapefiles (e.g., containing *DA_for_locality_*... or similar in their names) will be present in the `SHAPEFILE_DIR`. 
 
 2.  **Aggregated Tables and Calculations:**
     *   **Script:** `01-descriptive-tables.R`.
