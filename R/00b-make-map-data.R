@@ -36,6 +36,8 @@ library(tidyverse)
 library(glue)
 library(janitor)
 library(sf)
+library(bcmaps)
+library(bcdata)
 
 source("R/settings.R")
 
@@ -59,63 +61,77 @@ if (nrow(crosswalk) == 0) {
 # -----------------------------------------------------------------------------------------
 
 da_shapefiles_processed <- tryCatch({
-    st_read(DA_SHAPE_FILEPATH) %>%
-    filter(PRUID == "59") %>%
-    st_transform(crs = 3005) %>%
+  bcmaps::census_dissemination_area() %>%
     clean_names() %>%
-    select(daid = dauid, landarea, geometry)
+    select("daid" = "dissemination_area_id", "landarea" = "feature_area_sqm", geometry)
 }, error = function(e) {
-  stop(glue("Failed to read or process da shapefile '{DA_SHAPE_FILEPATH}': {e$message}"))
+  stop(glue("Failed to read or process da shapefile from bcmaps: {e$message}"))
 })
 
 if (nrow(da_shapefiles_processed) == 0) {
-  stop("DA shapefile data is empty after filtering for BC.")
+  stop("DA shapefile data is empty after filtering regions")
 }
 
 # -----------------------------------------------------------------------------------------
 # Load and prepare db shapefile - check for invalid data
+# currently a fragile - submitted issue to bcmaps for db layer
 # -----------------------------------------------------------------------------------------
 
+res <- bcdc_search("Current Census Dissemination Block")
+i <- which(names(res) == "current-census-dissemination-blocks")
+
+if (length(i) == 0) {
+  stop(glue("Failed to find a valid DB shapefile in bcdata catalog"))
+}
+
 db_shapefiles_processed <- tryCatch({
-    st_read(DB_SHAPE_FILEPATH) %>%
-    filter(PRUID == "59") %>%
-    st_transform(crs = 3005) %>%
+  bcdc_query_geodata(res[[first(i)]]$id) %>% 
+    collect() %>% 
     clean_names() %>%
-    select(dissemination_block_id = dbuid, landarea, geometry)
+    select(dissemination_block_id, "landare" = "feature_area_sqm")
 
 }, error = function(e) {
-  stop(glue("Failed to read or process da shapefile '{DB_SHAPE_FILEPATH}': {e$message}"))
+  stop(glue("Failed to read or process db shapefile from bcdata catalog: {e$message}"))
 })
 
 if (nrow(db_shapefiles_processed) == 0) {
-  stop("DB shapefile data is empty after filtering for BC.")
+  stop("DB shapefile data is empty after filtering regions.")
 }
 
 
 # -----------------------------------------------------------------------------------------
 # Filter shapefile to include only those da/db's in our localities of interest
 # could do some light error checking here, but we don't have a true mapping from
-# location to da/db (locality is still not definded and we don't have shapefiles for those)
+# location to da/db (locality is still not defined and we don't have shapefiles for those)
 # -----------------------------------------------------------------------------------------
 
 db_with_location  <- db_shapefiles_processed  %>%
-   inner_join(crosswalk %>% distinct(daid, dissemination_block_id, location_id), by = "dissemination_block_id")
+  inner_join(
+    crosswalk %>%
+      distinct(daid, dissemination_block_id, location_id) 
+              , by = "dissemination_block_id"
+  )
 
 if (nrow(db_with_location) == 0) {
   stop("No DAs after joining with the crosswalk.")
 }
 
-da_with_location  <- da_shapefiles_processed  %>%
-   inner_join(crosswalk %>% distinct(daid, location_id), by = "daid")
+da_with_location <- da_shapefiles_processed  %>%
+  inner_join(
+    crosswalk %>%
+      distinct(daid, location_id)
+    , by = "daid"
+  )
 
 if (nrow(da_with_location) == 0) {
   stop("No DAs after joining with the crosswalk.")
 }
 
-
 # -----------------------------------------------------------------------------------------
-# write processed da/db shapefiles to source folder
+# write processed da/db shapefiles to source folder - changing to
+# bcmaps/bcdata version introduces new warnings about truncated columns, but
+# doesn't appear to otherwise affect things upstream
 # -----------------------------------------------------------------------------------------
 # TODO - add tryCatch logic
-st_write(da_with_location, glue("{SHAPEFILE_OUT}/processed_da_with_location.shp"))
-st_write(db_with_location, glue("{SHAPEFILE_OUT}/processed_db_with_location.shp"))
+st_write(da_with_location, glue("{SHAPEFILE_OUT}/processed_da_with_location.shp"), append = TRUE)
+st_write(db_with_location, glue("{SHAPEFILE_OUT}/processed_db_with_location.shp"), append = TRUE)
