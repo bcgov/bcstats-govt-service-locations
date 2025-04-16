@@ -45,6 +45,7 @@ library(glue)
 # Constants declaration
 #------------------------------------------------------------------------------
 EXPECTED_LOCALITIES <- c("909", "227", "213", "420")
+LOC_LIST <- setNames(as.list(c("Langford", "Dawson Creek", "Smithers", "Kamloops")), c("909", "227", "213", "420"))
 
 # File paths
 LAN_FOLDER <- use_network_path()
@@ -52,10 +53,20 @@ SRC_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/sou
 RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/")
 RAW_POP_FILEPATH <- glue("{RAW_DATA_FOLDER}/statscan/98100015-eng/98100015.csv")
 
+CROSSWALK_FILEPATH <- glue("{SRC_DATA_FOLDER}/da-db-loc-crosswalk.csv")
+DA_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/lda_000b21a_e/lda_000b21a_e.shp")
+DB_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/ldb_000b21a_e/ldb_000b21a_e.shp")
+SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
+
 # Output filenames
 OUTPUT_DB_STATS_FILENAME  <- "db_average_times_dist_all_locs.csv"
 OUTPUT_DA_STATS_FILENAME  <- "da_average_times_dist_all_locs.csv"
 OUTPUT_LOC_STATS_FILENAME <- "loc_average_times_dist_all_locs.csv"
+
+
+SHAPEFILE_OUT <- glue("{SRC_DATA_FOLDER}/shapefiles/")
+MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
+TABLES_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/tables")
 
 # Patterns for cleaning
 POP_GUI_PREFIX_PATTERN <- "^2021S[0-9]{4}"
@@ -73,3 +84,19 @@ NO_ERRS_FILE_PATTERN <- "no_errors.csv"
 REQUIRED_COLS <- c("site_albers_x", "site_albers_y", "dissemination_block_id", "drv_time_sec", "drv_dist", "tag")
 POP_COLS <- c("region_name", "area_sq_km", "population", "dwellings", "households")
 FACILITY_TAG <- "servicebc"
+
+# Constants for visualizations
+MAP_THEME <- theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 10),
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 9),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.title.position = "top")
+
+ FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.75, na.value = "red")
+

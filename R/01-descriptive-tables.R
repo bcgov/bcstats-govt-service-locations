@@ -167,6 +167,24 @@ tryCatch({
   message(glue("Error writing file {outfile}:  {e$message}"))
 })
 
+#------------------------------------------------------------------------------
+# Write service bc locations to source folder
+#------------------------------------------------------------------------------
+outfile <- SBCLOC_FILEPATH
+
+if (file.exists(outfile)) {
+  warning(glue("Overwriting existing file: {outfile}"))
+}
+
+service_bc_locations <- data %>% 
+  distinct(loc, nearest_facility, coord_x, coord_y)
+
+tryCatch({
+  write_csv(service_bc_locations, outfile)
+}, error = function(e) {
+  message(glue("Error writing file {outfile}:  {e$message}"))
+})
+
 # clean up the environment
 rm(list = ls())
 gc()

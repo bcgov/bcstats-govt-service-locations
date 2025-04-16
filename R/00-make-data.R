@@ -85,6 +85,24 @@ processed_files <- purrr::walk2(
   facility_tag = FACILITY_TAG
 )
 
+#------------------------------------------------------------------------------
+# Create a crosswalk for daid, duid and locality
+#------------------------------------------------------------------------------
+crosswalk_list <- purrr::map2(
+  .x = file_paths$fn,
+  .y = file_paths$loc,
+  .f = create_crosswalk
+)
+
+crosswalk <- bind_rows(crosswalk_list)
+outfile <- glue("{SRC_DATA_FOLDER}/da-db-loc-crosswalk.csv")
+tryCatch({
+  write_csv(crosswalk, outfile)
+}, error = function(e) {
+  message(glue("Error writing file {outfile}:  {e$message}"))
+})
+
+
 # clean up the environment
 rm(list = ls())
 gc()
