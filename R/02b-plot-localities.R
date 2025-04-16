@@ -17,7 +17,7 @@
 # It plots the locations on top of a map of B.C. 
 
 # ------------------------------------------------------------------------
-# Script: 02-plot-localities.R
+# Script: 02b-plot-localities.R
 
 # Description: plot localities on a map of BC
 
