@@ -36,7 +36,7 @@ remotes::install_github("bcgov/safepaths")
 
 ## How to Run the Analysis
 
-This section describes how to run the R scripts to perform the drive time analysis after completing the installation and setup. The process involves two main scripts executed sequentially (there may be additional scripts in the future).
+This section describes how to run the R scripts to perform the drive time analysis after completing the installation and setup. The process involves five scripts executed sequentially (there may be additional scripts in the future).
 
 **Prerequisites:**
 
@@ -44,7 +44,7 @@ This section describes how to run the R scripts to perform the drive time analys
 2.  **Review Configuration Settings:** Open and review the `R/settings.R` script. Verify that:
     *   The path returned from `safepaths::use_network_path()` correctly points to your network or local data storage location.
     *   The values in `EXPECTED_LOCALITIES` list matches the localities you intend to process, and for which data exists.
-    *   Other patterns and constants align with your input data structure if it differs from the project defaults.
+    *   Paths like `SRC_DATA_FOLDER`, `SHAPEFILE_DIR` and other patterns/constants defined in `settings.R` align with your input data structure and project needs.
 
 **Execution:**
 Run the following scripts in the order specified:
@@ -103,11 +103,11 @@ A geographic concordance file was acquired from Statistics Canada ([statcan.gc.c
 
 **Digital Boundary Files**
 
-Digital boundary files in Shapefile format (.shp), defining the geographic extents of Population Centers (PC), Dissemination Areas (DAs) and Dissemination Blocks (DBs), were obtained from Statistics Canada ([https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21](https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21)). These vector datasets served as the geometric base for cartographic visualization and underpinning geospatial operations within the analysis.
+Digital boundary files in Shapefile format (.shp), defining the geographic extents of Population Centers (PC), Dissemination Areas (DAs) and Dissemination Blocks (DBs), were obtained from Statistics Canada ([https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21](https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21)). These vector datasets served as the geometric base for cartographic visualization and underpinning geospatial operations within the analysis (used as input for `00b-make-map-data.R`).
 
 **Census Population and Dwelling Counts**
 
-Aggregate population and dwelling count data at the Dissemination Area (DA) level were extracted from the Statistics Canada 2021 Census profile tables ([https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259) - Table 98-10-0015-02]. This dataset provided the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study regions.
+Aggregate population and dwelling count data at the Dissemination Area (DA) level were extracted from the Statistics Canada 2021 Census profile tables ([https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259) - Table 98-10-0015-02]. This dataset provided the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study regions (used in 01-descriptive-tables.R).
 
 ## Guiding Principles
 
