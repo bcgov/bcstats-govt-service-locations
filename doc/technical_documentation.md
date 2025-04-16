@@ -1,0 +1,37 @@
+---
+title: "Techinical Documentation"
+output: 
+    html_document:
+        toc: true
+        toc_depth: 2
+        number_sections: true
+        theme: cerulean
+        highlight: tango
+        code_folding: hide
+        fig_caption: true
+        self_contained: false
+---
+
+This documentation contains notes about the project.  
+Eventually, it will be techincal documentation for the project but for now is **under construction**
+
+## settings.R 
+This file contains the settings for the project, inclusding global constants (written in all caps) and the paths to the data files.
+
+## 00-make-data.R
+
+GeoData team has prepared drive times to nearest service bc facility for all addresses within a municipality, for four municipalities.
+The municipalities are defined by "locality id" (more clarification needed) and mapped to municipality:
+
+- Langford: locality 909
+- Smithers: locality 227
+- Dawson Creek: locality 213
+- Kamploops: Locality 420
+
+
+The data is provided as a series of .zik files, partitioned into a subfolder in the project directory by date of provision. 
+.zik files are extracted manually into same folder ("data/raw"). 
+Each row in the data is identified by a unique id in place of civic address; geodata team has removed duplicate rows.
+
+# 01-descriptive-tables.raw
+This script loads csv files containing drive times to nearest service bc facility for all addresses within a municipality.
