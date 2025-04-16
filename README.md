@@ -74,7 +74,7 @@ Run the following scripts in the order specified:
     *   **Expected Output:** Check the console for messages about data loading, data quality warnings (e.g., handling NAs or negative values), file overwrite warnings, or errors.  Successful completion will result in a series of map visualizations (e.g., PNG, SVG) saved to the output directory specified within the script or `settings.R`. 
 
     *   **Script:** `02b-plot-localities.R`.
-    *   **Purpose:** Generates a map visualizing the geographic locations of the specific municipalities/localities included in the analysis, providing context within British Columbia. It uses the processed shapefiles and potentially the crosswalk file.
+    *   **Purpose:** Generates a map visualizing the geographic locations of the specific municipalities/localities included in the analysis, providing context within British Columbia. It uses the processed shapefiles and the service BC locations processed previously.
     *   **How to Run:** This script can be run from source: `source("R/02b-plot-localities.R")`
     *   **Expected Output:** Check the console for messages about data loading, data quality warnings (e.g., handling NAs or negative values), file overwrite warnings, or errors.  Successful completion will result in a map image file (e.g., PNG, SVG) saved to disk, showing the study area boundaries overlaid on a map of BC.
 
