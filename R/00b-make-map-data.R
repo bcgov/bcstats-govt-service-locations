@@ -74,18 +74,11 @@ if (nrow(da_shapefiles_processed) == 0) {
 
 # -----------------------------------------------------------------------------------------
 # Load and prepare db shapefile - check for invalid data
-# currently a fragile - submitted issue to bcmaps for db layer
+# Resource '76909e49-8ba8-44b1-b69e-dba1fe9ecfba' should be stable over time
 # -----------------------------------------------------------------------------------------
 
-res <- bcdc_search("Current Census Dissemination Block")
-i <- which(names(res) == "current-census-dissemination-blocks")
-
-if (length(i) == 0) {
-  stop(glue("Failed to find a valid DB shapefile in bcdata catalog"))
-}
-
 db_shapefiles_processed <- tryCatch({
-  bcdc_query_geodata(res[[first(i)]]$id) %>% 
+  bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>% 
     collect() %>% 
     clean_names() %>%
     select(dissemination_block_id, "landare" = "feature_area_sqm")
@@ -128,10 +121,8 @@ if (nrow(da_with_location) == 0) {
 }
 
 # -----------------------------------------------------------------------------------------
-# write processed da/db shapefiles to source folder - changing to
-# bcmaps/bcdata version introduces new warnings about truncated columns, but
-# doesn't appear to otherwise affect things upstream
+# write processed da/db shapefiles to source folder 
 # -----------------------------------------------------------------------------------------
-# TODO - add tryCatch logic
-st_write(da_with_location, glue("{SHAPEFILE_OUT}/processed_da_with_location.shp"), append = TRUE)
-st_write(db_with_location, glue("{SHAPEFILE_OUT}/processed_db_with_location.shp"), append = TRUE)
+
+st_write(da_with_location, glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg"))
+st_write(db_with_location, glue("{SHAPEFILE_OUT}/processed_db_with_location.gpkg"))
