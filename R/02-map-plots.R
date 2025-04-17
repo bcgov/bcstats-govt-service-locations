@@ -17,7 +17,7 @@
 # displaying quantitative information on basic descriptive statisics
 
 # ------------------------------------------------------------------------
-# Script: 02-plots.R
+# Script: 02-map-plots.R
 
 # Description: Loads previously processed DA and DB shapefiles (containing location IDs)
 # and corresponding processed drive time summary statistics CSV files. Prepares the final 
