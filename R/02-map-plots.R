@@ -36,7 +36,6 @@
 #   - Prints errors and stops execution if input files are missing.
 # ------------------------------------------------------------------------
 
-
 library(tidyverse)
 library(glue)
 library(janitor)
@@ -53,12 +52,12 @@ source("R/fxns/plots.R")
 # Note: saving shapeiles truncates the column names, reassignment needed
 #------------------------------------------------------------------------------
 
-fn <- glue("{SHAPEFILE_OUT}/processed_da_with_location.shp")
+fn <- glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg")
 da_shapefile <- tryCatch({
   st_read(fn) %>%
-  rename("landarea" = "landare",
-         "loc" = "loctn_d") %>%
-  mutate(across(c(daid, loc), as.character)) # Explictly declare data types on join columns
+  rename("loc" = location_id) %>%
+  mutate(across(c(daid, loc), as.character),
+         across(c(landarea), as.numeric))
 }, error = function(e) {
    message(glue("Error reading or processing file {fn}: {e$message}"))
    return(NULL) # Return NULL on error
@@ -68,17 +67,18 @@ if (is.null(da_shapefile)) {
   stop("Failed to load or process DA shapefile. Stopping script.")
 }
 
-fn <- glue("{SHAPEFILE_OUT}/processed_db_with_location.shp")
+fn <- glue("{SHAPEFILE_OUT}/processed_db_with_location.gpkg")
 db_shapefile <- tryCatch({
   st_read(fn) %>%
-  rename("dissemination_block_id" = "dssmn__",
-         "landarea" = "landare",
-         "loc" = "loctn_d") %>% 
-  mutate(across(c(dissemination_block_id, loc), as.character)) # Explictly declare data types on join columns
+  rename("landarea" = "landare") %>%
+  rename("loc" = location_id) %>%
+  mutate(across(c(dissemination_block_id, daid, loc), as.character),
+         across(c(landarea), as.numeric))
 }, error = function(e) {
    message(glue("Error reading or processing file {fn}: {e$message}"))
-   return(NULL) # Return NULL on error
+   return(NULL)
 })
+
 
 if (is.null(db_shapefile)) {
   stop("Failed to load or process DB shapefile. Stopping script.")
@@ -139,7 +139,7 @@ if (is.null(servicebc)) {
 # Use left_join to color differently those da/db's missing data
 #------------------------------------------------------------------------------
 da_drivetime_map_data <- da_shapefile %>%
-  left_join(da_drivetime_data, by = join_by(daid, loc)) 
+  left_join(da_drivetime_data, by = join_by(daid, loc))
 
 if (nrow(da_drivetime_map_data) == 0)  {
   stop("No DA map data after joining with shapefiles")
@@ -192,7 +192,7 @@ db_drivetime_data %>%
 # user-defined map parameters
 var <- "n_address"  # colnames(map_data) for other options
 var_title <- "Count of Addresses"
-region_title <- "Dissemination Area"
+region_title <- "Dissemination Block"
 plot_subtitle <- "(Regions with 0-4 data points are shown in red)"
 
 map_data  <- db_drivetime_map_data
@@ -234,4 +234,3 @@ for (loc in names(LOC_LIST)) {
     device = "svg"
   )
 }
-
