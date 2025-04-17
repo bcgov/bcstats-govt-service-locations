@@ -55,7 +55,11 @@ source("R/fxns/calculations.R")
 fls <- list.files(SRC_DATA_FOLDER, full.names = TRUE, pattern = INPUT_ADDR_DA_PATTERN, recursive = TRUE)
 
 # map_dfr automatically handles NULLs from read_all_locs
-data <- map_dfr(.x = fls, .f = read_all_locs)
+data <- map_dfr(.x = fls, .f = read_all_locs) 
+
+# add CSD_NAMES column to data
+data <- data %>%
+  left_join(LOC_LIST %>% clean_names(), by = c("loc" = "expected_localities"))
 
 if (nrow(data) == 0) {
   stop("No data successfully loaded. Check input files.")
@@ -64,9 +68,9 @@ if (nrow(data) == 0) {
 #------------------------------------------------------------------------------
 # Create DA and DB-level summary statistics table
 #------------------------------------------------------------------------------
-drivetime_stats_db <- calculate_drivetime_stats(data, group_cols = c("loc", "dissemination_block_id"))
-drivetime_stats_da <- calculate_drivetime_stats(data, group_cols = c("loc", "daid"))
-drivetime_stats_loc <- calculate_drivetime_stats(data, group_cols = c("loc"))
+drivetime_stats_db <- calculate_drivetime_stats(data, group_cols = c("csd_names", "dissemination_block_id"))
+drivetime_stats_da <- calculate_drivetime_stats(data, group_cols = c("csd_names", "daid"))
+drivetime_stats_loc <- calculate_drivetime_stats(data, group_cols = c("csd_names"))
 
 #------------------------------------------------------------------------------
 # Read in population data from Statistics Canada
@@ -82,8 +86,8 @@ pop_da <- cancensus::get_census(
 
 #add locality to population data, assumes daid is a variable in pop
 pop_da <- pop_da %>% 
-  left_join(data %>% distinct(daid, loc), by = c("daid")) %>%
-  filter(!is.na(loc))
+  left_join(data %>% distinct(daid, csd_names), by = c("daid")) %>%
+  filter(!is.na(csd_names))
 
 # Check if pop data frame is empty after filtering
 if (nrow(pop_da) == 0) {
@@ -101,8 +105,8 @@ pop_db <- cancensus::get_census(
 
 #add locality to population data, assumes daid is a variable in pop
 pop_db <- pop_db %>%
-  left_join(data %>% distinct(dissemination_block_id, loc), by = c("dissemination_block_id")) %>%
-  filter(!is.na(loc))
+  left_join(data %>% distinct(dissemination_block_id, csd_names), by = c("dissemination_block_id")) %>%
+  filter(!is.na(csd_names))
 
 # Check if pop data frame is empty after filtering
 if (nrow(pop_db) == 0) {
@@ -110,7 +114,7 @@ if (nrow(pop_db) == 0) {
 }
 
 pop_loc <- pop_da %>%
-  group_by(loc)  %>%
+  group_by(csd_names)  %>%
   summarise(across(is.numeric, ~ sum(.x, na.rm = TRUE)))
 
 #------------------------------------------------------------------------------
@@ -123,7 +127,7 @@ if (file.exists(outfile)) {
 }
 
 drivetime_stats_db <- drivetime_stats_db %>%
-  left_join(pop_db, by = c("dissemination_block_id", "loc"))
+  left_join(pop_db, by = c("dissemination_block_id", "csd_names"))
 
 tryCatch({
   write_csv(drivetime_stats_db, outfile)
@@ -141,7 +145,7 @@ if (file.exists(outfile)) {
 }
 
 drivetime_stats_da <- drivetime_stats_da %>%
-  left_join(pop_da, by = c("daid", "loc"))
+  left_join(pop_da, by = c("daid", "csd_names"))
 
 tryCatch({
   write_csv(drivetime_stats_da, outfile)
@@ -159,7 +163,7 @@ if (file.exists(outfile)) {
 }
 
 drivetime_stats_loc <- drivetime_stats_loc %>%
-  left_join(pop_loc, by = c("loc"))
+  left_join(pop_loc, by = c("csd_names"))
 
 tryCatch({
   write_csv(drivetime_stats_loc, outfile)
@@ -177,7 +181,7 @@ if (file.exists(outfile)) {
 }
 
 service_bc_locations <- data %>% 
-  distinct(loc, nearest_facility, coord_x, coord_y)
+  distinct(csd_names, nearest_facility, coord_x, coord_y)
 
 tryCatch({
   write_csv(service_bc_locations, outfile)

@@ -196,7 +196,7 @@ create_crosswalk <- function(filepath, location_id) {
   # -----------------------------------------------------------------------------------------
   if (!is.character(filepath) || length(filepath) != 1) {
     message("Error: 'filepath' must be a single character string.")
-    return(NULL) 
+    return(NULL)
   }
   if (!is.character(location_id) || length(location_id) != 1) {
     message("Error: 'location_id' must be a single character string.")
@@ -224,6 +224,7 @@ create_crosswalk <- function(filepath, location_id) {
 
 # -----------------------------------------------------------------------------------------
 # Create crosswalk with unique combinations of daid and dissemination_block_id, and location_id
+# also add csd to crosswalk
 # -----------------------------------------------------------------------------------------
 
   crosswalk_data <- data %>%
@@ -231,7 +232,10 @@ create_crosswalk <- function(filepath, location_id) {
     clean_names() %>%
     mutate(location_id = {{ location_id }}) %>%
     mutate(daid = str_sub(dissemination_block_id, 1, 8)) %>%
-    distinct(daid, dissemination_block_id, location_id)
+    distinct(daid, dissemination_block_id, location_id) %>%
+    left_join(LOC_LIST, by = join_by(location_id == EXPECTED_LOCALITIES)) %>%
+    clean_names()
 
   return(crosswalk_data)
+
 }

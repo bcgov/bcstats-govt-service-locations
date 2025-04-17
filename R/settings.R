@@ -45,7 +45,9 @@ library(glue)
 # Constants declaration
 #------------------------------------------------------------------------------
 EXPECTED_LOCALITIES <- c("909", "227", "213", "420")
-LOC_LIST <- setNames(as.list(c("Langford", "Dawson Creek", "Smithers", "Kamloops")), c("909", "227", "213", "420"))
+LOC_NAMES <- c("Langford", "Dawson Creek", "Smithers", "Kamloops")
+CSD_NAMES <- c("Langford", "Dawson Creek", "Smithers", "Kamloops")
+LOC_LIST <- tibble(EXPECTED_LOCALITIES, LOC_NAMES, CSD_NAMES)
 
 # File paths
 LAN_FOLDER <- use_network_path()
