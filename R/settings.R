@@ -46,6 +46,7 @@ library(glue)
 #------------------------------------------------------------------------------
 EXPECTED_LOCALITIES <- c("909", "227", "213", "420")
 LOC_LIST <- setNames(as.list(c("Langford", "Dawson Creek", "Smithers", "Kamloops")), c("909", "227", "213", "420"))
+CURRENT_YEAR <- 2025
 
 # File paths
 LAN_FOLDER <- use_network_path()
