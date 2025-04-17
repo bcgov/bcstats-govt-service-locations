@@ -235,3 +235,73 @@ create_crosswalk <- function(filepath, location_id) {
 
   return(crosswalk_data)
 }
+
+
+
+# ------------------------------------------------------------------------
+# Function: create_sbc_locations
+
+# Description: Reads a csv file passed as a parameter,and returns a data frame
+# of unique `nearest_facility`. Adds a column
+# containing the user specified `location_id`.
+#
+# Inputs:
+#   - filepath: Character string specifying the full path to the input CSV file.
+#   - location_id: Character string representing the location identifier to be
+#                  added to the crosswalk.
+#
+# Outputs:
+#   - Returns a data frame with columns `location_id`, `nearest_facility`, and
+#     `coord_x/coord_y`, containing the unique combinations found in the input file.
+#   - Returns NULL if an error occurs during file reading or if required
+#     columns are missing.
+# ------------------------------------------------------------------------
+
+
+
+create_sbc_locations <- function(filepath, location_id) {
+  
+  # -----------------------------------------------------------------------------------------
+  # validate user-defined inputs - return NULL on failure
+  # -----------------------------------------------------------------------------------------
+  if (!is.character(filepath) || length(filepath) != 1) {
+    message("Error: 'filepath' must be a single character string.")
+    return(NULL) 
+  }
+  if (!is.character(location_id) || length(location_id) != 1) {
+    message("Error: 'location_id' must be a single character string.")
+    return(NULL)
+  }
+  
+  # -----------------------------------------------------------------------------------------
+  # read data - return NULL on failure, check for missing data
+  # -----------------------------------------------------------------------------------------
+  data <- tryCatch({
+    read_csv(filepath, col_types = cols(.default = "c"), show_col_types = FALSE)
+  }, error = function(e) {
+    message(glue::glue("Error reading file '{filepath}': {e$message}"))
+    return(NULL)
+  })
+  
+  if (is.null(data)) {
+    return(NULL)
+  }
+  
+  if (!("nearest_facility" %in% colnames(data))) {
+    message(glue::glue("Error: nearest_facility column missing in '{filepath}'."))
+    return(NULL)
+  }
+  
+  # -----------------------------------------------------------------------------------------
+  # Create crosswalk with unique combinations of location_id and nearest facility. 
+  # include facility coordinates
+  # -----------------------------------------------------------------------------------------
+  
+  crosswalk_data <- data %>%
+    select(nearest_facility, coord_x, coord_y) %>% 
+    clean_names() %>%
+    mutate(loc = {{ location_id }}) %>%
+    distinct(loc, nearest_facility, coord_x, coord_y)
+  
+  return(crosswalk_data)
+}

@@ -72,6 +72,10 @@ if (length(extra_localities) > 0) {
   warning("Unexpected localities found: ", paste(extra_localities, collapse = ", "))
 }
 
+# only include files with locs that match our list
+file_paths <- file_paths |> 
+  filter(loc %in% EXPECTED_LOCALITIES)
+
 #------------------------------------------------------------------------------
 # Run the preprocessing function to perform data cleaning steps for each file
 #------------------------------------------------------------------------------
@@ -98,6 +102,22 @@ crosswalk <- bind_rows(crosswalk_list)
 outfile <- glue("{SRC_DATA_FOLDER}/da-db-loc-crosswalk.csv")
 tryCatch({
   write_csv(crosswalk, outfile)
+}, error = function(e) {
+  message(glue("Error writing file {outfile}:  {e$message}"))
+})
+
+#------------------------------------------------------------------------------
+# Create a list of SBC locations by locality
+#------------------------------------------------------------------------------
+sbc_list <- purrr::map2(
+  .x = file_paths$fn,
+  .y = file_paths$loc,
+  .f = create_sbc_locations
+)
+
+sbc <- bind_rows(sbc_list)
+tryCatch({
+  write_csv(crosswalk, SBCLOC_FILEPATH)
 }, error = function(e) {
   message(glue("Error writing file {outfile}:  {e$message}"))
 })
