@@ -59,7 +59,8 @@ file_paths <- file.info(list.files(RAW_DATA_FOLDER,
   group_by(loc) %>%
   arrange(loc, desc(mtime)) %>%
   slice_head(n = 1) %>%
-  select(fn, loc)
+  select(fn, loc) %>%
+  filter(loc %in% EXPECTED_LOCALITIES)
 
 # Warn if localities are not as expected
 missing_localities <- setdiff(EXPECTED_LOCALITIES, unique(file_paths$loc))
@@ -95,6 +96,7 @@ crosswalk_list <- purrr::map2(
 )
 
 crosswalk <- bind_rows(crosswalk_list)
+
 outfile <- glue("{SRC_DATA_FOLDER}/da-db-loc-crosswalk.csv")
 tryCatch({
   write_csv(crosswalk, outfile)
