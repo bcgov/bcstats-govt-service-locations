@@ -124,5 +124,5 @@ if (nrow(da_with_location) == 0) {
 # write processed da/db shapefiles to source folder 
 # -----------------------------------------------------------------------------------------
 
-st_write(da_with_location, glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg"))
-st_write(db_with_location, glue("{SHAPEFILE_OUT}/processed_db_with_location.gpkg"))
+st_write(da_with_location, glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg"), append = FALSE)
+st_write(db_with_location, glue("{SHAPEFILE_OUT}/processed_db_with_location.gpkg"), append = FALSE)
