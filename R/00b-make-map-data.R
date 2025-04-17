@@ -101,7 +101,7 @@ if (nrow(db_shapefiles_processed) == 0) {
 db_with_location  <- db_shapefiles_processed  %>%
   inner_join(
     crosswalk %>%
-      distinct(daid, dissemination_block_id, location_id)
+      distinct(daid, dissemination_block_id, location_id, loc_names, csd_names)
               , by = "dissemination_block_id"
   )
 
@@ -112,7 +112,7 @@ if (nrow(db_with_location) == 0) {
 da_with_location <- da_shapefiles_processed  %>%
   inner_join(
     crosswalk %>%
-      distinct(daid, location_id)
+      distinct(daid, location_id,loc_names, csd_names)
     , by = "daid"
   )
 
