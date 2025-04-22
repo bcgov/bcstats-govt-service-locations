@@ -178,9 +178,11 @@ ggplot(
     mutate(drv_dist_mean = mean(drv_dist)) |> 
     ungroup() |> 
     mutate(assigned = fct_reorder(assigned, desc(drv_dist_mean))),
-  aes(x = drv_dist, y=assigned, fill=assigned)
+  aes(x = drv_dist, y=assigned, fill=assigned, height=after_stat(density))
 ) +
-  geom_density_ridges() +
+  #geom_density_ridges()+
+  geom_density_ridges(stat = 'binline', trim=TRUE, draw_baseline=FALSE) +
+  xlim(0,150)+
   theme_ridges() + 
   theme(legend.position = 'none')
 
