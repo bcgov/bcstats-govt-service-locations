@@ -110,7 +110,7 @@ box_plot_out <- build_boxplot(
 )
 
 # Save the plot
-fn <- to_snake_case(glue("{y_var} by {region}"))
+fn <- to_snake_case(glue("box plot {y_var} by {region}"))
 fn <- glue("{fn}.svg")
 ggsave(
   filename = fn,
@@ -149,7 +149,7 @@ plot_subtitle <- glue("Comparison Across Municipalities, by {region_title}")
 # Generate plot
 message("Generating Violin Plot...")
 
-plot_violin <- build_violinplot(
+violin_plot_out <- build_violinplot(
   data = plot_data,
   x_var = x_var,
   y_var = y_var,
@@ -161,9 +161,18 @@ plot_violin <- build_violinplot(
   fill_scale = scale_fill_viridis_d(option = "mako") #Made sure the option has 
 )
 
-print(plot_violin)
+print(violin_plot_out)
 
-# Save plot
-plot_violin_path <- glue("{OUTPUT_DIR}/drive_time_violin.png")
-ggsave(plot_violin_path, plot_violin, width = 8, height = 6, dpi = 300, bg = "white")
-message(glue("Violin plot saved to: {plot_violin_path}"))
+# Save the plot
+fn <- to_snake_case(glue("violin plot {y_var} by {region}"))
+fn <- glue("{fn}.svg")
+ggsave(
+  filename = fn,
+  path = VISUALS_OUT,
+  plot = violin_plot_out,
+  width = 8,
+  height = 7,
+  device = "svg"
+)
+
+message(glue("Violin plot saved to: {VISUALS_OUT}/{fn}"))
