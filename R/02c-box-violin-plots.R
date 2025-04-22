@@ -62,10 +62,9 @@ numeric_cols <- names(db_stats_raw)[str_detect(names(db_stats_raw), numeric_cols
 
 db_stats_plot_data <- db_stats_raw %>%
   mutate(across(all_of(numeric_cols), as.numeric)) %>%
-  mutate(across(any_of(c("loc", "daid", "dissemination_block_id")), as.character)) %>%
-  left_join(tibble(loc = EXPECTED_LOCALITIES, municipality = unlist(LOC_LIST)), by = "loc") %>%
-  mutate(municipality = as.factor(municipality)) %>%
-  filter(!is.na(municipality))
+  mutate(across(any_of(c('csd_names', 'dissemination_block_id')), as.character)) %>%
+  mutate(municipality = as.factor(csd_names)) %>%
+  filter(!is.na(csd_names))
 
 # Check if data remains after processing
 if (nrow(db_stats_plot_data) == 0) {
@@ -80,15 +79,16 @@ if (nrow(db_stats_plot_data) == 0) {
 var <- "median_drv_time_min"  # colnames(map_data) for other options
 region <- "DB"
 var_title <- glue("Median Drive Time per {region} (Minutes)")
-region_title <- "Dissemination Block"
+
 plot_title <- glue("Distribution of Count of Addresses to Service BC by {region}")
 plot_subtitle <- "Comparison Across Municipalities"
 
 plot_data  <- db_stats_plot_data
 
-#if(region_title == "Dissemination Area"){
-#  map_data  <- da_stats_plot_data
-#}
+if (region == "DA") {
+  region_title <- "Dissemination Area"
+  plot_data  <- NULL # replace with DA data if we want this functionality later
+}
 
 # --- Box Plot: Median Drive Time ---
 message("Generating Box Plot...")
