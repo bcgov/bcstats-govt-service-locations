@@ -133,7 +133,7 @@ y_var <- "drv_time_sec_qnt100"
 x_var <- "municipality"
 region <- "DB"
 
-y_title <- glue("Median Drive Time (Minutes)")
+y_title <- glue("Drive Time 100th Percentile (Seconds)")
 x_title <- "Municipality"
 
 # dynamic plot parameters
