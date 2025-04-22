@@ -83,6 +83,7 @@ region <- "DB"
 y_title <- glue("Median Drive Time (min)")
 x_title <- "Municipality"
 
+# dynamic plot parameters
 plot_data  <- db_stats_plot_data
 region_title <- "Dissemination Block"
 
@@ -135,6 +136,7 @@ region <- "DB"
 y_title <- glue("Median Drive Time (Minutes)")
 x_title <- "Municipality"
 
+# dynamic plot parameters
 plot_data  <- db_stats_plot_data
 region_title <- "Dissemination Block"
 
