@@ -178,7 +178,7 @@ build_boxplot <- function(
       size = 0.7,
       color = "grey30"
     ) +
-    fill_scale + # Color boxes with color blind friendly pallete, discrete scale, changed from fill_theme to fill_scale
+    fill_scale + 
     scale_y_continuous(labels = scales::comma_format()) + # Format y-axis
     labs(
       title = plot_title,
@@ -188,12 +188,7 @@ build_boxplot <- function(
       fill = "" # Removing the x axis title
 
     ) +
-    boxplot_theme +
-    theme(
-      axis.text.x = element_text(angle = 30, hjust = 1), # Rotate labels slightly
-      plot.title = element_text(face = "bold"),
-      panel.grid.major.x = element_blank() # Cleaner look
-    )
+    boxplot_theme
 
   return(boxplot)
 }

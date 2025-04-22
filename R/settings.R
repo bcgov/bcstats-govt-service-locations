@@ -98,5 +98,13 @@ MAP_THEME <- theme_minimal() +
     legend.box = "horizontal",
     legend.title.position = "top")
 
+BOX_PLOT_THEME <- theme_minimal() +
+    theme(
+      plot.title = element_text(face = "bold"),
+      axis.text.x = element_text(angle = 30, hjust = 1), # Rotate labels slightly
+      panel.grid.major.x = element_blank() # Cleaner look
+    )
+
  FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.75, na.value = "red")
+ FILL_THEME_D <- scale_fill_viridis_d(option = "mako", alpha = 0.75)
 

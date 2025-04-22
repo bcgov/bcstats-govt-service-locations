@@ -105,8 +105,8 @@ plot_boxplot <- build_boxplot(
   plot_subtitle = plot_subtitle,
   x_title = x_title,
   y_title = y_title,
-  boxplot_theme = theme_minimal(),
-  fill_scale = scale_fill_viridis_d(option = "viridis")
+  boxplot_theme = BOX_PLOT_THEME,
+  fill_scale = FILL_THEME_D
 )
 
 print(plot_boxplot)
