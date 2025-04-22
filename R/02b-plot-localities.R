@@ -45,28 +45,27 @@ source("R/fxns/pre-processing.R") # for read_all_locs()
 # ----------------------------------------------------------------------------
 
 # map of BC
-bc_map <- bc_bound() |> 
+bc_map <- bc_bound() |>
   st_transform(crs = 3005)
 
 # da level shapefiles for each locality
-fn <- glue("{SHAPEFILE_OUT}/processed_da_with_location.shp")
+fn <- glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg")
 da_shapefile <- tryCatch({
   st_read(fn) %>%
-    rename("landarea" = "landare",
-           "loc" = "loctn_d") %>%
-    mutate(across(c(daid, loc), as.character)) # Explicitly declare data types on join columns
+  mutate(across(c(daid, location_id, loc_names, csd_names), as.character),
+         across(c(landarea), as.numeric))
 }, error = function(e) {
   message(glue("Error reading or processing file {fn}: {e$message}"))
   return(NULL) # Return NULL on error
 })
 
 # simplify geographies to 1 per locality
-localities <- da_shapefile |> 
-  group_by(loc) |> 
-  summarize(geometry = st_union(geometry)) |> 
-  ungroup() |> 
+localities <- da_shapefile |>
+  group_by(location_id, csd_names) |>
+  summarize(geometry = st_union(geom)) |>
+  ungroup() |>
   mutate(
-    locality = paste0(LOC_LIST[loc],' (',loc,')')
+    locality = paste0(csd_names, ' (',location_id,')')
   )
 
 # get centroids for labels
@@ -74,12 +73,15 @@ locality_centroids <- st_centroid(localities)
 locality_centroids_nudged <- locality_centroids |> 
 mutate(
     geometry = case_when(
-      loc == '227' ~ geometry + c(-150000, 40000),
-      loc == '909' ~ geometry + c(130000, 10000), # move east for langford
+      location_id == '227' ~ geometry + c(-150000, 40000),
+      location_id == '909' ~ geometry + c(130000, 10000), # move east for langford
       TRUE ~ geometry + c(0, 70000)  # move label north to not overlap 
-      )
-    )|>  
-  st_set_crs(st_crs(locality_centroids))
+)
+    )|>
+mutate(
+    locality = paste0(csd_names, ' (',location_id,')')
+) |>
+st_set_crs(st_crs(locality_centroids))
 
 # locations of all nearby SBC locations 
 sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")) |>
