@@ -119,3 +119,81 @@ build_map <- function(
   return(map)
 
 }
+
+
+
+# ------------------------------------------------------------------------
+# Function: build_boxplot
+
+# Description: Generates a ggplot boxplot from an input data frame.
+# Allows customization of titles, theme, x and y variables, and fill color.
+
+# Inputs:
+#   - data: A data frame containing data for the boxplot.
+#   - x_var: Character string specifying the name of the column in `data`
+#     to use for the x-axis aesthetic.
+#   - y_var: Character string specifying the name of the column in `data`
+#     to use for the y-axis aesthetic.
+# Optional Inputs:
+#   - plot_title, plot_subtitle, x_title, y_title: Defaults to empty string.
+#   - boxplot_theme: Defaults to `theme_minimal()`.
+#   - fill_scale: Defaults to a discrete color fill with a viridis pallete.
+
+# Outputs:
+#   - Returns a ggplot object representing the boxplot.
+# ------------------------------------------------------------------------
+build_boxplot <- function(
+  data,
+  x_var,
+  y_var,
+  plot_title = "",
+  plot_subtitle = "",
+  x_title = "",
+  y_title = "",
+  boxplot_theme = theme_minimal(),
+  fill_scale = scale_fill_viridis_d(option = "viridis") #Discrete Colour function scale
+) {
+
+  # --- Prepare arguments as symbols ---
+  x_var_sym <- rlang::sym(x_var)
+  y_var_sym <- rlang::sym(y_var)
+
+  # --- Prepare titles as strings --
+  default_title <- glue::glue("Distribution of {y_var} per {x_var}")
+  plot_title <- plot_title %||% default_title
+  x_title <- x_title %||% x_var
+  y_title <- y_title %||% y_var
+
+  ## Build the ggplot object
+  boxplot <- ggplot(data, aes(x = !!x_var_sym, y = !!y_var_sym)) +
+    geom_boxplot(
+      aes(fill = !!x_var_sym), # Use discrete x-variable for fill
+      notch = FALSE,
+      outlier.shape = NA
+    ) +
+    geom_jitter(
+      width = 0.15,
+      height = 0,
+      alpha = 0.15,
+      size = 0.7,
+      color = "grey30"
+    ) +
+    fill_scale + # Color boxes with color blind friendly pallete, discrete scale, changed from fill_theme to fill_scale
+    scale_y_continuous(labels = scales::comma_format()) + # Format y-axis
+    labs(
+      title = plot_title,
+      subtitle = plot_subtitle,
+      x = x_title,
+      y = y_title,
+      fill = "" # Removing the x axis title
+
+    ) +
+    boxplot_theme +
+    theme(
+      axis.text.x = element_text(angle = 30, hjust = 1), # Rotate labels slightly
+      plot.title = element_text(face = "bold"),
+      panel.grid.major.x = element_blank() # Cleaner look
+    )
+
+  return(boxplot)
+}

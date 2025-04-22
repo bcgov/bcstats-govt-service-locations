@@ -83,6 +83,10 @@ var_title <- glue("Median Drive Time per {region} (Minutes)")
 plot_title <- glue("Distribution of Count of Addresses to Service BC by {region}")
 plot_subtitle <- "Comparison Across Municipalities"
 
+x_title <- "Municipality"
+y_title <- var_title
+
+
 plot_data  <- db_stats_plot_data
 
 if (region == "DA") {
@@ -93,31 +97,17 @@ if (region == "DA") {
 # --- Box Plot: Median Drive Time ---
 message("Generating Box Plot...")
 
-plot_boxplot <- stats_plot %>%
-  ggplot(aes(x = municipality, y = drv_dist_qnt50)) +
-  geom_boxplot(
-    aes(fill = municipality),
-    notch = FALSE, outlier.shape = NA) +
-  geom_jitter(
-    width = 0.15,
-    height = 0,
-    alpha = 0.15,
-    size = 0.7,
-    color = "grey30") +
-  FILL_THEME_D + # Color boxes, discrete scale
-  scale_y_continuous(labels = scales::comma_format()) + # Format y-axis
-  labs(
-    title = plot_title,
-    subtitle = plot_subtitle,
-    x = "Municipality",
-    y = var_title
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    axis.text.x = element_text(angle = 30, hjust = 1), # Rotate labels slightly
-    plot.title = element_text(face = "bold"),
-    panel.grid.major.x = element_blank() # Cleaner look
-  )
+plot_boxplot <- build_boxplot(
+  data = plot_data,
+  x_var = "municipality", #X axis
+  y_var = "drv_dist_qnt50", #Y axis,
+  plot_title = plot_title,
+  plot_subtitle = plot_subtitle,
+  x_title = x_title,
+  y_title = y_title,
+  boxplot_theme = theme_minimal(),
+  fill_scale = scale_fill_viridis_d(option = "viridis")
+)
 
 print(plot_boxplot)
 
