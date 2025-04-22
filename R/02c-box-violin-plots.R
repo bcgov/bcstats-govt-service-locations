@@ -53,7 +53,7 @@ if (nrow(db_stats_raw) == 0) {
 }
 
 #------------------------------------------------------------------------------
-#Prep DB Data for Plotting 
+# Prep DB Data for Plotting 
 #------------------------------------------------------------------------------
 
 # Identify columns expected to be numeric based on naming convention
@@ -72,7 +72,7 @@ if (nrow(db_stats_plot_data) == 0) {
 }
 
 #------------------------------------------------------------------------------
-# Comparative Plots (Distribution by region)
+# Comparative Box Plot (Distribution by region)
 #------------------------------------------------------------------------------
 
 # user-defined plot parameters
@@ -94,10 +94,10 @@ if (region == "DA") {
 plot_title <- glue("Distribution of {y_title} to nearest Service BC Location")
 plot_subtitle <- glue("Comparison Across Municipalities, by {region_title}")
 
-# --- Box Plot: Median Drive Time ---
+# Generate plot
 message("Generating Box Plot...")
 
-plot_boxplot <- build_boxplot(
+box_plot_out <- build_boxplot(
   data = plot_data,
   x_var = x_var, 
   y_var = "drv_dist_qnt50", 
@@ -109,15 +109,13 @@ plot_boxplot <- build_boxplot(
   fill_scale = FILL_THEME_D
 )
 
-print(plot_boxplot)
-
 # Save the plot
 fn <- to_snake_case(glue("{y_var} by {region}"))
 fn <- glue("{fn}.svg")
 ggsave(
   filename = fn,
   path = VISUALS_OUT,
-  plot = plot_boxplot,
+  plot = box_plot_out,
   width = 8,
   height = 7,
   device = "svg"
@@ -125,26 +123,43 @@ ggsave(
 
 message(glue("Box plot saved to: {VISUALS_OUT}/{fn}"))
 
+# ------------------------------------------------------------------------
+# Comparative Violin Plot (Distribution by region)
+# ------------------------------------------------------------------------
 
-# --- Violin Plot: Median Drive Time ---
+# user-defined plot parameters
+y_var <- "drv_time_sec_qnt100"
+x_var <- "municipality"
+region <- "DB"
+
+y_title <- glue("Median Drive Time (Minutes)")
+x_title <- "Municipality"
+
+plot_data  <- db_stats_plot_data
+region_title <- "Dissemination Block"
+
+if (region == "DA") {
+  region_title <- "Dissemination Area"
+  plot_data  <- NULL # replace with DA data if we want this functionality later
+}
+
+plot_title <- glue("Distribution of {y_title} to nearest Service BC Location")
+plot_subtitle <- glue("Comparison Across Municipalities, by {region_title}")
+
+# Generate plot
 message("Generating Violin Plot...")
-plot_violin <- ggplot(stats_plot, aes(x = municipality, y = median_drv_time_min)) +
-  geom_violin(aes(fill = municipality), trim = FALSE, alpha = 0.7) +
-  geom_boxplot(width = 0.1, fill = "white", outlier.size = 0.8, alpha = 0.8) + # Overlay smaller boxplot
-  scale_fill_viridis_d(guide = "none", option = "mako", alpha = 0.75, na.value = "red")+
-  scale_y_continuous(labels = scales::comma_format()) +
-  labs(
-    title = "Distribution of Median Drive Times to Service BC by DB",
-    subtitle = "Comparison Across Municipalities (Violin Plot)",
-    x = "Municipality",
-    y = "Median Drive Time per DB (Minutes)"
-  ) +
-  theme_minimal(base_size = 12) +
-  theme(
-    axis.text.x = element_text(angle = 30, hjust = 1),
-    plot.title = element_text(face = "bold"),
-    panel.grid.major.x = element_blank()
-  )
+
+plot_violin <- build_violinplot(
+  data = plot_data,
+  x_var = x_var,
+  y_var = y_var,
+  plot_title = plot_title,
+  plot_subtitle = plot_subtitle,
+  x_title = x_title,
+  y_title = y_title,
+  violinplot_theme = theme_minimal(),
+  fill_scale = scale_fill_viridis_d(option = "mako") #Made sure the option has 
+)
 
 print(plot_violin)
 

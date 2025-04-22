@@ -192,3 +192,71 @@ build_boxplot <- function(
 
   return(boxplot)
 }
+
+
+
+# ------------------------------------------------------------------------
+# Function: build_violinplot
+
+# Description: Generates a ggplot violin plot from an input data frame.
+# Allows customization of titles, theme, x and y variables, and fill color.
+
+# Inputs:
+#   - data: A data frame containing data for the violin plot.
+#   - x_var: Character string specifying the name of the column in `data`
+#     to use for the x-axis aesthetic.
+#   - y_var: Character string specifying the name of the column in `data`
+#     to use for the y-axis aesthetic.
+# Optional Inputs:
+#   - plot_title, plot_subtitle, x_title, y_title: Defaults to empty string.
+#   - violinplot_theme: Defaults to `theme_minimal()`.
+#   - fill_scale: Defaults to a discrete color fill with a mako pallete.
+
+# Outputs:
+#   - Returns a ggplot object representing the violin plot.
+
+# ------------------------------------------------------------------------
+build_violinplot <- function(
+  data,
+  x_var,
+  y_var,
+  plot_title = "",
+  plot_subtitle = "",
+  x_title = "",
+  y_title = "",
+  violinplot_theme = theme_minimal(),
+  fill_scale = scale_fill_viridis_d(option = "mako") 
+) {
+
+  # --- Prepare arguments as symbols ---
+  x_var_sym <- rlang::sym(x_var)
+  y_var_sym <- rlang::sym(y_var)
+
+  # --- Prepare titles as strings --
+  default_title <- glue::glue("Distribution of {y_var} per {x_var}")
+  plot_title <- plot_title %||% default_title
+  x_title <- x_title %||% x_var
+  y_title <- y_title %||% y_var
+
+  ## Build the ggplot object
+  violinplot <- ggplot(data, aes(x = !!x_var_sym, y = !!y_var_sym)) +
+    geom_violin(aes(fill = !!x_var_sym), trim = FALSE, alpha = 0.7) +
+    geom_boxplot(width = 0.1, fill = "white", outlier.shape = NA, alpha = 0.8) + # Overlay smaller boxplot
+    fill_scale +
+    scale_y_continuous(labels = scales::comma_format()) +
+    labs(
+      title = plot_title,
+      subtitle = plot_subtitle,
+      x = x_title,
+      y = y_title,
+      fill = "" 
+    ) +
+    violinplot_theme +
+    theme(
+      axis.text.x = element_text(angle = 30, hjust = 1),
+      plot.title = element_text(face = "bold"),
+      panel.grid.major.x = element_blank()
+    )
+
+  return(violinplot)
+}
