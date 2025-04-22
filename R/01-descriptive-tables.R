@@ -70,7 +70,7 @@ if (nrow(data) == 0) {
 #------------------------------------------------------------------------------
 drivetime_stats_db <- calculate_drivetime_stats(data, group_cols = c("csd_names", "dissemination_block_id"))
 drivetime_stats_da <- calculate_drivetime_stats(data, group_cols = c("csd_names", "daid"))
-drivetime_stats_loc <- calculate_drivetime_stats(data, group_cols = c("csd_names"))
+drivetime_stats_csd <- calculate_drivetime_stats(data, group_cols = c("csd_names"))
 
 #------------------------------------------------------------------------------
 # Read in population data from Statistics Canada
@@ -84,7 +84,7 @@ pop_da <- cancensus::get_census(
   select(all_of(POP_COLS)) %>%
   rename(daid = region_name)
 
-#add locality to population data, assumes daid is a variable in pop
+#add csd to population data, assumes daid is a variable in pop
 pop_da <- pop_da %>% 
   left_join(data %>% distinct(daid, csd_names), by = c("daid")) %>%
   filter(!is.na(csd_names))
@@ -103,7 +103,7 @@ pop_db <- cancensus::get_census(
   select(all_of(POP_COLS)) %>%
   rename(dissemination_block_id = region_name)
 
-#add locality to population data, assumes daid is a variable in pop
+#add csd to population data, assumes daid is a variable in pop
 pop_db <- pop_db %>%
   left_join(data %>% distinct(dissemination_block_id, csd_names), by = c("dissemination_block_id")) %>%
   filter(!is.na(csd_names))
@@ -113,7 +113,7 @@ if (nrow(pop_db) == 0) {
   warning("Population data is empty after cleaning.")
 }
 
-pop_loc <- pop_da %>%
+pop_csd <- pop_da %>%
   group_by(csd_names)  %>%
   summarise(across(is.numeric, ~ sum(.x, na.rm = TRUE)))
 
@@ -162,8 +162,8 @@ if (file.exists(outfile)) {
   warning(glue("Overwriting existing file: {outfile}"))
 }
 
-drivetime_stats_loc <- drivetime_stats_loc %>%
-  left_join(pop_loc, by = c("csd_names"))
+drivetime_stats_csd <- drivetime_stats_csd %>%
+  left_join(pop_csd, by = c("csd_names"))
 
 tryCatch({
   write_csv(drivetime_stats_loc, outfile)

@@ -45,8 +45,8 @@ build_map <- function(
     data,
     servicebc_data,
     varname,
-    loc_id,
-    loc_col = "loc",
+    csd_name,
+    csd_col = "",
     plot_title = "",
     plot_subtitle = "",
     legend_title = "",
@@ -57,10 +57,10 @@ build_map <- function(
 
   # --- Prepare arguments as symbols ---
   varname_sym <- rlang::sym(varname)
-  loc_col_sym <- rlang::sym(loc_col)
+  csd_col_sym <- rlang::sym(csd_col)
 
   # --- Prepare titles as strings --
-  default_title <- glue::glue("{varname} for Locality {loc_id}")
+  default_title <- glue::glue("{varname} for {csd_name}")
   plot_title <- plot_title %||% default_title
   legend_title <- legend_title %||% varname
 
@@ -70,15 +70,15 @@ build_map <- function(
   fill_theme$oob <- scales::squish
 
   map_data <- data %>%
-    filter(!!loc_col_sym == loc_id)
+    filter(!!csd_col_sym == csd_name)
 
   points_data <- servicebc_data %>%
-    filter(!!loc_col_sym == loc_id)
+    filter(!!csd_col_sym == csd_name)
 
   # Check if filtering resulted in data
   if (nrow(map_data) == 0) {
     warning(glue("Warning: No data found for loc_id '{loc_id}'"))
-    return(ggplot() + theme_void() + labs(title = glue("No data for {loc_id}")))
+    return(ggplot() + theme_void() + labs(title = glue("No data for {csd_name}")))
   }
 
   ## Build the ggplot object

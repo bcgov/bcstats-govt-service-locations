@@ -56,7 +56,7 @@ fn <- glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg")
 da_shapefile <- tryCatch({
   st_read(fn) %>%
   rename("loc" = location_id) %>%
-  mutate(across(c(daid, loc), as.character),
+  mutate(across(c(daid, loc, loc_names, csd_names), as.character),
          across(c(landarea), as.numeric))
 }, error = function(e) {
    message(glue("Error reading or processing file {fn}: {e$message}"))
@@ -72,8 +72,8 @@ db_shapefile <- tryCatch({
   st_read(fn) %>%
   rename("landarea" = "landare") %>%
   rename("loc" = location_id) %>%
-  mutate(across(c(dissemination_block_id, daid, loc), as.character),
-         across(c(landarea), as.numeric))
+  mutate(across(c(dissemination_block_id, daid, loc,loc_names, csd_names), as.character),
+         across(c(landarea), as.numeric)) 
 }, error = function(e) {
    message(glue("Error reading or processing file {fn}: {e$message}"))
    return(NULL)
@@ -92,7 +92,7 @@ fn <- glue("{SRC_DATA_FOLDER}/da_average_times_dist_all_locs.csv")
 da_drivetime_data <- tryCatch({
   read_csv(fn) %>%
   clean_names() %>%
-  mutate(across(c(daid, loc), as.character)) # Explictly declare data types on join columns
+  mutate(across(c(daid, csd_names), as.character)) # Explictly declare data types on join columns
 }, error = function(e) {
    message(glue("Error reading or processing file {fn}: {e$message}"))
    return(NULL) # Return NULL on error
@@ -106,7 +106,7 @@ fn <- glue("{SRC_DATA_FOLDER}/db_average_times_dist_all_locs.csv")
 db_drivetime_data <-  tryCatch({
   read_csv(fn) %>%
   clean_names() %>%
-  mutate(across(c(dissemination_block_id, loc), as.character)) # Explictly declare data types on join columns
+  mutate(across(c(dissemination_block_id, csd_names), as.character)) # Explictly declare data types on join columns
 }, error = function(e) {
    message(glue("Error reading or processing file {fn}: {e$message}"))
    return(NULL) # Return NULL on error
@@ -123,7 +123,7 @@ if (is.null(db_drivetime_data)) {
 fn <- SBCLOC_FILEPATH
 servicebc <- tryCatch({
   read_csv(fn) %>%
-  mutate(across(c(loc), as.character)) %>% # Explictly declare data types on join columns
+  mutate(across(c(csd_names, nearest_facility), as.character)) %>% # Explictly declare data types on join columns
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
 }, error = function(e) {
    message(glue("Error reading or processing file {fn}: {e$message}"))
@@ -137,9 +137,10 @@ if (is.null(servicebc)) {
 #------------------------------------------------------------------------------
 # Join shapefiles to data for mapping
 # Use left_join to color differently those da/db's missing data
+# remove DA's for for which we have only an extremely small number of addresses
 #------------------------------------------------------------------------------
 da_drivetime_map_data <- da_shapefile %>%
-  left_join(da_drivetime_data, by = join_by(daid, loc))
+  left_join(da_drivetime_data, by = join_by(daid, csd_names))
 
 if (nrow(da_drivetime_map_data) == 0)  {
   stop("No DA map data after joining with shapefiles")
@@ -151,8 +152,13 @@ message(glue("({percent(na_prop)}) of NAs in DA map data"))
 low_counts_prop <- sum(da_drivetime_map_data$n_address < 5) / nrow(da_drivetime_map_data)
 message(glue("({percent(low_counts_prop)}) of DA regions contain fewer than 5 observations"))
 
+da_drivetime_map_data <- da_drivetime_map_data %>% 
+  filter(dwellings > 0 & n_address > 4 & n_address/dwellings > 0.01)
+
+message(glue("(removing DA regions contain fewer than 5 observations, or less than 1% coverage"))
+
 db_drivetime_map_data <- db_shapefile %>%
-  left_join(db_drivetime_data, by = join_by(dissemination_block_id, loc))
+  left_join(db_drivetime_data, by = join_by(dissemination_block_id, csd_names))
 
 if (nrow(db_drivetime_map_data) == 0)  {
   stop("No DB map data after joining with shapefiles")
@@ -165,25 +171,6 @@ low_counts_prop <- sum(db_drivetime_map_data$n_address < 5) / nrow(db_drivetime_
 message(glue("({percent(low_counts_prop)}) of DB regions have fewer than 5 observations"))
 
 
-# ------------------------------------------------------------------
-# testing only
-# just for checking low counts
-# ------------------------------------------------------------------
-
-da_drivetime_data$loc_name <-unlist(LOC_LIST[da_drivetime_data$loc])
-db_drivetime_data$loc_name <-unlist(LOC_LIST[db_drivetime_data$loc])
-
-da_drivetime_data %>%
-  filter(n_address < 5) %>%
-  select(!starts_with("drv")) %>%
-  sf::st_drop_geometry() %>%
-  write_csv(glue("{TABLES_OUT }/low_counts_da.csv"))
-
-db_drivetime_data %>%
-  filter(n_address < 5) %>%
-  select(!starts_with("drv")) %>%
-  sf::st_drop_geometry() %>%
-  write_csv(glue("{TABLES_OUT }/low_counts_db.csv"))
 
 #------------------------------------------------------------------------------
 # build map - this is where we provide options for build map function
@@ -192,8 +179,8 @@ db_drivetime_data %>%
 # user-defined map parameters
 var <- "n_address"  # colnames(map_data) for other options
 var_title <- "Count of Addresses"
-region_title <- "Dissemination Block"
-plot_subtitle <- "(Regions with 0-4 data points are shown in red)"
+region_title <- "Dissemination Area"
+plot_subtitle <- ""
 
 map_data  <- db_drivetime_map_data
 
@@ -201,20 +188,17 @@ if(region_title == "Dissemination Area"){
   map_data  <- da_drivetime_map_data
 }
 
-map_data <- map_data %>%
-  mutate(n_address = if_else(n_address < 5, NA, n_address))
+for (csd in LOC_LIST[[CSD_NAMES]]) {
+  message(glue("Generating map for {csd} ..."))
 
-for (loc in names(LOC_LIST)) {
-  loc_name <- LOC_LIST[[loc]]
-  message(glue("Generating map for {loc_name} ({loc})..."))
-
-  plot_title <- glue("{var_title} by {region_title}, {loc_name}")
+  plot_title <- glue("{var_title} by {region_title}, {csd}")
 
   map_plot <- build_map(
     data = map_data,
     servicebc_data = servicebc,
     varname = var,
-    loc_id = loc,
+    csd_col = "csd_names",
+    csd_name = csd,
     map_theme = MAP_THEME,
     fill_scale = FILL_THEME,
     plot_title = plot_title,
@@ -223,10 +207,10 @@ for (loc in names(LOC_LIST)) {
   )
 
   # Save the plot
-  fn <- to_snake_case(glue("{var} by {region_title}, {loc_name}"))
-  fn <- glue("{fn}.svg")
+  fn <- to_snake_case(glue("{var}-by-{region_title}-{csd}"))
+  
   ggsave(
-    filename = fn,
+    filename = glue("{fn}.svg"),
     path = MAP_OUT,
     plot = map_plot,
     width = 8,
