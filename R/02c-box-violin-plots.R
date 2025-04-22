@@ -76,31 +76,31 @@ if (nrow(db_stats_plot_data) == 0) {
 #------------------------------------------------------------------------------
 
 # user-defined plot parameters
-var <- "median_drv_time_min"  # colnames(map_data) for other options
+y_var <- "median_drv_time_min"  # colnames(map_data) for other options
+x_var <- "municipality"
 region <- "DB"
-var_title <- glue("Median Drive Time per {region} (Minutes)")
 
-plot_title <- glue("Distribution of Count of Addresses to Service BC by {region}")
-plot_subtitle <- "Comparison Across Municipalities"
-
+y_title <- glue("Median Drive Time (min)")
 x_title <- "Municipality"
-y_title <- var_title
-
 
 plot_data  <- db_stats_plot_data
+region_title <- "Dissemination Block"
 
 if (region == "DA") {
   region_title <- "Dissemination Area"
   plot_data  <- NULL # replace with DA data if we want this functionality later
 }
 
+plot_title <- glue("Distribution of {y_title} to nearest Service BC Location")
+plot_subtitle <- glue("Comparison Across Municipalities, by {region_title}")
+
 # --- Box Plot: Median Drive Time ---
 message("Generating Box Plot...")
 
 plot_boxplot <- build_boxplot(
   data = plot_data,
-  x_var = "municipality", #X axis
-  y_var = "drv_dist_qnt50", #Y axis,
+  x_var = x_var, 
+  y_var = "drv_dist_qnt50", 
   plot_title = plot_title,
   plot_subtitle = plot_subtitle,
   x_title = x_title,
@@ -111,10 +111,19 @@ plot_boxplot <- build_boxplot(
 
 print(plot_boxplot)
 
-# Save plot
-plot_boxplot_path <- glue("{OUTPUT_DIR}/drive_time_boxplot.png")
-ggsave(plot_boxplot_path, plot_boxplot, width = 8, height = 6, dpi = 300, bg = "white")
-message(glue("Box plot saved to: {plot_boxplot_path}"))
+# Save the plot
+fn <- to_snake_case(glue("{y_var} by {region}"))
+fn <- glue("{fn}.svg")
+ggsave(
+  filename = fn,
+  path = VISUALS_OUT,
+  plot = plot_boxplot,
+  width = 8,
+  height = 7,
+  device = "svg"
+)
+
+message(glue("Box plot saved to: {VISUALS_OUT}/{fn}"))
 
 
 # --- Violin Plot: Median Drive Time ---

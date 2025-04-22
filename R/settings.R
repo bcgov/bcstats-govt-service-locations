@@ -66,6 +66,7 @@ OUTPUT_LOC_STATS_FILENAME <- "loc_average_times_dist_all_locs.csv"
 
 SHAPEFILE_OUT <- glue("{SRC_DATA_FOLDER}/shapefiles/")
 MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
+VISUALS_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
 TABLES_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/tables")
 
 # Patterns for cleaning
