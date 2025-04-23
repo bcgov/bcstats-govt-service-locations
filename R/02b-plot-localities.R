@@ -39,7 +39,7 @@ library(rmapshaper)    # simplify geometries
 library(bcmaps) # get BC outline
 
 source("R/settings.R")
-source("R/fxns/pre-processing.R") # for read_all_locs()
+
 # ----------------------------------------------------------------------------
 # Load and prepare mapping data
 # ----------------------------------------------------------------------------
@@ -49,37 +49,32 @@ bc_map <- bc_bound() |>
   st_transform(crs = 3005)
 
 # da level shapefiles for each locality
-fn <- glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg")
-da_shapefile <- tryCatch({
-  st_read(fn) %>%
-  mutate(across(c(daid, location_id, loc_names, csd_names), as.character),
+da_shapefile <- 
+  st_read(glue("{SHAPEFILE_OUT}/temp/processed_da_with_location.gpkg")) %>%
+  mutate(across(c(daid, locid, csd_name), as.character),
          across(c(landarea), as.numeric))
-}, error = function(e) {
-  message(glue("Error reading or processing file {fn}: {e$message}"))
-  return(NULL) # Return NULL on error
-})
 
 # simplify geographies to 1 per locality
 localities <- da_shapefile |>
-  group_by(location_id, csd_names) |>
+  group_by(locid, csd_name) |>
   summarize(geometry = st_union(geom)) |>
   ungroup() |>
   mutate(
-    locality = paste0(csd_names, ' (',location_id,')')
-  )
+    locality = paste0(csd_name, ' (',locid,')')
+  ) 
 
 # get centroids for labels
 locality_centroids <- st_centroid(localities) 
 locality_centroids_nudged <- locality_centroids |> 
 mutate(
     geometry = case_when(
-      location_id == '227' ~ geometry + c(-150000, 40000),
-      location_id == '909' ~ geometry + c(130000, 10000), # move east for langford
+      locid == '227' ~ geometry + c(-150000, 40000),
+      locid == '909' ~ geometry + c(130000, 10000), # move east for langford
       TRUE ~ geometry + c(0, 70000)  # move label north to not overlap 
 )
     )|>
 mutate(
-    locality = paste0(csd_names, ' (',location_id,')')
+    locality = paste0(csd_name, ' (',locid,')')
 ) |>
 st_set_crs(st_crs(locality_centroids))
 
@@ -93,6 +88,12 @@ sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")) |>
 #-----------------------------------------------------------------------------
 # build map 
 #-----------------------------------------------------------------------------
+
+localities <- localities |>
+  filter(csd_name %in% CSD_NAMES)
+
+locality_centroids_nudged <- locality_centroids_nudged |>
+  filter(csd_name %in% CSD_NAMES)
 
 out <- ggplot() + 
   geom_sf(
