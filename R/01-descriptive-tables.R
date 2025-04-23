@@ -30,8 +30,7 @@ source("R/fxns/calculations.R")
 
 crosswalk <-
   read_csv(glue("{SRC_DATA_FOLDER}/temp/csd-da-db-loc-crosswalk.csv"), col_types = cols(.default = "c")) %>%
-  clean_names() %>%
-  mutate(across(c(db_pop, db_n_dwelling, db_n_dwelling_resident, db_area), as.numeric))
+  clean_names()
 
 drivetime_data <-
   read_csv(glue("{SRC_DATA_FOLDER}/temp/processed-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
