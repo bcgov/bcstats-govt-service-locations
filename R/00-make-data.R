@@ -26,7 +26,7 @@ library(bcmaps)
 library(bcdata)
 
 #------------------------------------------------------------------------------
-# Pre-process drive time files for each locality and write output to csv as a single file
+# Pre-process drive time files for each locality and merge as a single file
 #------------------------------------------------------------------------------
 
 preprocess_locs <- function(fn, loc, tag = 'servicebc') {
