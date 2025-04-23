@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script loads aggregated csv data files containing spatial data for 
-# municipality of interest in BC (loc). 
-# It plots the locations on top of a map of B.C. 
+# This script loads aggregated csv data files containing spatial data for
+# municipality of interest in BC (loc).
+# It plots the locations on top of a map of B.C.
 
 # ------------------------------------------------------------------------
 # Script: 02b-plot-localities.R
@@ -45,7 +45,7 @@ source("R/fxns/pre-processing.R") # for read_all_locs()
 # ----------------------------------------------------------------------------
 
 # map of BC
-bc_map <- bc_bound() |> 
+bc_map <- bc_bound() |>
   st_transform(crs = 3005)
 
 # da level shapefiles for each locality
@@ -61,27 +61,27 @@ da_shapefile <- tryCatch({
 })
 
 # simplify geographies to 1 per locality
-localities <- da_shapefile |> 
-  group_by(loc) |> 
-  summarize(geometry = st_union(geometry)) |> 
-  ungroup() |> 
+localities <- da_shapefile |>
+  group_by(loc) |>
+  summarize(geometry = st_union(geometry)) |>
+  ungroup() |>
   mutate(
     locality = paste0(LOC_LIST[loc],' (',loc,')')
   )
 
 # get centroids for labels
-locality_centroids <- st_centroid(localities) 
-locality_centroids_nudged <- locality_centroids |> 
+locality_centroids <- st_centroid(localities)
+locality_centroids_nudged <- locality_centroids |>
 mutate(
     geometry = case_when(
       loc == '227' ~ geometry + c(-150000, 40000),
       loc == '909' ~ geometry + c(130000, 10000), # move east for langford
-      TRUE ~ geometry + c(0, 70000)  # move label north to not overlap 
+      TRUE ~ geometry + c(0, 70000)  # move label north to not overlap
       )
     )|>  
   st_set_crs(st_crs(locality_centroids))
 
-# locations of all nearby SBC locations 
+# locations of all nearby SBC locations
 sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")) |>
   st_as_sf(
     coords = c('coord_x', 'coord_y'),
@@ -92,14 +92,14 @@ sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")) |>
 # build map 
 #-----------------------------------------------------------------------------
 
-out <- ggplot() + 
+out <- ggplot() +
   geom_sf(
-    data = bc_map, 
-    fill = 'white', 
+    data = bc_map,
+    fill = 'white',
     color='black'
     ) +
   geom_sf(
-    data = localities, 
+    data = localities,
     aes(fill = as.factor(locality)),
     color = 'darkgrey',
     alpha = 1
@@ -114,8 +114,8 @@ out <- ggplot() +
   ) +
   geom_sf_text(
     data = locality_centroids_nudged,
-    aes(label = locality), 
-    size=4, 
+    aes(label = locality),
+    size=4,
     fontface='bold'
     ) +
   scale_fill_brewer(
@@ -129,7 +129,7 @@ out <- ggplot() +
   ) +
   MAP_THEME +
   theme(
-    legend.position="none",
+    legend.position = "none",
     axis.title = element_blank()
     )
 
@@ -142,5 +142,5 @@ ggsave(
    plot = out,
    width = 8,
    height = 7,
- dpi = 300
+   dpi = 300
 )

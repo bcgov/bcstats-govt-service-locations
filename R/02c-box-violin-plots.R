@@ -51,11 +51,11 @@ db_stats_plot_data <- db_stats_raw %>%
 #------------------------------------------------------------------------------
 
 # user-defined plot parameters
-y_var <- "median_drv_time_min"  # colnames(map_data) for other options
+y_var <- "drv_time_sec_qnt100"  # colnames(map_data) for other options
 x_var <- "municipality"
 region <- "DB"
 
-y_title <- glue("Median Drive Time (min)")
+y_title <- glue("Drive Time 100th Percentile (Seconds)")
 x_title <- "Municipality"
 
 # dynamic plot parameters
@@ -73,10 +73,13 @@ plot_subtitle <- glue("Comparison Across Municipalities, by {region_title}")
 # Generate plot
 message("Generating Box Plot...")
 
+plot_data <- plot_data %>% 
+  filter(csd_name %in% CSD_NAMES)
+
 box_plot_out <- build_boxplot(
   data = plot_data,
-  x_var = x_var, 
-  y_var = "drv_dist_qnt50", 
+  x_var = x_var,
+  y_var = y_var,
   plot_title = plot_title,
   plot_subtitle = plot_subtitle,
   x_title = x_title,
@@ -97,7 +100,7 @@ ggsave(
   device = "svg"
 )
 
-message(glue("Box plot saved to: {VISUALS_OUT}/{fn}"))
+message(glue("Box plot saved to: {VISUALS_OUT}/temp/{fn}"))
 
 # ------------------------------------------------------------------------
 # Comparative Violin Plot (Distribution by region)
@@ -122,6 +125,9 @@ if (region == "DA") {
 
 plot_title <- glue("Distribution of {y_title} to nearest Service BC Location")
 plot_subtitle <- glue("Comparison Across Municipalities, by {region_title}")
+
+plot_data <- plot_data %>% 
+  filter(csd_name %in% CSD_NAMES)
 
 # Generate plot
 message("Generating Violin Plot...")
@@ -152,4 +158,4 @@ ggsave(
   device = "svg"
 )
 
-message(glue("Violin plot saved to: {VISUALS_OUT}/{fn}"))
+message(glue("Violin plot saved to: {VISUALS_OUT}/temp/{fn}"))
