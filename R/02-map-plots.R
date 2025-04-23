@@ -21,8 +21,8 @@ library(tidyverse)
 library(glue)
 library(janitor)
 library(sf)
-library(svglite)
-library(scales)
+#library(svglite)
+#library(scales)
 library(snakecase)
 
 source("R/settings.R")
@@ -95,15 +95,16 @@ csd_drivetime_map_data <- csd_shapefile %>%
 # user-defined map parameters
 var <- "n_address"  # colnames(map_data) for other options
 var_title <- "Count of Addresses"
-region_title <- "Dissemination Area"
+region_title <- "Dissemination Block"
 plot_subtitle <- ""
 
-map_data  <- da_drivetime_map_data
+map_data  <- db_drivetime_map_data
 
 if(region_title == "Dissemination Area"){
   map_data  <- da_drivetime_map_data
 }
 
+# filter on desired csd here
 for (csd in csd_drivetime_map_data %>% pull(csd_name)){
 
   message(glue("Generating map for {csd} ..."))
@@ -125,7 +126,7 @@ for (csd in csd_drivetime_map_data %>% pull(csd_name)){
 
   # Save the plot
   fn <- to_snake_case(glue("{var}-by-{region_title}-{csd}"))
-  
+
   ggsave(
     filename = glue("temp/{fn}.svg"),
     path = MAP_OUT,
@@ -135,3 +136,7 @@ for (csd in csd_drivetime_map_data %>% pull(csd_name)){
     device = "svg"
   )
 }
+
+# clean up the environment
+rm(list = ls())
+gc()

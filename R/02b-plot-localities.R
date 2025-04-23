@@ -140,7 +140,7 @@ out
 
 # save
 ggsave(
-   filename = glue("pilot_regions.png"),
+   filename = glue("temp/pilot_regions.png"),
    path = MAP_OUT,
    plot = out,
    width = 8,
