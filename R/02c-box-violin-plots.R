@@ -25,36 +25,18 @@
 library(tidyverse)
 library(glue)
 library(ggplot2)
-library(scales) # For formatting axes/labels
+library(scales) 
 
 source("R/settings.R")
-
-
-# Create output directory if it doesn't exist
-# if (!dir.exists(OUTPUT_DIR)) {#
-#   dir.create(OUTPUT_DIR, recursive = TRUE, showWarnings = FALSE)
-# }
-
+source("R/fxns/plots.r")
 
 #------------------------------------------------------------------------------
-# Load DB-Level Data 
+# Load DB-level plot data
 #------------------------------------------------------------------------------
-db_stats_file <- glue("{SRC_DATA_FOLDER}/{OUTPUT_DB_STATS_FILENAME}")
 
-message(glue("Loading region stats from: {db_stats_file}"))
-db_stats_raw <- tryCatch({
-  read_csv(db_stats_file, col_types = cols(.default = "c"))
-}, error = function(e) {
-  stop(glue("Failed to read DB stats file '{stats_file}': {e$message}"))
-})
-
-if (nrow(db_stats_raw) == 0) {
-  stop("statistics file is empty.")
-}
-
-#------------------------------------------------------------------------------
-# Prep DB Data for Plotting 
-#------------------------------------------------------------------------------
+db_stats_raw <-
+  read_csv(glue("{SRC_DATA_FOLDER}/temp/db_average_times_dist_all_locs.csv")
+               , col_types = cols(.default = "c"))
 
 # Identify columns expected to be numeric based on naming convention
 numeric_cols_pattern <- "(dist|time|area|households|n_address|population|dwellings)" # Adjust if needed
@@ -62,14 +44,7 @@ numeric_cols <- names(db_stats_raw)[str_detect(names(db_stats_raw), numeric_cols
 
 db_stats_plot_data <- db_stats_raw %>%
   mutate(across(all_of(numeric_cols), as.numeric)) %>%
-  mutate(across(any_of(c('csd_names', 'dissemination_block_id')), as.character)) %>%
-  mutate(municipality = as.factor(csd_names)) %>%
-  filter(!is.na(csd_names))
-
-# Check if data remains after processing
-if (nrow(db_stats_plot_data) == 0) {
-  stop("No data remains after processing and joining municipality names.")
-}
+  mutate(municipality = as.factor(csd_name))
 
 #------------------------------------------------------------------------------
 # Comparative Box Plot (Distribution by region)
@@ -112,7 +87,7 @@ box_plot_out <- build_boxplot(
 
 # Save the plot
 fn <- to_snake_case(glue("box plot {y_var} by {region}"))
-fn <- glue("{fn}.svg")
+fn <- glue("temp/{fn}.svg")
 ggsave(
   filename = fn,
   path = VISUALS_OUT,
@@ -167,7 +142,7 @@ print(violin_plot_out)
 
 # Save the plot
 fn <- to_snake_case(glue("violin plot {y_var} by {region}"))
-fn <- glue("{fn}.svg")
+fn <- glue("temp/{fn}.svg")
 ggsave(
   filename = fn,
   path = VISUALS_OUT,
