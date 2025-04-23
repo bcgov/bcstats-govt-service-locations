@@ -20,8 +20,8 @@ source("R/settings.R")
 library(tidyverse)
 library(glue)
 library(janitor)
-library(e1071)
-library(sf)
+#library(e1071)
+#library(sf)
 library(bcmaps)
 library(bcdata)
 
@@ -59,7 +59,7 @@ processed_files <- purrr::map2_dfr(
 #------------------------------------------------------------------------------
 # Make a crosswalk for da-db-loc-csd
 #------------------------------------------------------------------------------
-
+# corresp data frame contains all DB's in BC
 corresp <- read_csv(CORRESP_FILEPATH, col_types = cols(.default = "c"))
 corresp <- corresp %>% 
   filter(PRUID_PRIDU == "59") %>%
@@ -74,17 +74,21 @@ corresp <- corresp %>%
          db_n_dwelling_resident = DBURDWELL2021_IDRHLOG2021,
          db_area = DBAREA2021_IDSUP2021)
 
+# contains all DB's in our data
 crosswalk <-
   processed_files %>%
   distinct(daid, dbid, locid)
 
+# add in the CSD's and db metrics from correspondance file
 crosswalk <- crosswalk %>%
   left_join(corresp, by = join_by(daid, dbid))
 
-# Data checks - some db's outside our csds of interest - note for later
+# Data checks - some db's outside our csd's of interest.
+# Let's leave them in for now and come back to this later after looking at them on a map.
 crosswalk %>% count(csd_name, csdid)
 
-# check these addresses out later, esp. bulkley-nechako
+# check these addresses out later, esp. bulkley-nechako as this region contains a small
+# cluster of homes near Smithers, I believe.
 extras <- processed_files %>%
   inner_join(crosswalk) %>%
   filter(!csd_name %in% CSD_NAMES)
@@ -93,17 +97,17 @@ extras <- processed_files %>%
 # Make shapefiles for da-db-loc-csd
 #------------------------------------------------------------------------------
 
-csd_shapefiles_processed <- bcmaps::census_subdivision() %>%
+csd_shapefiles_processed <- census_subdivision() %>%
   clean_names() %>%
   select(csdid = census_subdivision_id,csd_name = census_subdivision_name, landarea = feature_area_sqm, geometry) %>%
   inner_join(crosswalk %>% distinct(csdid, csd_name, locid), by = c("csdid", "csd_name"))
 
-da_shapefiles_processed <- bcmaps::census_dissemination_area() %>%
+da_shapefiles_processed <- census_dissemination_area() %>%
   clean_names() %>%
   select(daid = dissemination_area_id, landarea = feature_area_sqm, geometry) %>%
   inner_join(crosswalk %>% distinct(daid, locid, csd_name), by = "daid")
 
-db_shapefiles_processed <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>% 
+db_shapefiles_processed <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
   collect() %>% 
   clean_names() %>%
   select(dbid = dissemination_block_id, landarea = feature_area_sqm) %>%

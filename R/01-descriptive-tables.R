@@ -25,18 +25,18 @@ source("R/settings.R")
 source("R/fxns/calculations.R")
 
 #------------------------------------------------------------------------------
-# Read drive time data from source folder
+# Read data from source folder
 #------------------------------------------------------------------------------
-
-drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/temp/processed-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
-  clean_names() %>%
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 crosswalk <-
   read_csv(glue("{SRC_DATA_FOLDER}/temp/csd-da-db-loc-crosswalk.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(db_pop, db_n_dwelling, db_n_dwelling_resident, db_area), as.numeric))
+
+drivetime_data <-
+  read_csv(glue("{SRC_DATA_FOLDER}/temp/processed-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
+  clean_names() %>%
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 drivetime_data <- drivetime_data %>% 
   inner_join(crosswalk, by = c("dbid", "daid", "locid"))
@@ -69,7 +69,7 @@ drivetime_stats_db <- drivetime_stats_db %>%
 drivetime_stats_csd <- drivetime_stats_csd %>%
   left_join(pop_csd, by = c("csd_name"))
 
-# Data checks - compare 2021 population to actual address counts
+# Data checks - compare 2021 values to actual address counts
 na_prop <- sum(is.na(drivetime_stats_da$n_address))/ nrow(drivetime_stats_da)
 message(glue("({percent(na_prop)}) of NAs in DA map data"))
 
