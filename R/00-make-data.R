@@ -63,8 +63,7 @@ processed_files <- purrr::map2_dfr(
 corresp <- read_csv(CORRESP_FILEPATH, col_types = cols(.default = "c"))
 corresp <- corresp %>% 
   filter(PRUID_PRIDU == "59") %>%
-  select(c(starts_with("DB"), CSDUID_SDRIDU, CSDNAME_SDRNOM,  DAUID_ADIDU)) %>%
-  select(-c(DBIR2021_IDRI2021, DBDGUID_IDIDUGD)) %>%
+  select(DBUID_IDIDU, CSDUID_SDRIDU, CSDNAME_SDRNOM,  DAUID_ADIDU) %>%
   rename(csd_name = CSDNAME_SDRNOM,
          csdid = CSDUID_SDRIDU,
          daid = DAUID_ADIDU,
