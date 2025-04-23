@@ -68,11 +68,7 @@ corresp <- corresp %>%
   rename(csd_name = CSDNAME_SDRNOM,
          csdid = CSDUID_SDRIDU,
          daid = DAUID_ADIDU,
-         dbid = DBUID_IDIDU,
-         db_pop = DBPOP2021_IDPOP2021,
-         db_n_dwelling = DBTDWELL2021_IDTLOG2021,
-         db_n_dwelling_resident = DBURDWELL2021_IDRHLOG2021,
-         db_area = DBAREA2021_IDSUP2021)
+         dbid = DBUID_IDIDU)
 
 # contains all DB's in our data
 crosswalk <-
