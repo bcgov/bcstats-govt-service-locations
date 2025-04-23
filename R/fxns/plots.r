@@ -69,11 +69,9 @@ build_map <- function(
   fill_theme$limits <- range(data[[varname_sym]])
   fill_theme$oob <- scales::squish
 
-  map_data <- data %>%
-    filter(!!csd_col_sym == csd_name)
+  map_data <- map_data <- data[data[[csd_col_sym]] == csd_name,]
 
-  points_data <- servicebc_data %>%
-    filter(!!csd_col_sym == csd_name)
+  points_data <- servicebc_data[servicebc_data[[csd_col_sym]] == csd_name,]
 
   # Check if filtering resulted in data
   if (nrow(map_data) == 0) {
