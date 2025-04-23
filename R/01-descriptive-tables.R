@@ -69,7 +69,9 @@ drivetime_stats_db <- drivetime_stats_db %>%
 drivetime_stats_csd <- drivetime_stats_csd %>%
   left_join(pop_csd, by = c("csd_name"))
 
-# Data checks - compare 2021 values to actual address counts
+#------------------------------------------------------------------------------
+# Data checks - come back to this as maybe some of these need to be looked at
+#------------------------------------------------------------------------------
 na_prop <- sum(is.na(drivetime_stats_da$n_address))/ nrow(drivetime_stats_da)
 message(glue("({percent(na_prop)}) of NAs in DA map data"))
 
