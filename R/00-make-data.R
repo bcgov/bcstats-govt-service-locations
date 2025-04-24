@@ -12,116 +12,157 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# ------------------------------------------------------------------------
-# Script: 00-make-data.R
-
-# Description: Finds the most recent drive time data file for each locality,
-# and loads the data into R. It relies on the `preprocess_locs` function
-# to perform preprocessing steps, including filtering for facility records.
-# The cleaned data is written back to the source data directory for use in 
-# further analytics.
-
-# Requirements:
-#   - Requires necessary R packages (e.g., `tidyverse`, `purrr`, `glue`).
-#   - Depends on `settings.R` for configuration constants.
-#   - Depends on the `preprocess_locs` function to perform preprocessing steps.
-#   - Requires appropriately named input files in the raw data folder and
-#     read/write access to the relevant data folders.
-
-# Side Effects/Outputs:
-#   - Writes processed CSV files (one per locality) to the source data folder.
-#   - Prints status messages, warnings (e.g., locality mismatches, overwrites),
-#     or errors to the console during execution.
-# ------------------------------------------------------------------------
-
 #------------------------------------------------------------------------------
 # Load req'd libraries and source constants and other settings
 #------------------------------------------------------------------------------
 source("R/settings.R")
-source("R/fxns/pre-processing.R")
 
 library(tidyverse)
 library(glue)
 library(janitor)
-library(e1071)
+#library(e1071)
 library(sf)
+library(bcmaps)
+library(bcdata)
 
 #------------------------------------------------------------------------------
-# Get the most recent drive time files for each locality
+# Pre-process drive time files for each locality and merge as a single file
 #------------------------------------------------------------------------------
-# TODO: Make more robust to handle different file structures and patterns.
-file_paths <- file.info(list.files(RAW_DATA_FOLDER,
+
+preprocess_locs <- function(fn, loc, tag = 'servicebc') {
+
+  read_csv(fn, col_types = cols(.default = "c")) %>%
+    clean_names() %>%
+    filter(tag == tag) %>%
+    rename(address_albers_x = site_albers_x,
+           address_albers_y = site_albers_y,
+           dbid = dissemination_block_id) %>%
+    mutate(daid = str_sub(dbid, 1, 8))
+}
+
+file_paths <- file.info(list.files(DT_DATA_FOLDER,
                                    full.names = TRUE,
                                    pattern = NO_ERRS_FILE_PATTERN,
                                    recursive = TRUE)) %>%
   rownames_to_column("fn") %>%
-  mutate(loc = gsub(glue("({RAW_DATA_FOLDER})(.*)(/locality_)({LOCALITY_REGEX_PATTERN})(.*)"), "\\4", fn)) %>%
-  group_by(loc) %>%
-  arrange(loc, desc(mtime)) %>%
-  slice_head(n = 1) %>%
-  select(fn, loc)
+  select(fn)
 
-# Warn if localities are not as expected
-missing_localities <- setdiff(EXPECTED_LOCALITIES, unique(file_paths$loc))
-extra_localities <- setdiff(unique(file_paths$loc), EXPECTED_LOCALITIES)
 
-if (length(missing_localities) > 0) {
-  warning("Expected localities not found: ", paste(missing_localities, collapse = ", "))
-}
-if (length(extra_localities) > 0) {
-  warning("Unexpected localities found: ", paste(extra_localities, collapse = ", "))
-}
-
-# only include files with locs that match our list
-file_paths <- file_paths |> 
-  filter(loc %in% EXPECTED_LOCALITIES)
-
-#------------------------------------------------------------------------------
-# Run the preprocessing function to perform data cleaning steps for each file
-#------------------------------------------------------------------------------
-
-processed_files <- purrr::walk2(
+processed_files <- purrr::map_dfr(
   .x = file_paths$fn,
-  .y = file_paths$loc,
-  .f = preprocess_locs,
-  output_folder = SRC_DATA_FOLDER,
-  reqd_cols = REQUIRED_COLS,
-  facility_tag = FACILITY_TAG
+  .f = preprocess_locs
 )
 
 #------------------------------------------------------------------------------
-# Create a crosswalk for daid, duid and locality
+# Make shapefiles for da-db-loc-csd
 #------------------------------------------------------------------------------
-crosswalk_list <- purrr::map2(
-  .x = file_paths$fn,
-  .y = file_paths$loc,
-  .f = create_crosswalk
-)
 
-crosswalk <- bind_rows(crosswalk_list)
-outfile <- glue("{SRC_DATA_FOLDER}/da-db-loc-crosswalk.csv")
-tryCatch({
-  write_csv(crosswalk, outfile)
-}, error = function(e) {
-  message(glue("Error writing file {outfile}:  {e$message}"))
-})
+csd_shapefiles <- census_subdivision() %>%
+  clean_names() %>%
+  select(
+    csdid = census_subdivision_id,
+    csd_name = census_subdivision_name, 
+    csd_desc = census_subdivision_type_desc,
+    landarea = feature_area_sqm, geometry)
+
+da_shapefiles <- census_dissemination_area() %>%
+  clean_names() %>%
+  select(daid = dissemination_area_id, landarea = feature_area_sqm, geometry)
+
+# the metadata says 2016, but the data itself says its from census 2021, so use as crosswalk basis
+db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
+  collect() %>% 
+  clean_names() %>%
+  select(
+    dbid = dissemination_block_id, 
+    daid = dissemination_area_id,
+    csdid = census_subdivision_id,
+    landarea = feature_area_sqm
+    ) 
 
 #------------------------------------------------------------------------------
-# Create a list of SBC locations by locality
+# Make a crosswalk for da-db-loc-csd
 #------------------------------------------------------------------------------
-sbc_list <- purrr::map2(
-  .x = file_paths$fn,
-  .y = file_paths$loc,
-  .f = create_sbc_locations
-)
+# corresp data frame contains all DB's in BC
+# remove geometry column for crosswalk
+corresp <- db_shapefiles |> 
+  st_drop_geometry() |> 
+  select(-landarea) |> 
+  # get csd names from csd shapefile
+  left_join(csd_shapefiles |> st_drop_geometry() |> select(-landarea), by = "csdid")
 
-sbc <- bind_rows(sbc_list)
-tryCatch({
-  write_csv(crosswalk, SBCLOC_FILEPATH)
-}, error = function(e) {
-  message(glue("Error writing file {outfile}:  {e$message}"))
-})
+# contains all DB's in our data
+crosswalk <-
+  processed_files %>%
+  distinct(daid, dbid)
 
+# add in the CSD's and db metrics from correspondance file
+crosswalk <- crosswalk %>%
+  left_join(corresp, by = join_by(daid, dbid))
+
+# Data checks - some db's outside our csd's of interest.
+# Let's leave them in for now and come back to this later after looking at them on a map.
+crosswalk %>% count(csd_name, csdid)
+
+# check these addresses out later, esp. bulkley-nechako as this region contains a small
+# cluster of homes near Smithers, I believe.
+extras <- processed_files %>%
+  inner_join(crosswalk) %>%
+  filter(!csd_name %in% CSD_NAMES)
+
+#------------------------------------------------------------------------------
+# Make population data
+#------------------------------------------------------------------------------
+pop_da <- cancensus::get_census(
+    dataset = CANCENSUS_YEAR, 
+    regions = list(PR = "59"), # grab only BC
+    level = 'DA' 
+  ) %>%
+  clean_names() %>%
+  select(c(all_of(POP_COLS), geo_uid)) %>%
+  rename(daid = geo_uid)
+
+pop_db <- cancensus::get_census(
+    dataset = CANCENSUS_YEAR,
+    regions = list(PR = "59"), # grab only BC
+    level = 'DB' 
+  ) %>%
+  clean_names() %>%
+  select(c(all_of(POP_COLS), geo_uid)) %>%
+  rename(dbid = geo_uid)
+
+pop_csd <- cancensus::get_census(
+    dataset = CANCENSUS_YEAR,
+    regions = list(PR = "59"), # grab only BC
+    level = 'CSD' 
+  ) %>%
+  clean_names() %>%
+  select(c(all_of(POP_COLS), geo_uid)) %>%
+  rename(csd_name = region_name, csdid = geo_uid)
+
+#------------------------------------------------------------------------------
+# Service BC location data
+#------------------------------------------------------------------------------
+
+service_bc_locations <- processed_files %>% 
+  inner_join(crosswalk, by = join_by(dbid, daid)) %>%
+  distinct(csd_name, csdid, nearest_facility, coord_x, coord_y)
+
+#------------------------------------------------------------------------------
+# Write output files (remove temp from filename when happy with output)
+#------------------------------------------------------------------------------
+write_csv(service_bc_locations, glue("{SRC_DATA_FOLDER}/service_bc_locs.csv"))
+
+write_csv(processed_files, glue("{SRC_DATA_FOLDER}/processed-drivetime-data.csv"))
+write_csv(crosswalk, glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"))
+
+write_csv(pop_da, glue("{SRC_DATA_FOLDER}/population-da.csv"))
+write_csv(pop_db, glue("{SRC_DATA_FOLDER}/population-db.csv"))
+write_csv(pop_csd, glue("{SRC_DATA_FOLDER}/population-csd.csv"))
+
+st_write(da_shapefiles, glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg"), append = FALSE)
+st_write(db_shapefiles, glue("{SHAPEFILE_OUT}/processed_db_with_location.gpkg"), append = FALSE)
+st_write(csd_shapefiles, glue("{SHAPEFILE_OUT}/processed_csd_with_location.gpkg"), append = FALSE)
 
 # clean up the environment
 rm(list = ls())
