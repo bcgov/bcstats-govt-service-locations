@@ -154,7 +154,8 @@ service_bc_locations <- processed_files %>%
 write_csv(service_bc_locations, glue("{SRC_DATA_FOLDER}/service_bc_locs.csv"))
 
 write_csv(processed_files, glue("{SRC_DATA_FOLDER}/processed-drivetime-data.csv"))
-write_csv(crosswalk, glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"))
+# we actually should save the entire crosswalk, not just our subsection
+write_csv(corresp, glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"))
 
 write_csv(pop_da, glue("{SRC_DATA_FOLDER}/population-da.csv"))
 write_csv(pop_db, glue("{SRC_DATA_FOLDER}/population-db.csv"))

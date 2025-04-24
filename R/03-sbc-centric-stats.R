@@ -44,7 +44,6 @@ library(bcdata)
 library(ggridges)
 
 source("R/settings.R")
-source("R/fxns/pre-processing.R")
 source("R/fxns/plots.R")
 
 
@@ -53,13 +52,16 @@ source("R/fxns/plots.R")
 # =========================================================================== #
 ## drive time data ----
 ## from BCDS
-drive_data <- read_csv(RAW_PROVINCE_ADDRESS_FILEPATH) |> clean_names()
+drivetime_data <-
+  read_csv(glue("{SRC_DATA_FOLDER}/processed-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
+  clean_names() %>%
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 ## SBC locations to include ----
 ## from source folder
 sbc_locs <- read_csv(SBCLOC_FILEPATH) |> 
-  mutate(across(c(loc), as.character)) |>  # Explictly declare data types on join columns
-  st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
+  st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005) |> 
+  filter(csd_name %in% CSD_NAMES)
 
 ## population projections ----
 ## from catalogue
@@ -87,18 +89,19 @@ pop_projections
 
 ## census populations ----
 ## from statscan 
-pop_db <- cancensus::get_census(
-  dataset = "CA21", # 2021 census
-  regions = list(PR = "59"), # grab only BC
-  level = 'DB' # at dissemination block level 
-) %>%
-  clean_names()
+pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
+  clean_names() %>%
+  mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
 ## db shapefiles 
-db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') |> 
-  collect() |> 
-  clean_names() |> 
-  select(dissemination_block_id, geometry)
+db_shapefile <-
+  st_read(glue("{SHAPEFILE_OUT}/processed_db_with_location.gpkg")) %>%
+  mutate(across(c(landarea), as.numeric))
+
+## crosswalk
+crosswalk <-
+  read_csv(glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"), col_types = cols(.default = "c")) %>%
+  clean_names()
 
 # =========================================================================== #
 # DB population projections ----
@@ -112,12 +115,13 @@ db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') |>
 # first, we create a new 'csd_clean' label to match the population projections
 # as some CSDs are rolled up in the projections
 get_clean_csd <- pop_db |> 
-  left_join(pop_projections |> distinct(region) |> mutate(in_projections=1), by=c('csd_uid'='region')) |> 
+  left_join(crosswalk, by='dbid') |> 
+  left_join(pop_projections |> distinct(region) |> mutate(in_projections=1), by=c('csdid'='region')) |> 
   # if rolled up, last 3 digits replaced with '999'
   mutate(
     csd_clean = if_else(
-      is.na(in_projections), paste0(str_sub(csd_uid, 1, 4), '999'),
-      csd_uid
+      is.na(in_projections), paste0(str_sub(csdid, 1, 4), '999'),
+      csdid
     )
   )
 
@@ -135,7 +139,9 @@ prop_of_csd <- get_clean_csd |>
 
 # join back to projections to get yearly estimates for each age, gender, year of interest
 db_projections <- prop_of_csd |> 
-  select(geo_uid, da_uid, csd_uid, csd_clean, area_sq_km, population, csd_population, dwellings, households, pct_of_csd) |> 
+  select(
+    dbid, daid, csdid, csd_clean, csd_name, csd_desc, 
+    area_sq_km, population, csd_population, dwellings, households, pct_of_csd) |> 
   left_join(
     pop_projections |> 
       filter(year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR+10)),
@@ -155,25 +161,45 @@ db_projections
 # =========================================================================== #
 
 # first assign every dissemination block a 'nearest facility'
-assigned_facility <- drive_data |> 
-  count(dissemination_block_id, nearest_facility) |> 
-  arrange(dissemination_block_id, desc(n)) |> 
-  group_by(dissemination_block_id) |> 
+assigned_facility <- drivetime_data |> 
+  count(dbid, nearest_facility) |> 
+  arrange(dbid, desc(n)) |> 
+  group_by(dbid) |> 
   slice_head(n=1) |>
   rename(assigned=nearest_facility) |> 
   select(-n) |> 
   ungroup()
 
 # filter to only a couple of facilities
-drive_data <- drive_data |> left_join(assigned_facility, by = 'dissemination_block_id')
+drivetime_data <- drivetime_data |> left_join(assigned_facility, by = 'dbid')
 
-drive_data_reduced <- drive_data |>  
-  filter(assigned %in% (sbc_locs |> pull(nearest_facility))) |> 
-  filter(nearest_facility %in% (sbc_locs |> pull(nearest_facility)))
+drivetime_data_reduced <- drivetime_data |>  
+  filter(assigned %in% (sbc_locs |> filter(csd_name %in% CSD_NAMES) |> pull(nearest_facility))) |> 
+  filter(nearest_facility %in% (sbc_locs |> filter(csd_name %in% CSD_NAMES) |> pull(nearest_facility)))
 
+## SBC centric measures (table form) ----
+# drive measures
+drive_measures <- drivetime_data_reduced |> 
+  group_by(assigned) |> 
+  summarize(
+    n_addresses = n(),
+    mean_drv_time = mean(drv_time_sec),
+    sd_drv_time = sd(drv_time_sec),
+    min_drv_time = min(drv_time_sec),
+    max_drv_time = max(drv_time_sec),
+    mean_drv_dist = mean(drv_dist),
+    sd_drv_dist = sd(drv_dist),
+    min_drv_dist = min(drv_dist),
+    max_drv_dist = max(drv_dist)
+  ) |> 
+  ungroup() 
+
+# 
+
+# plots ----
 # step 1: create a histogram/density plot for each facility
 ggplot(
-  drive_data |> 
+  drivetime_data_reduced |> 
     group_by(assigned) |> 
     mutate(drv_dist_mean = mean(drv_dist)) |> 
     ungroup() |> 
@@ -187,12 +213,12 @@ ggplot(
   theme(legend.position = 'none')
 
 # step 2: map of all closest DBs/average drive distances
-map_data <- drive_data_reduced |> 
-  mutate(dissemination_block_id = as.character(dissemination_block_id)) |> 
-  group_by(dissemination_block_id, nearest_facility) |> 
+map_data <- drivetime_data_reduced |> 
+  mutate(dbid = as.character(dbid)) |> 
+  group_by(dbid, nearest_facility) |> 
   summarize(drive_dist_mean = mean(drv_dist)) |> 
   ungroup() |> 
-  left_join(db_shapefiles, by=c('dissemination_block_id')) |> 
+  left_join(db_shapefiles, by=c('dbid')) |> 
   st_as_sf(crs = 3005)
 
 var <- 'drive_dist_mean'
@@ -205,8 +231,8 @@ map_plot <- build_map(
   data = map_data,
   servicebc_data = sbc_locs,
   varname = var,
-  loc_id = loc_id,
-  loc_col = loc_col,
+  csd_name = loc_id,
+  csd_col = loc_col,
   map_theme = MAP_THEME,
   fill_scale = FILL_THEME,
   plot_title = plot_title,

@@ -48,6 +48,7 @@ library(tidyverse)
 CSD_NAMES <- c("Langford", "Dawson Creek", "Smithers", "Kamloops")
 CENSUS_BASIS <- 2021
 CANCENSUS_YEAR <- paste0('CA', str_sub(as.character(CENSUS_BASIS),3,4))
+CURRENT_YEAR <- 2025
 
 # File paths
 LAN_FOLDER <- use_network_path()
