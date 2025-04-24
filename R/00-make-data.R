@@ -21,7 +21,7 @@ library(tidyverse)
 library(glue)
 library(janitor)
 #library(e1071)
-#library(sf)
+library(sf)
 library(bcmaps)
 library(bcdata)
 
@@ -37,8 +37,7 @@ preprocess_locs <- function(fn, loc, tag = 'servicebc') {
     rename(address_albers_x = site_albers_x,
            address_albers_y = site_albers_y,
            dbid = dissemination_block_id) %>%
-    mutate(daid = str_sub(dbid, 1, 8),
-           locid = loc)
+    mutate(daid = str_sub(dbid, 1, 8))
 }
 
 file_paths <- file.info(list.files(DT_DATA_FOLDER,
@@ -46,33 +45,55 @@ file_paths <- file.info(list.files(DT_DATA_FOLDER,
                                    pattern = NO_ERRS_FILE_PATTERN,
                                    recursive = TRUE)) %>%
   rownames_to_column("fn") %>%
-  mutate(locid = gsub(glue("({RAW_DATA_FOLDER})(.*)(/locality_)({LOCALITY_REGEX_PATTERN})(.*)"), "\\4", fn)) %>%
-  group_by(locid) %>%
-  select(fn, locid)
+  select(fn)
 
-processed_files <- purrr::map2_dfr(
+processed_files <- purrr::map_dfr(
   .x = file_paths$fn,
-  .y = file_paths$locid,
   .f = preprocess_locs
 )
+
+#------------------------------------------------------------------------------
+# Make shapefiles for da-db-loc-csd
+#------------------------------------------------------------------------------
+
+csd_shapefiles <- census_subdivision() %>%
+  clean_names() %>%
+  select(
+    csdid = census_subdivision_id,
+    csd_name = census_subdivision_name, 
+    csd_desc = census_subdivision_type_desc,
+    landarea = feature_area_sqm, geometry)
+
+da_shapefiles <- census_dissemination_area() %>%
+  clean_names() %>%
+  select(daid = dissemination_area_id, landarea = feature_area_sqm, geometry)
+
+# the metadata says 2016, but the data itself says its from census 2021, so use as crosswalk basis
+db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
+  collect() %>% 
+  clean_names() %>%
+  select(
+    dbid = dissemination_block_id, 
+    daid = dissemination_area_id,
+    csdid = census_subdivision_id,
+    landarea = feature_area_sqm
+    ) 
 
 #------------------------------------------------------------------------------
 # Make a crosswalk for da-db-loc-csd
 #------------------------------------------------------------------------------
 # corresp data frame contains all DB's in BC
-corresp <- read_csv(CORRESP_FILEPATH, col_types = cols(.default = "c"))
-corresp <- corresp %>% 
-  filter(PRUID_PRIDU == "59") %>%
-  select(DBUID_IDIDU, CSDUID_SDRIDU, CSDNAME_SDRNOM,  DAUID_ADIDU) %>%
-  rename(csd_name = CSDNAME_SDRNOM,
-         csdid = CSDUID_SDRIDU,
-         daid = DAUID_ADIDU,
-         dbid = DBUID_IDIDU)
+# remove geometry column for crosswalk
+corresp <- db_shapefiles |> 
+  st_drop_geometry() |> 
+  select(-landarea) |> 
+  # get csd names from csd shapefile
+  left_join(csd_shapefiles |> st_drop_geometry() |> select(-landarea), by = "csdid")
 
 # contains all DB's in our data
 crosswalk <-
   processed_files %>%
-  distinct(daid, dbid, locid)
+  distinct(daid, dbid)
 
 # add in the CSD's and db metrics from correspondance file
 crosswalk <- crosswalk %>%
@@ -89,30 +110,10 @@ extras <- processed_files %>%
   filter(!csd_name %in% CSD_NAMES)
 
 #------------------------------------------------------------------------------
-# Make shapefiles for da-db-loc-csd
-#------------------------------------------------------------------------------
-
-csd_shapefiles_processed <- census_subdivision() %>%
-  clean_names() %>%
-  select(csdid = census_subdivision_id,csd_name = census_subdivision_name, landarea = feature_area_sqm, geometry) %>%
-  inner_join(crosswalk %>% distinct(csdid, csd_name, locid), by = c("csdid", "csd_name"))
-
-da_shapefiles_processed <- census_dissemination_area() %>%
-  clean_names() %>%
-  select(daid = dissemination_area_id, landarea = feature_area_sqm, geometry) %>%
-  inner_join(crosswalk %>% distinct(daid, locid, csd_name), by = "daid")
-
-db_shapefiles_processed <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
-  collect() %>% 
-  clean_names() %>%
-  select(dbid = dissemination_block_id, landarea = feature_area_sqm) %>%
-  inner_join(crosswalk %>% distinct(daid, dbid, locid, csd_name), by = "dbid")
-
-#------------------------------------------------------------------------------
 # Make population data
 #------------------------------------------------------------------------------
 pop_da <- cancensus::get_census(
-    dataset = "CA21", # 2021 census
+    dataset = CANCENSUS_YEAR, 
     regions = list(PR = "59"), # grab only BC
     level = 'DA' 
   ) %>%
@@ -121,7 +122,7 @@ pop_da <- cancensus::get_census(
   rename(daid = geo_uid)
 
 pop_db <- cancensus::get_census(
-    dataset = "CA21", # 2021 census
+    dataset = CANCENSUS_YEAR,
     regions = list(PR = "59"), # grab only BC
     level = 'DB' 
   ) %>%
@@ -130,7 +131,7 @@ pop_db <- cancensus::get_census(
   rename(dbid = geo_uid)
 
 pop_csd <- cancensus::get_census(
-    dataset = "CA21", # 2021 census
+    dataset = CANCENSUS_YEAR,
     regions = list(PR = "59"), # grab only BC
     level = 'CSD' 
   ) %>%
@@ -143,24 +144,24 @@ pop_csd <- cancensus::get_census(
 #------------------------------------------------------------------------------
 
 service_bc_locations <- processed_files %>% 
-  inner_join(crosswalk, by = join_by(dbid, daid, locid)) %>%
+  inner_join(crosswalk, by = join_by(dbid, daid)) %>%
   distinct(csd_name, csdid, nearest_facility, coord_x, coord_y)
 
 #------------------------------------------------------------------------------
 # Write output files (remove temp from filename when happy with output)
 #------------------------------------------------------------------------------
-write_csv(service_bc_locations, glue("{SRC_DATA_FOLDER}/temp/service_bc_locs.csv"))
+write_csv(service_bc_locations, glue("{SRC_DATA_FOLDER}/service_bc_locs.csv"))
 
-write_csv(processed_files, glue("{SRC_DATA_FOLDER}/temp/processed-drivetime-data.csv"))
-write_csv(crosswalk, glue("{SRC_DATA_FOLDER}/temp/csd-da-db-loc-crosswalk.csv"))
+write_csv(processed_files, glue("{SRC_DATA_FOLDER}/processed-drivetime-data.csv"))
+write_csv(crosswalk, glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"))
 
-write_csv(pop_da, glue("{SRC_DATA_FOLDER}/temp/population-da.csv"))
-write_csv(pop_db, glue("{SRC_DATA_FOLDER}/temp/population-db.csv"))
-write_csv(pop_csd, glue("{SRC_DATA_FOLDER}/temp/population-csd.csv"))
+write_csv(pop_da, glue("{SRC_DATA_FOLDER}/population-da.csv"))
+write_csv(pop_db, glue("{SRC_DATA_FOLDER}/population-db.csv"))
+write_csv(pop_csd, glue("{SRC_DATA_FOLDER}/population-csd.csv"))
 
-st_write(da_shapefiles_processed, glue("{SHAPEFILE_OUT}/temp/processed_da_with_location.gpkg"), append = FALSE)
-st_write(db_shapefiles_processed, glue("{SHAPEFILE_OUT}/temp/processed_db_with_location.gpkg"), append = FALSE)
-st_write(csd_shapefiles_processed, glue("{SHAPEFILE_OUT}/temp/processed_csd_with_location.gpkg"), append = FALSE)
+st_write(da_shapefiles, glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg"), append = FALSE)
+st_write(db_shapefiles, glue("{SHAPEFILE_OUT}/processed_db_with_location.gpkg"), append = FALSE)
+st_write(csd_shapefiles, glue("{SHAPEFILE_OUT}/processed_csd_with_location.gpkg"), append = FALSE)
 
 # clean up the environment
 rm(list = ls())

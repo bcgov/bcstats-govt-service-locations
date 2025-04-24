@@ -33,34 +33,34 @@ source("R/fxns/plots.R")
 #------------------------------------------------------------------------------
 
 csd_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/temp/processed_csd_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/processed_csd_with_location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
 da_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/temp/processed_da_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/temp/processed_db_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/processed_db_with_location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
 #------------------------------------------------------------------------------
 # Read drive time data from source folder
 #------------------------------------------------------------------------------
 da_drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/temp/da_average_times_dist_all_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/da_average_times_dist_all_locs.csv")
           , col_types = cols(.default = "c")) %>%
   clean_names()  %>%
   mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
 
 db_drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/temp/db_average_times_dist_all_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/db_average_times_dist_all_locs.csv")
           , col_types = cols(.default = "c"))  %>%
   clean_names() %>%
   mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
 
 csd_drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/temp/csd_average_times_dist_all_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/csd_average_times_dist_all_locs.csv")
   , col_types = cols(.default = "c"))  %>%
   clean_names() %>%
   mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
@@ -69,7 +69,7 @@ csd_drivetime_data <-
 # Read service bc location data from source folder
 #------------------------------------------------------------------------------
 servicebc <-
-  read_csv(glue("{SRC_DATA_FOLDER}/temp/service_bc_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
            , col_types = cols(.default = "c")) %>%
   clean_names() %>%
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
@@ -80,13 +80,13 @@ servicebc <-
 # remove DA's for for which we have only an extremely small number of addresses
 #------------------------------------------------------------------------------
 da_drivetime_map_data <- da_shapefile %>%
-  inner_join(da_drivetime_data, by = join_by(daid, csd_name))
+  inner_join(da_drivetime_data, by = join_by(daid))
 
 db_drivetime_map_data <- db_shapefile %>%
-  inner_join(db_drivetime_data, by = join_by(dbid, csd_name))
+  inner_join(db_drivetime_data, by = join_by(dbid, csdid))
 
 csd_drivetime_map_data <- csd_shapefile %>%
-  inner_join(csd_drivetime_data, by = join_by(csd_name))
+  inner_join(csd_drivetime_data, by = join_by(csdid, csd_name))
 
 #------------------------------------------------------------------------------
 # build map - this is where we provide options for build map function
@@ -124,11 +124,14 @@ for (csd in csd_drivetime_map_data %>% pull(csd_name)){
     legend_title = var_title
   )
 
+  # show the plot
+  show(map_plot)
+  
   # Save the plot
   fn <- to_snake_case(glue("{var}-by-{region_title}-{csd}"))
 
   ggsave(
-    filename = glue("temp/{fn}.svg"),
+    filename = glue("{fn}.svg"),
     path = MAP_OUT,
     plot = map_plot,
     width = 8,
