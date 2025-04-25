@@ -175,7 +175,8 @@ drivetime_data <- drivetime_data |> left_join(assigned_facility, by = 'dbid')
 
 drivetime_data_reduced <- drivetime_data |>  
   filter(assigned %in% (sbc_locs |> filter(csd_name %in% CSD_NAMES) |> pull(nearest_facility))) |> 
-  filter(nearest_facility %in% (sbc_locs |> filter(csd_name %in% CSD_NAMES) |> pull(nearest_facility)))
+  filter(nearest_facility %in% (sbc_locs |> filter(csd_name %in% CSD_NAMES) |> pull(nearest_facility))) |> 
+  left_join(crosswalk, by=c('dbid', 'daid'))
 
 ## SBC centric measures (table form) ----
 # drive measures
@@ -194,7 +195,69 @@ drive_measures <- drivetime_data_reduced |>
   ) |> 
   ungroup() 
 
-# 
+# population measures 
+total_pops <- db_projections |> 
+  filter(gender == 'T') |> 
+  select(dbid, pct_of_csd, year, total) |> 
+  pivot_wider(
+    names_from = year,
+    values_from = total,
+    names_prefix = 'pop_'
+  ) |> 
+  mutate(
+    across(
+      starts_with('pop_'),
+      ~ .x * pct_of_csd,
+      .names = '{.col}_db'
+    )
+  ) 
+
+# csds served by each SBC location
+csds_serviced <- drivetime_data_reduced |>  
+  distinct(assigned, csdid, csd_name, dbid) |> 
+  left_join(total_pops, by = 'dbid') |> 
+  filter(!is.na(csdid)) |> 
+  group_by(assigned, csdid, csd_name) |> 
+  summarize(
+    pct_of_csd = sum(pct_of_csd)
+  ) |> 
+  ungroup() |> 
+  arrange(assigned, desc(pct_of_csd))
+
+csds_serviced
+
+pop_measures <- drivetime_data_reduced |> 
+  distinct(assigned, csdid, dbid) |> 
+  left_join(total_pops, by = 'dbid') |> 
+  filter(!is.na(csdid)) |> 
+  group_by(assigned) |> 
+  summarize(
+    n_dbs = n(),
+    n_csds = n_distinct(csdid),
+    est_pop_2025 = sum(pop_2025_db),
+    est_pop_2030 = sum(pop_2030_db),
+    est_pop_2035 = sum(pop_2035_db)
+  ) |> 
+  left_join(
+    csds_serviced |> 
+      filter(pct_of_csd>0.5) |> 
+      group_by(assigned) |> 
+      summarize(n_majority_csds = n()),
+    by='assigned'
+  )
+
+
+# look at some weird percents, eg esquimalt
+# likely due to missing DBs in the data? 
+drivetime_data |> 
+  left_join(crosswalk, by=c('dbid', 'daid')) |> 
+  filter(csd_name == 'Esquimalt') |> 
+  distinct(nearest_facility)
+
+crosswalk |> 
+  left_join(drivetime_data, by=c('dbid', 'daid')) |> 
+  filter(csd_name == 'Esquimalt') |> 
+  filter(is.na(nearest_facility))
 
 # plots ----
 # step 1: create a histogram/density plot for each facility
