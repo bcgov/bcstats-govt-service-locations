@@ -43,44 +43,71 @@
 
 build_map <- function(
     data,
+    servicebc_data,
     varname,
-    loc_id,
-    loc_col = "loc",
+    csd_name,
+    csd_col = "",
     plot_title = "",
+    plot_subtitle = "",
     legend_title = "",
     map_theme = theme_minimal(),
-    fill_scale = scale_fill_viridis_c(option = "viridis")
+    fill_scale = scale_fill_viridis_c(option = "viridis"),
+    scale_limits = NULL
 ) {
 
   # --- Prepare arguments as symbols ---
   varname_sym <- rlang::sym(varname)
-  loc_col_sym <- rlang::sym(loc_col)
+  csd_col_sym <- rlang::sym(csd_col)
 
   # --- Prepare titles as strings --
-  default_title <- glue::glue("{varname} for Locality {loc_id}")
+  default_title <- glue::glue("{varname} for {csd_name}")
   plot_title <- plot_title %||% default_title
   legend_title <- legend_title %||% varname
 
-  map_data <- data %>%
-    filter(!!loc_col_sym == loc_id)
+  # dynamically set limits
+  fill_theme <- fill_scale$clone()
+  fill_theme$limits <- range(data[[varname_sym]])
+  fill_theme$oob <- scales::squish
+
+  map_data <- map_data <- data[data[[csd_col_sym]] == csd_name,]
+
+  points_data <- servicebc_data[servicebc_data[[csd_col_sym]] == csd_name,]
 
   # Check if filtering resulted in data
   if (nrow(map_data) == 0) {
     warning(glue("Warning: No data found for loc_id '{loc_id}'"))
-    return(ggplot() + theme_void() + labs(title = glue("No data for {loc_id}")))
+    return(ggplot() + theme_void() + labs(title = glue("No data for {csd_name}")))
   }
 
   ## Build the ggplot object
-  map <-  map_data %>%
-    ggplot() +
+  map <-  ggplot() +
     geom_sf(
+        data = map_data,
         aes(fill = !!varname_sym),
         color = "gray50",
         lwd = 0.1
     ) +
-   fill_scale +
+    fill_theme +
+    geom_sf(data = points_data,
+      aes(shape = "Nearest Service BC Location"),
+      fill = 'yellow',
+      color = 'black',
+      size = 2,
+      stroke = 1.1) +
+    scale_shape_manual(
+      name = NULL,
+      values = c("Nearest Service BC Location" = 23) 
+    ) +
+    guides(
+      shape = guide_legend(
+        override.aes = list(
+          fill = "yellow", 
+          size = 4)
+      )
+    ) +
     labs(
       title = plot_title,
+      subtitle = plot_subtitle,
       fill = legend_title,
       x = "\nLongitude",
       y = "Latitude\n"
