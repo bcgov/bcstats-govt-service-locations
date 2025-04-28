@@ -33,14 +33,9 @@ crosswalk <-
   clean_names()
 
 drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/processed-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
-
-drivetime_data_reduced <- drivetime_data %>% 
-  inner_join(crosswalk, by = c("dbid", "daid")) |> 
-  # filter to only the CSDs we are interested in
-  filter(csd_name %in% CSD_NAMES)
 
 pop_da <- read_csv(glue("{SRC_DATA_FOLDER}/population-da.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
@@ -53,14 +48,14 @@ pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols
 pop_csd <- read_csv(glue("{SRC_DATA_FOLDER}/population-csd.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric)) |> 
-  select(-csd_name) # this CSD name doesn't match, so always join on ids
+  select(-csd_name) # this CSD name doesn't match, so join on ids
 
 #------------------------------------------------------------------------------
 # Create CSD, DA and DB-level summary statistics table
 #------------------------------------------------------------------------------
-drivetime_stats_da <- calculate_drivetime_stats(drivetime_data_reduced, group_cols = c("csd_name", "csdid", "daid"))
-drivetime_stats_db <- calculate_drivetime_stats(drivetime_data_reduced, group_cols = c("csd_name","csdid", "dbid"))
-drivetime_stats_csd <- calculate_drivetime_stats(drivetime_data_reduced, group_cols = c("csd_name", "csdid"))
+drivetime_stats_da <- calculate_drivetime_stats(drivetime_data, group_cols = c("csd_name", "csdid", "daid"))
+drivetime_stats_db <- calculate_drivetime_stats(drivetime_data, group_cols = c("csd_name","csdid", "dbid"))
+drivetime_stats_csd <- calculate_drivetime_stats(drivetime_data, group_cols = c("csd_name", "csdid"))
 
 drivetime_stats_da <- drivetime_stats_da %>%
   left_join(pop_da, by = c("daid"))
@@ -97,9 +92,9 @@ investigate_db <- drivetime_stats_db %>%
 #------------------------------------------------------------------------------
 # Write descriptive tables to source folder
 #------------------------------------------------------------------------------
-write_csv(drivetime_stats_da, glue("{SRC_DATA_FOLDER}/da_average_times_dist_all_locs.csv"))
-write_csv(drivetime_stats_db, glue("{SRC_DATA_FOLDER}/db_average_times_dist_all_locs.csv"))
-write_csv(drivetime_stats_csd, glue("{SRC_DATA_FOLDER}/csd_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_da, glue("{SRC_DATA_FOLDER}/reduced_da_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_db, glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_csd, glue("{SRC_DATA_FOLDER}/reduced_csd_average_times_dist_all_locs.csv"))
 
 # clean up the environment
 rm(list = ls())
