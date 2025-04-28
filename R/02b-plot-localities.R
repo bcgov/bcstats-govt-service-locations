@@ -17,7 +17,7 @@
 # It plots the locations on top of a map of B.C. 
 
 # ------------------------------------------------------------------------
-# Script: 02-plot-localities.R
+# Script: 02b-plot-localities.R
 
 # Description: plot localities on a map of BC
 
@@ -39,58 +39,52 @@ library(rmapshaper)    # simplify geometries
 library(bcmaps) # get BC outline
 
 source("R/settings.R")
-source("R/fxns/pre-processing.R") # for read_all_locs()
+
 # ----------------------------------------------------------------------------
 # Load and prepare mapping data
 # ----------------------------------------------------------------------------
 
 # map of BC
-bc_map <- bc_bound() |> 
+bc_map <- bc_bound() |>
   st_transform(crs = 3005)
 
-# da level shapefiles for each locality
-fn <- glue("{SHAPEFILE_OUT}/processed_da_with_location.shp")
-da_shapefile <- tryCatch({
-  st_read(fn) %>%
-    rename("landarea" = "landare",
-           "loc" = "loctn_d") %>%
-    mutate(across(c(daid, loc), as.character)) # Explicitly declare data types on join columns
-}, error = function(e) {
-  message(glue("Error reading or processing file {fn}: {e$message}"))
-  return(NULL) # Return NULL on error
-})
-
-# simplify geographies to 1 per locality
-localities <- da_shapefile |> 
-  group_by(loc) |> 
-  summarize(geometry = st_union(geometry)) |> 
-  ungroup() |> 
-  mutate(
-    locality = paste0(LOC_LIST[loc],' (',loc,')')
-  )
+# csd level shapefiles for each locality
+csd_shapefile <- 
+  st_read(glue("{SHAPEFILE_OUT}/processed_csd_with_location.gpkg")) %>%
+  mutate(across(c(csd_name), as.character),
+         across(c(landarea), as.numeric))
 
 # get centroids for labels
-locality_centroids <- st_centroid(localities) 
-locality_centroids_nudged <- locality_centroids |> 
-mutate(
-    geometry = case_when(
-      loc == '227' ~ geometry + c(-150000, 40000),
-      loc == '909' ~ geometry + c(130000, 10000), # move east for langford
-      TRUE ~ geometry + c(0, 70000)  # move label north to not overlap 
-      )
-    )|>  
-  st_set_crs(st_crs(locality_centroids))
+csd_centroids <- st_centroid(csd_shapefile) 
+csd_centroids_nudged <- csd_centroids |> 
+  mutate(
+      geom = case_when(
+        csd_name == 'Dawson Creek' ~ geom + c(-150000, 40000),
+        csd_name == 'Langford' ~ geom + c(130000, 10000), # move east for langford
+        TRUE ~ geom + c(0, 70000)  # move label north to not overlap 
+  )
+      ) %>%
+  st_set_crs(st_crs(csd_centroids))
 
 # locations of all nearby SBC locations 
 sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")) |>
   st_as_sf(
     coords = c('coord_x', 'coord_y'),
     crs = 3005
-  )
+  ) 
 
 #-----------------------------------------------------------------------------
 # build map 
 #-----------------------------------------------------------------------------
+
+csds <- csd_shapefile |>
+  filter(csd_name %in% CSD_NAMES)
+
+csd_centroids_nudged <- csd_centroids_nudged |>
+  filter(csd_name %in% CSD_NAMES)
+
+sbc_locs <- sbc_locs |>
+  filter(csd_name %in% CSD_NAMES)
 
 out <- ggplot() + 
   geom_sf(
@@ -99,8 +93,8 @@ out <- ggplot() +
     color='black'
     ) +
   geom_sf(
-    data = localities, 
-    aes(fill = as.factor(locality)),
+    data = csds, 
+    aes(fill = as.factor(csd_name)),
     color = 'darkgrey',
     alpha = 1
   ) +
@@ -113,8 +107,8 @@ out <- ggplot() +
     stroke = 1.1
   ) +
   geom_sf_text(
-    data = locality_centroids_nudged,
-    aes(label = locality), 
+    data = csd_centroids_nudged,
+    aes(label = csd_name), 
     size=4, 
     fontface='bold'
     ) +

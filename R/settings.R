@@ -40,20 +40,24 @@ options(timeout = 600)
 
 library(safepaths)
 library(glue)
+library(tidyverse)
 
 #------------------------------------------------------------------------------
 # Constants declaration
 #------------------------------------------------------------------------------
-EXPECTED_LOCALITIES <- c("909", "227", "213", "420")
-LOC_LIST <- setNames(as.list(c("Langford", "Dawson Creek", "Smithers", "Kamloops")), c("909", "227", "213", "420"))
+CSD_NAMES <- c("Langford", "Dawson Creek", "Smithers", "Kamloops")
+CENSUS_BASIS <- 2021
+CANCENSUS_YEAR <- paste0('CA', str_sub(as.character(CENSUS_BASIS),3,4))
 
 # File paths
 LAN_FOLDER <- use_network_path()
 SRC_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/source/")
 RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/")
 RAW_POP_FILEPATH <- glue("{RAW_DATA_FOLDER}/statscan/98100015-eng/98100015.csv")
+DT_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/nearest_facility_BC")
 
 CROSSWALK_FILEPATH <- glue("{SRC_DATA_FOLDER}/da-db-loc-crosswalk.csv")
+CORRESP_FILEPATH <-"C:/Users/BASHCROF/Desktop/2021_92-151_X/2021_92-151_X.csv"
 DA_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/lda_000b21a_e/lda_000b21a_e.shp")
 DB_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/ldb_000b21a_e/ldb_000b21a_e.shp")
 SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
