@@ -354,7 +354,7 @@ write_csv(
 )
 
 write_csv(
-  drive_measures, 
+  pop_measures, 
   glue("{TABLES_OUT}/service_bc_centered_population_metrics.csv")
 )
 
