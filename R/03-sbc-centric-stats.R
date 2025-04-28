@@ -102,13 +102,13 @@ pop_db <- read_csv(
 
 ## db shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/processed_db_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
-## crosswalk
+## crosswalk (entire province, not filtered)
 crosswalk <-
   read_csv(
-    glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"),
+    glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"),
     col_types = cols(.default = "c")
   ) %>%
   clean_names()
@@ -183,9 +183,48 @@ db_projections <- prop_of_csd |>
     relationship = "many-to-many"
   )
 
+# Preprocess db_projections data to transform age columns into rows
+# The columns x0, x1, etc. represent different age groups
+db_projections_transformed <- db_projections |>
+  # Get all column names that start with 'x' followed by digits (age columns)
+  pivot_longer(
+    cols = starts_with("x") & matches("^x\\d+$"),
+    names_to = "age_column",
+    values_to = "population_by_age"
+  ) |>
+  # Extract age values from column names (remove 'x' prefix)
+  mutate(
+    age = as.numeric(str_replace(age_column, "^x", "")),
+    # Create age groups (0-4, 5-9, etc.)
+    age_group = case_when(
+      age < 5 ~ "0-4",
+      age < 10 ~ "5-9",
+      age < 15 ~ "10-14",
+      age < 20 ~ "15-19",
+      age < 25 ~ "20-24",
+      age < 30 ~ "25-29",
+      age < 35 ~ "30-34",
+      age < 40 ~ "35-39",
+      age < 45 ~ "40-44",
+      age < 50 ~ "45-49",
+      age < 55 ~ "50-54",
+      age < 60 ~ "55-59",
+      age < 65 ~ "60-64",
+      age < 70 ~ "65-69",
+      age < 75 ~ "70-74",
+      age < 80 ~ "75-79",
+      age < 85 ~ "80-84",
+      age < 90 ~ "85-89",
+      TRUE ~ "90+"
+    ),
+    # Calculate population estimate for each DB
+    population = population_by_age * pct_of_csd,
+    total = total * pct_of_csd
+  )
+
 # this table now has a pct of csd column that we can use
 # to multiple by any other population projections to get estimates
-db_projections
+db_projections_transformed
 
 # =========================================================================== #
 # Metrics for SBC locations of interest ----
@@ -241,26 +280,13 @@ drive_measures <- drivetime_data_reduced |>
   ungroup()
 
 # population measures
-total_pops <- db_projections |>
-  filter(gender == "T") |>
-  select(dbid, pct_of_csd, year, total) |>
-  pivot_wider(
-    names_from = year,
-    values_from = total,
-    names_prefix = "pop_"
-  ) |>
-  mutate(
-    across(
-      starts_with("pop_"),
-      ~ .x * pct_of_csd,
-      .names = "{.col}_db"
-    )
-  )
-
 # csds served by each SBC location
 csds_serviced <- drivetime_data_reduced |>
   distinct(assigned, csdid, csd_name, dbid) |>
-  left_join(total_pops, by = "dbid") |>
+  left_join(
+    db_projections_transformed  %>% distinct(dbid, pct_of_csd), 
+    by = "dbid"
+    ) |>
   filter(!is.na(csdid)) |>
   group_by(assigned, csdid, csd_name) |>
   summarize(
@@ -271,26 +297,37 @@ csds_serviced <- drivetime_data_reduced |>
 
 csds_serviced
 
+# total population, average/median age
 pop_measures <- drivetime_data_reduced |>
   distinct(assigned, csdid, dbid) |>
-  left_join(total_pops, by = "dbid") |>
-  filter(!is.na(csdid)) |>
-  group_by(assigned) |>
-  summarize(
-    n_dbs = n(),
-    n_csds = n_distinct(csdid),
-    est_pop_2025 = sum(pop_2025_db),
-    est_pop_2030 = sum(pop_2030_db),
-    est_pop_2035 = sum(pop_2035_db)
-  ) |>
   left_join(
-    csds_serviced |>
-      filter(pct_of_csd > 0.5) |>
-      group_by(assigned) |>
-      summarize(n_majority_csds = n()),
+    db_projections_transformed %>% 
+    filter(gender=='T') %>% 
+    select(dbid, year, age, population, total), 
+    by = "dbid"
+    ) |>
+  filter(!is.na(csdid)) %>% 
+  group_by(assigned, year) %>% 
+  summarize(
+    n_dbs = n_distinct(dbid),
+    n_csds = n_distinct(csdid),
+    est_pop = sum(population),
+    avg_age = weighted.mean(age, population),
+    median_age = median(rep(age, times = round(population))), # Use exact ages instead of bins
+    .groups = "drop"
+  )  %>% 
+  left_join(
+    csds_serviced  %>% 
+    filter(pct_of_csd > 0.5)  %>% 
+    group_by(assigned) %>% 
+    summarize(n_majority_csds = n()),
     by = "assigned"
+  ) %>% 
+  select(
+    assigned, year,
+    n_dbs, n_csds, n_majority_csds, 
+    est_pop, avg_age, median_age
   )
-
 
 # look at some weird percents, eg esquimalt
 # likely due to missing DBs in the data?
@@ -304,6 +341,12 @@ crosswalk |>
   filter(csd_name == "Esquimalt") |>
   filter(is.na(nearest_facility))
 
+
+# SAVE ALL TABLES
+drive_measures
+csds_serviced
+pop_measures
+
 # plots ----
 # step 1: create a histogram/density plot for each facility
 ggplot(
@@ -311,14 +354,34 @@ ggplot(
     group_by(assigned) |>
     mutate(drv_dist_mean = mean(drv_dist)) |>
     ungroup() |>
-    mutate(assigned = fct_reorder(assigned, desc(drv_dist_mean))),
+    mutate(
+      assigned = fct_reorder(assigned, desc(drv_dist_mean)),
+      drv_dist = if_else(drv_dist == 0, 0.01, drv_dist)
+      ),
   aes(x = drv_dist, y = assigned, fill = assigned, height = after_stat(density))
 ) +
-  # geom_density_ridges()+
-  geom_density_ridges(stat = "binline", trim = TRUE, draw_baseline = FALSE) +
+  geom_density_ridges(
+    stat = "binline",
+    draw_baseline = FALSE,
+    alpha = 0.3,
+    binwidth = 3
+  ) +
   xlim(0, 150) +
-  theme_ridges() +
-  theme(legend.position = "none")
+  labs(
+    x = "Drive Distance (km)",
+    title = "Driving Distances to Service BC Locations"
+  ) +
+  theme_ridges(center_axis_labels=TRUE) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 14),
+    axis.text = element_text(size = 14),
+    axis.title = element_text(size = 14),
+    legend.position = "none",
+    axis.title.y = element_blank(),
+    axis.text.y = element_text(),
+    plot.title.position = "plot"
+  )
 
 # step 2: map of all closest DBs/average drive distances
 map_data <- drivetime_data_reduced |>
@@ -349,3 +412,65 @@ map_plot <- build_map(
 )
 
 map_plot
+
+# =========================================================================== #
+# Population Pyramid Creation ----
+# =========================================================================== #
+
+# Prepare data for population pyramids by joining with location assignment data
+pyramid_data <- drivetime_data_reduced |>
+  distinct(assigned, dbid) |>
+  inner_join(
+    db_projections_transformed |>
+      filter(year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)),
+    by = "dbid"
+  )
+
+# Get unique facility names to generate pyramids for
+facilities <- unique(pyramid_data$assigned)
+
+# Generate population pyramids for each facility
+population_pyramids <- list()
+for (facility in facilities) {
+  population_pyramids[[facility]] <- create_population_pyramid(
+    data = pyramid_data,
+    location_name = facility
+  )
+}
+
+# Display a sample pyramid for the first facility
+if (length(facilities) > 0) {
+  print(population_pyramids[[facilities[2]]])
+}
+
+# Save all pyramids to files
+if (!dir.exists("outputs/population_pyramids")) {
+  dir.create("outputs/population_pyramids", recursive = TRUE)
+}
+
+for (facility in facilities) {
+  ggsave(
+    filename = glue("outputs/population_pyramids/{facility}_population_pyramid.png"),
+    plot = population_pyramids[[facility]],
+    width = 10,
+    height = 8,
+    dpi = 300
+  )
+}
+
+# Create a combined view with multiple pyramids
+# Take up to 4 facilities for a nice grid layout
+if (length(facilities) > 1) {
+  combined_pyramids <- cowplot::plot_grid(
+    plotlist = population_pyramids[1:min(4, length(facilities))],
+    ncol = 2
+  )
+  
+  ggsave(
+    filename = "outputs/population_pyramids/combined_population_pyramids.png",
+    plot = combined_pyramids,
+    width = 16,
+    height = 12,
+    dpi = 300
+  )
+}
