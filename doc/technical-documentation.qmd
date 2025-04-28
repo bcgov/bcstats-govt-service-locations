@@ -1,0 +1,157 @@
+---
+title: "Technical Documentation"
+output: 
+    html_document:
+        toc: true
+        toc_depth: 2
+        number_sections: true
+        theme: cerulean
+        highlight: tango
+        code_folding: hide
+        fig_caption: true
+        self_contained: false
+---
+
+This is technical documentation for the project and is **under construction**.
+
+## Configuration Settings (setting.R)
+
+The file `setting.R` contains the settings for the project, including global constants (written in all caps) and the paths to the data files. These constants are used throughout the project to ensure consistency and simplify configuration.
+
+#### General Settings
+
+-   **CSD_NAMES**: A list of municipalities of interest (`Langford`, `Dawson Creek`, `Smithers`, `Kamloops`).
+-   **CENSUS_BASIS**: The census year used for the analysis (2021).
+-   **CANCENSUS_YEAR**: The formatted census year for use with the `cancensus` package.
+
+#### File Paths
+
+-   **LAN_FOLDER**: The base folder for the project, configured using the `safepaths` package.
+-   **SRC_DATA_FOLDER**: The folder containing processed source data files.
+-   **RAW_DATA_FOLDER**: The folder containing raw input data files.
+-   **DT_DATA_FOLDER**: The folder containing raw drive time data.
+-   **SHAPEFILE_OUT**: The folder where processed shapefiles are saved.
+-   **MAP_OUT**: The folder where map visualizations are saved.
+-   **TABLES_OUT**: The folder where summary tables are saved.
+
+#### File Patterns
+
+-   **NO_ERRS_FILE_PATTERN**: A pattern used to identify valid drive time files.
+-   **INPUT_ADDR_DA_PATTERN**: A pattern for address files with dissemination area information.
+
+#### Columns
+
+-   **REQUIRED_COLS**: The required columns in the input data files.
+-   **POP_COLS**: The population-related columns used in the analysis.
+
+#### Visualization Settings
+
+-   **MAP_THEME**: The default theme for map visualizations.
+-   **FILL_THEME**: The default fill scale for map visualizations.
+
+------------------------------------------------------------------------
+
+## Raw to Ready Data (00-make-data.R)
+
+The file `00-make-data.R` prepares the data required for subsequent analysis, such as visuals and tables. It processes raw input files, generates shape files, and creates crosswalks for different geographic units.
+
+1.  **Pre-processing Driving distance data files**:
+
+    -   The script reads raw drive time files for each locality, cleans the data, and extracts relevant columns. (Note this is outdated) as we now have the full dataset. The single raw data file is read in and pre-processed. The processed files are saved to the `SRC_DATA_FOLDER`.
+
+2.  **Shapefiles**:
+
+    -   Shapefiles for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) are created using the `bcmaps` and `bcdata` packages. These shapefiles are saved to the `SHAPEFILE_OUT` folder.
+
+3.  **Crosswalk**:
+
+    -   A crosswalk is created to link dissemination blocks (DBs) to dissemination areas (DAs) and Census Subdivisions (CSDs. This crosswalk is used to aggregate data at different geographic levels. A correspondence file contains all DB's in BC, and the crosswalk file contains only those used in the analysis.
+
+4.  **Population Data**:
+
+    -   Population data for DAs, DBs, and CSDs is retrieved using the `cancensus` package. The data is pruned and cleaned and saved for use in later scripts.
+
+5.  **Service BC Location Data**:
+
+    -   An aggregated data set containing the count of addresses considered "nearest" to each Service BC locations is saved.
+
+6.  **Output Files**:
+
+    -   The processed data is saved in both full and reduced formats (filtered by the municipalities of interest) for use in subsequent scripts.
+
+## Descriptive Tables (01-descriptive-tables.R)
+
+This script loads the processed data files created in `00-make-data.R` and calculates summary statistics for drive times and distances. The results are aggregated at three geographic levels:
+
+1.  **Dissemination Block (DB)**: The smallest geographic unit for which population and dwelling counts are disseminated.
+2.  **Dissemination Area (DA)**: A small, relatively stable geographic unit composed of one or more adjacent dissemination blocks.
+3.  **Census Subdivision (CSD)**: A municipality or equivalent geographic area used for census purposes.
+
+### Key Steps in Summary Table Creation
+
+1.  **Loading Processed Data**:
+    -   The script reads the processed drive time and population data files created in `00-make-data.R`.
+2.  **Calculating Summary Statistics**:
+    -   Summary statistics such as mean, variance, skewness, kurtosis, and quantiles are calculated for drive times and distances.
+    -   The statistics are grouped by the geographic levels (DB, DA, and CSD).
+3.  **Data Validation**:
+    -   The script performs data checks to identify missing or low-count regions.
+    -   Regions with fewer than five observations are flagged for further investigation.
+4.  **Output Files**:
+    -   The aggregated summary tables are saved to the `TABLES_OUT` folder for use in subsequent scripts.
+
+## Thematic Maps for Accessibility Metrics (02-map-plots.R: )
+
+The `02-map-plots.R` script generates thematic maps that visualize accessibility metrics, such as average drive times and the number of addresses, at various geographic levels. These maps provide insights into potential disparities in service access.
+
+-   **Data Integration**: Combines processed shapefiles and summary statistics from earlier scripts.
+
+    -   **Shapefiles**: Geographic boundaries for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs).
+
+    -   **Summary Statistics**: Aggregated metrics from `01-descriptive-tables.R`.
+
+-   **Geographic Focus**: Filters data to include only the municipalities of interest (`Langford`, `Dawson Creek`, `Smithers`, `Kamloops`).
+
+-   **Custom Visualizations**: Uses `ggplot2` to create maps with color-coded fill scales and custom themes.
+
+    -   **Pilot Regions Map**: Highlights the pilot municipalities and their Service BC locations.
+
+    -   **Accessibility Metrics Map**: Visualizes metrics like average drive times at the Dissemination Block (DB) level.
+
+-   **Output File Location**: Maps are saved as image files in the `MAP_OUT` folder.
+
+#### 
+
+### Mapping Pilot Municipalities (02b-plot-localities.R)
+
+The `02b-plot-localities.R` script creates a map that highlights the pilot municipalities (`Langford`, `Dawson Creek`, `Smithers`, `Kamloops`) and plots the locations of Service BC offices. This map provides a high-level overview of the geographic distribution of the selected localities.
+
+#### **Key Features**
+
+-   **BC Base Map**: Uses the `bcmaps` package to generate a map of British Columbia, transformed to CRS 3005.
+
+-   **Data Integration**:
+
+    -   **Shapefiles**: Processed CSD shapefiles from `SHAPEFILE_OUT`.
+
+    -   **Service BC Locations**: CSV file containing the geographic coordinates of Service BC offices.
+
+-   **Custom Visualizations**:
+
+    -   **Pilot Regions Map**: A map showing the pilot municipalities and their Service BC locations.
+
+    -   **Centroid Adjustments**: Calculates and adjusts centroids for municipality labels to avoid overlap.
+
+    -   **Service BC Locations**: Plots Service BC offices as yellow markers on the map.
+
+-   **File Location**: The map is saved as `pilot_regions.png` in the `MAP_OUT` folder.
+
+------------------------------------------------------------------------
+
+### 
+
+## Future Work
+
+-   Expand the analysis to include additional municipalities and public services.
+-   Incorporate socio-economic and demographic factors into the analysis.
+-   Improve the documentation for each script and function.

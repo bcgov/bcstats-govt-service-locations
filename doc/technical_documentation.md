@@ -118,7 +118,81 @@ The summary tables generated in this script will be used to:
 
 This script uses the processed shapefiles and summary statistics to create thematic maps. The maps visualize accessibility metrics, such as the number of addresses or average drive times, at different geographic levels.
 
+### Key Steps in Map Creation
+
+1. **Loading Processed Data**:
+   - The script reads the processed shapefiles and summary statistics created in `00-make-data.R` and `01-descriptive-tables.R`.
+   - Shapefiles for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) are loaded.
+
+2. **Filtering Data**:
+   - The data is filtered to include only the municipalities of interest, as defined in the `CSD_NAMES` constant.
+
+3. **Building Thematic Maps**:
+   - The script uses the `ggplot2` package to create thematic maps.
+   - Accessibility metrics, such as the number of addresses or average drive times, are visualized using color-coded fill scales.
+   - Custom themes and labels are applied to enhance readability.
+
+4. **Adding Service BC Locations**:
+   - The locations of Service BC offices are plotted on the maps using point markers.
+   - Labels for municipalities are added, with adjustments to avoid overlapping.
+
+5. **Output Files**:
+   - The generated maps are saved as image files in the `MAP_OUT` folder.
+
+### Outputs
+The maps generated in this script provide visual insights into accessibility metrics and are used to:
+- Highlight geographic disparities in service access.
+- Support decision-making for resource allocation and service planning.
+
+### Example Maps
+- **Pilot Regions Map**: Displays the pilot municipalities (e.g., Langford, Dawson Creek, Smithers, Kamloops) and their associated Service BC locations.
+- **Accessibility Metrics Map**: Visualizes metrics such as the number of addresses or average drive times at the Dissemination Block (DB) level.
+
+
 ---
+
+
+### Purpose
+This script creates a map that highlights the pilot regions (`Langford`, `Dawson Creek`, `Smithers`, `Kamloops`) and plots the locations of Service BC offices within these regions. It serves as a foundational visualization for understanding the spatial context of the analysis.
+
+### Key Features
+
+1. **BC Map**:
+   - The base map of British Columbia is generated using the `bcmaps` package.
+   - The map is transformed to the appropriate coordinate reference system (CRS 3005).
+
+2. **Locality Shapefiles**:
+   - Shapefiles for Census Subdivisions (CSDs) are loaded and filtered to include only the pilot municipalities.
+   - Centroids of the CSDs are calculated and adjusted to avoid overlapping labels.
+
+3. **Service BC Locations**:
+   - The locations of Service BC offices are loaded from a CSV file and plotted as yellow markers on the map.
+
+4. **Customizations**:
+   - Labels for municipalities are added with adjustments to improve readability.
+   - A color-coded fill scale is applied to distinguish between localities.
+
+5. **Output**:
+   - The final map is saved as `pilot_regions.png` in the `MAP_OUT` folder.
+
+### Outputs
+The map generated in this script provides:
+- A visual representation of the pilot municipalities.
+- The geographic locations of Service BC offices within these regions.
+
+### Example Map
+The map includes:
+- **Regions**: Highlighted in distinct colors for each locality.
+- **Service BC Locations**: Marked with yellow symbols.
+- **Municipality Labels**: Positioned to avoid overlap with other map elements.
+
+This visualization is a key component of the project, offering a clear and intuitive way to understand the spatial distribution of the pilot regions and their Service BC locations.
+
+---
+
+### How It Fits
+
+
 
 ## Future Work
 - Expand the analysis to include additional municipalities and public services.
