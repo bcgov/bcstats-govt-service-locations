@@ -342,46 +342,69 @@ crosswalk |>
   filter(is.na(nearest_facility))
 
 
-# SAVE ALL TABLES
-drive_measures
-csds_serviced
-pop_measures
+# SAVE ALL TABLES ----
+write_csv(
+  drive_measures, 
+  glue("{TABLES_OUT}/service_bc_centered_drive_metrics.csv")
+)
+
+write_csv(
+  csds_serviced, 
+  glue("{TABLES_OUT}/service_bc_centered_csd_counts.csv")
+)
+
+write_csv(
+  drive_measures, 
+  glue("{TABLES_OUT}/service_bc_centered_population_metrics.csv")
+)
 
 # plots ----
-# step 1: create a histogram/density plot for each facility
-ggplot(
-  drivetime_data_reduced |>
-    group_by(assigned) |>
-    mutate(drv_dist_mean = mean(drv_dist)) |>
-    ungroup() |>
-    mutate(
-      assigned = fct_reorder(assigned, desc(drv_dist_mean)),
-      drv_dist = if_else(drv_dist == 0, 0.01, drv_dist)
-      ),
-  aes(x = drv_dist, y = assigned, fill = assigned, height = after_stat(density))
-) +
-  geom_density_ridges(
-    stat = "binline",
-    draw_baseline = FALSE,
-    alpha = 0.3,
-    binwidth = 3
-  ) +
-  xlim(0, 150) +
-  labs(
-    x = "Drive Distance (km)",
-    title = "Driving Distances to Service BC Locations"
-  ) +
-  theme_ridges(center_axis_labels=TRUE) +
-  theme(
-    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5, size = 14),
-    axis.text = element_text(size = 14),
-    axis.title = element_text(size = 14),
-    legend.position = "none",
-    axis.title.y = element_blank(),
-    axis.text.y = element_text(),
-    plot.title.position = "plot"
+# Create individual histograms for each facility 
+# Create a folder specifically for the histograms
+histogram_folder <- file.path(MAP_OUT, "sbc_drive_distance_histograms")
+if (!dir.exists(histogram_folder)) {
+  dir.create(histogram_folder, recursive = TRUE)
+}
+
+# Create and save histograms for each facility
+facilities <- unique(drivetime_data_reduced$assigned)
+for (facility in facilities) {
+  p <- create_drive_distance_histogram(
+    data = drivetime_data_reduced, 
+    facility_name = facility, 
+    facet = FALSE
   )
+  
+  # Save the individual plot
+  ggsave(
+    filename = glue("{histogram_folder}/{facility}_drive_distance.png"),
+    plot = p,
+    width = 10,
+    height = 6,
+    dpi = 300
+  )
+}
+
+print(p)
+
+# Create the faceted plot with all facilities
+faceted_plot <- create_drive_distance_histogram(
+  data = drivetime_data_reduced,
+  facet = TRUE
+)
+
+# display
+print(faceted_plot)
+
+# Save the faceted plot
+ggsave(
+  filename = glue("{histogram_folder}/all_facilities_drive_distance.png"),
+  plot = faceted_plot,
+  width = 16,
+  height = 12,
+  dpi = 300
+)
+
 
 # step 2: map of all closest DBs/average drive distances
 map_data <- drivetime_data_reduced |>
@@ -389,16 +412,52 @@ map_data <- drivetime_data_reduced |>
   group_by(dbid, nearest_facility) |>
   summarize(drive_dist_mean = mean(drv_dist)) |>
   ungroup() |>
-  left_join(db_shapefiles, by = c("dbid")) |>
+  left_join(db_shapefile, by = c("dbid")) |>
   st_as_sf(crs = 3005)
 
+# Create a folder for drive distance maps
+map_folder <- file.path(MAP_OUT, "sbc_drive_distance_maps")
+if (!dir.exists(map_folder)) {
+  dir.create(map_folder, recursive = TRUE)
+}
+
+# Generate a map for each Service BC location
+for (loc_id in unique(map_data$nearest_facility)) {
+  var <- "drive_dist_mean"
+  loc_col <- "nearest_facility"
+  plot_title <- glue("Driving Distances for {loc_id}")
+  var_title <- "Driving Distance (km)"
+  
+  map_plot <- build_map(
+    data = map_data,
+    servicebc_data = sbc_locs,
+    varname = var,
+    csd_name = loc_id,
+    csd_col = loc_col,
+    map_theme = MAP_THEME,
+    fill_scale = FILL_THEME,
+    plot_title = plot_title,
+    legend_title = var_title
+  )
+  
+  # Save the map
+  ggsave(
+    filename = glue("{map_folder}/{loc_id}_drive_distance_map.png"),
+    plot = map_plot,
+    width = 10,
+    height = 8,
+    dpi = 300
+  )
+}
+
+# Display the map for a specific location as an example
+loc_id <- unique(map_data$nearest_facility)[1]
 var <- "drive_dist_mean"
-loc_id <- "Service BC - Victoria"
 loc_col <- "nearest_facility"
 plot_title <- glue("Driving Distances for {loc_id}")
 var_title <- "Driving Distance (km)"
 
-map_plot <- build_map(
+example_map <- build_map(
   data = map_data,
   servicebc_data = sbc_locs,
   varname = var,
@@ -407,11 +466,10 @@ map_plot <- build_map(
   map_theme = MAP_THEME,
   fill_scale = FILL_THEME,
   plot_title = plot_title,
-  # plot_subtitle = plot_subtitle,
   legend_title = var_title
 )
 
-map_plot
+print(example_map)
 
 # =========================================================================== #
 # Population Pyramid Creation ----
@@ -443,14 +501,15 @@ if (length(facilities) > 0) {
   print(population_pyramids[[facilities[2]]])
 }
 
-# Save all pyramids to files
-if (!dir.exists("outputs/population_pyramids")) {
-  dir.create("outputs/population_pyramids", recursive = TRUE)
+# Create a folder for drive distance maps
+pyramid_folder <- file.path(MAP_OUT, "sbc_population_pyramids")
+if (!dir.exists(pyramid_folder)) {
+  dir.create(pyramid_folder, recursive = TRUE)
 }
 
 for (facility in facilities) {
   ggsave(
-    filename = glue("outputs/population_pyramids/{facility}_population_pyramid.png"),
+    filename = glue("{pyramid_folder}/{facility}_population_pyramid.png"),
     plot = population_pyramids[[facility]],
     width = 10,
     height = 8,
@@ -467,7 +526,7 @@ if (length(facilities) > 1) {
   )
   
   ggsave(
-    filename = "outputs/population_pyramids/combined_population_pyramids.png",
+    filename = glue("{pyramid_folder}/combined_population_pyramids.png"),
     plot = combined_pyramids,
     width = 16,
     height = 12,
