@@ -25,7 +25,7 @@
 library(tidyverse)
 library(glue)
 library(ggplot2)
-library(scales) 
+library(scales)
 
 source("R/settings.R")
 source("R/fxns/plots.r")
@@ -47,7 +47,7 @@ db_stats_plot_data <- db_stats_raw %>%
   mutate(municipality = as.factor(csd_name))
 
 #------------------------------------------------------------------------------
-# Comparative Box Plot (Distribution by region)
+# Comparative Box and Violin Plots (Distribution by region)
 #------------------------------------------------------------------------------
 
 # user-defined plot parameters
@@ -60,23 +60,27 @@ x_title <- "Municipality"
 
 # dynamic plot parameters
 plot_data  <- db_stats_plot_data
-region_title <- "Dissemination Block"
+region_title <- "dissemination block"
 
 if (region == "DA") {
   region_title <- "Dissemination Area"
   plot_data  <- NULL # replace with DA data if we want this functionality later
 }
 
-plot_title <- glue("Distribution of {y_title} to nearest Service BC Location")
-plot_subtitle <- glue("Comparison Across Municipalities, by {region_title}")
+plot_title <- glue("Distribution of Driving Time to Nearest Service BC Location")
+plot_subtitle <- glue("Comparison across municipalities, by {region_title}")
 
-# Generate plot
+plot_data <- plot_data %>%
+  filter(csd_name %in% c("Langford", "Dawson Creek", "Smithers", "Kamloops"))
+
+# --- Box Plot (Distribution by region) ---
+
 message("Generating Box Plot...")
 
-plot_data <- plot_data %>% 
-  filter(csd_name %in% CSD_NAMES)
+outfile <- to_snake_case(glue("box plot {y_var} by {region}"))
+outfile <- glue("temp/{outfile}.svg")
 
-box_plot_out <- build_boxplot(
+box_plot <- build_boxplot(
   data = plot_data,
   x_var = x_var,
   y_var = y_var,
@@ -84,55 +88,26 @@ box_plot_out <- build_boxplot(
   plot_subtitle = plot_subtitle,
   x_title = x_title,
   y_title = y_title,
-  boxplot_theme = BOX_PLOT_THEME,
+  plot_theme = BOX_PLOT_THEME,
   fill_scale = FILL_THEME_D
 )
 
 # Save the plot
-fn <- to_snake_case(glue("box plot {y_var} by {region}"))
-fn <- glue("temp/{fn}.svg")
 ggsave(
-  filename = fn,
+  filename = outfile,
   path = VISUALS_OUT,
-  plot = box_plot_out,
+  plot = box_plot,
   width = 8,
   height = 7,
   device = "svg"
 )
 
-message(glue("Box plot saved to: {VISUALS_OUT}/temp/{fn}"))
 
-# ------------------------------------------------------------------------
-# Comparative Violin Plot (Distribution by region)
-# ------------------------------------------------------------------------
+# --- Violin Plot (Distribution by region) ---
 
-# user-defined plot parameters
-y_var <- "drv_time_sec_qnt100"
-x_var <- "municipality"
-region <- "DB"
-
-y_title <- glue("Drive Time 100th Percentile (Seconds)")
-x_title <- "Municipality"
-
-# dynamic plot parameters
-plot_data  <- db_stats_plot_data
-region_title <- "Dissemination Block"
-
-if (region == "DA") {
-  region_title <- "Dissemination Area"
-  plot_data  <- NULL # replace with DA data if we want this functionality later
-}
-
-plot_title <- glue("Distribution of {y_title} to nearest Service BC Location")
-plot_subtitle <- glue("Comparison Across Municipalities, by {region_title}")
-
-plot_data <- plot_data %>% 
-  filter(csd_name %in% CSD_NAMES)
-
-# Generate plot
 message("Generating Violin Plot...")
 
-violin_plot_out <- build_violinplot(
+violin_plot <- build_violinplot(
   data = plot_data,
   x_var = x_var,
   y_var = y_var,
@@ -140,22 +115,20 @@ violin_plot_out <- build_violinplot(
   plot_subtitle = plot_subtitle,
   x_title = x_title,
   y_title = y_title,
-  violinplot_theme = theme_minimal(),
-  fill_scale = scale_fill_viridis_d(option = "mako") #Made sure the option has 
+  plot_theme = VIOLIN_PLOT_THEME,
+  fill_scale = FILL_THEME_D
 )
 
-print(violin_plot_out)
-
 # Save the plot
-fn <- to_snake_case(glue("violin plot {y_var} by {region}"))
-fn <- glue("temp/{fn}.svg")
+outfile <- to_snake_case(glue("violin plot {y_var} by {region}"))
+outfile <- glue("temp/{outfile}.svg")
 ggsave(
-  filename = fn,
+  filename = outfile,
   path = VISUALS_OUT,
-  plot = violin_plot_out,
+  plot = violin_plot,
   width = 8,
   height = 7,
   device = "svg"
 )
 
-message(glue("Violin plot saved to: {VISUALS_OUT}/temp/{fn}"))
+message(glue("Violin plot saved to: {VISUALS_OUT}/temp/{outfile}"))

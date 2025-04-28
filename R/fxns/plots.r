@@ -148,7 +148,7 @@ build_boxplot <- function(
   plot_subtitle = "",
   x_title = "",
   y_title = "",
-  boxplot_theme = theme_minimal(),
+  plot_theme = theme_minimal(),
   fill_scale = scale_fill_viridis_d(option = "viridis") #Discrete Colour function scale
 ) {
 
@@ -165,28 +165,28 @@ build_boxplot <- function(
   ## Build the ggplot object
   boxplot <- ggplot(data, aes(x = !!x_var_sym, y = !!y_var_sym)) +
     geom_boxplot(
-      aes(fill = !!x_var_sym), # Use discrete x-variable for fill
+      aes(fill = !!x_var_sym),
       notch = FALSE,
       outlier.shape = NA
     ) +
     geom_jitter(
       width = 0.15,
       height = 0,
-      alpha = 0.15,
+      alpha = 0.25,
       size = 0.7,
       color = "grey30"
     ) +
     fill_scale + 
-    scale_y_continuous(labels = scales::comma_format()) + # Format y-axis
+    scale_y_continuous(labels = scales::comma_format()) + 
     labs(
       title = plot_title,
       subtitle = plot_subtitle,
       x = x_title,
       y = y_title,
-      fill = "" # Removing the x axis title
-
+      fill = ""
     ) +
-    boxplot_theme
+    xlab("") +
+    plot_theme
 
   return(boxplot)
 }
@@ -222,8 +222,8 @@ build_violinplot <- function(
   plot_subtitle = "",
   x_title = "",
   y_title = "",
-  violinplot_theme = theme_minimal(),
-  fill_scale = scale_fill_viridis_d(option = "mako") 
+  plot_theme = theme_minimal(),
+  fill_scale = scale_fill_viridis_d(option = "mako")
 ) {
 
   # --- Prepare arguments as symbols ---
@@ -239,22 +239,24 @@ build_violinplot <- function(
   ## Build the ggplot object
   violinplot <- ggplot(data, aes(x = !!x_var_sym, y = !!y_var_sym)) +
     geom_violin(aes(fill = !!x_var_sym), trim = FALSE, alpha = 0.7) +
-    geom_boxplot(width = 0.1, fill = "white", outlier.shape = NA, alpha = 0.8) + # Overlay smaller boxplot
     fill_scale +
+        geom_jitter(
+      width = 0.15,
+      height = 0,
+      alpha = 0.25,
+      size = 0.7,
+      color = "grey30"
+    ) +
     scale_y_continuous(labels = scales::comma_format()) +
     labs(
       title = plot_title,
       subtitle = plot_subtitle,
       x = x_title,
       y = y_title,
-      fill = "" 
+      fill = ""
     ) +
-    violinplot_theme +
-    theme(
-      axis.text.x = element_text(angle = 30, hjust = 1),
-      plot.title = element_text(face = "bold"),
-      panel.grid.major.x = element_blank()
-    )
+    xlab("") +
+    plot_theme
 
   return(violinplot)
 }
