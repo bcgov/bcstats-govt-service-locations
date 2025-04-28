@@ -85,7 +85,32 @@ The data prepared in this script will be used to:
 
 ## 01-descriptive-tables.R
 
-This script loads the processed data files created in `00-make-data.R` and calculates summary statistics for drive times and distances. The results are aggregated at the Dissemination Block (DB), Dissemination Area (DA), and Census Subdivision (CSD) levels.
+This script loads the processed data files created in `00-make-data.R` and calculates summary statistics for drive times and distances. The results are aggregated at three geographic levels:
+
+1. **Dissemination Block (DB)**: The smallest geographic unit for which population and dwelling counts are disseminated.
+2. **Dissemination Area (DA)**: A small, relatively stable geographic unit composed of one or more adjacent dissemination blocks.
+3. **Census Subdivision (CSD)**: A municipality or equivalent geographic area used for census purposes.
+
+### Key Steps in Summary Table Creation
+
+1. **Loading Processed Data**:
+   - The script reads the processed drive time and population data files created in `00-make-data.R`.
+
+2. **Calculating Summary Statistics**:
+   - Summary statistics such as mean, variance, skewness, kurtosis, and quantiles are calculated for drive times and distances.
+   - The statistics are grouped by the geographic levels (DB, DA, and CSD).
+
+3. **Data Validation**:
+   - The script performs data checks to identify missing or low-count regions.
+   - Regions with fewer than five observations are flagged for further investigation.
+
+4. **Output Files**:
+   - The aggregated summary tables are saved to the `TABLES_OUT` folder for use in subsequent scripts.
+
+### Outputs
+The summary tables generated in this script will be used to:
+- Create thematic maps in `02-map-plots.R`.
+- Provide quantitative insights for accessibility analysis.
 
 ---
 
