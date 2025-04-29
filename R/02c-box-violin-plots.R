@@ -51,19 +51,19 @@ db_stats_raw <- db_stats_raw %>%
 #------------------------------------------------------------------------------
 
 region <- "Dissemination Block"
-plot_data  <- db_stats_plot_data %>%
+plot_data  <- db_stats_raw %>%
   filter(csd_name %in% c("Langford", "Dawson Creek", "Smithers", "Kamloops"))
 
 if(region == "Dissemination Area"){
-  map_data  <- NULL # replace with DA data if we want this functionality later
+  plot_data  <- NULL # replace with DA data if we want this functionality later
 }
 
 # user-defined plot parameters
-y_var <- "drv_dist_mean"  # colnames(map_data) for other options
+y_var <- "drv_time_min_mean"  # colnames(plot_data) for other options
 x_var <- "municipality"
 
-y_title <- "Mean Driving Distance"
-y_unit <- "km"
+y_title <- "Mean Driving Time"
+y_unit <- "minutes"
 x_title <- "Municipality"
 
 plot_title <- glue("Distribution of {y_title} to Nearest Service BC Office")
@@ -74,7 +74,7 @@ plot_subtitle <- glue("Comparison across municipalities")
 message("Generating Box Plot...")
 
 outfile <- to_snake_case(glue("box plot {y_var} by {region}"))
-outfile <- glue("csd-drive-distance-maps/{outfile}.svg")
+outfile <- glue("csd-drive-distance-plots/{outfile}.svg")
 
 box_plot <- build_boxplot(
   data = plot_data,
@@ -117,7 +117,7 @@ violin_plot <- build_violinplot(
 
 # Save the plot
 outfile <- to_snake_case(glue("violin plot {y_var} by {region}"))
-outfile <- glue("csd-drive-distance-maps/{outfile}.svg")
+outfile <- glue("csd-drive-distance-plots/{outfile}.svg")
 ggsave(
   filename = outfile,
   path = VISUALS_OUT,
