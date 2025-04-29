@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script loads aggregated csv data files containing spatial data for 
-# municipality of interest in BC (loc). It produces maps at the dissemination block level 
+# This script loads aggregated csv data files containing spatial data for
+# municipality of interest in BC (loc). It produces maps at the dissemination block level
 # displaying quantitative information on basic descriptive statisics
 
 
@@ -33,20 +33,21 @@ source("R/fxns/plots.R")
 #------------------------------------------------------------------------------
 
 csd_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/processed_csd_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/reduced-csd-with-location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
 da_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/processed_da_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/reduced-da-with-location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/processed_db_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/reduced-db-with-location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
 #------------------------------------------------------------------------------
 # Read drive time data from source folder
 #------------------------------------------------------------------------------
+
 da_drivetime_data <-
   read_csv(glue("{SRC_DATA_FOLDER}/da_average_times_dist_all_locs.csv")
           , col_types = cols(.default = "c")) %>%
@@ -61,13 +62,14 @@ db_drivetime_data <-
 
 csd_drivetime_data <-
   read_csv(glue("{SRC_DATA_FOLDER}/csd_average_times_dist_all_locs.csv")
-  , col_types = cols(.default = "c"))  %>%
+          , col_types = cols(.default = "c"))  %>%
   clean_names() %>%
   mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
 
 #------------------------------------------------------------------------------
 # Read service bc location data from source folder
 #------------------------------------------------------------------------------
+
 servicebc <-
   read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
            , col_types = cols(.default = "c")) %>%
@@ -79,11 +81,12 @@ servicebc <-
 # Use left_join to color differently those da/db's missing data
 # remove DA's for for which we have only an extremely small number of addresses
 #------------------------------------------------------------------------------
+
 da_drivetime_map_data <- da_shapefile %>%
-  inner_join(da_drivetime_data, by = join_by(daid))
+  inner_join(da_drivetime_data, by = join_by(daid, csd_name))
 
 db_drivetime_map_data <- db_shapefile %>%
-  inner_join(db_drivetime_data, by = join_by(dbid, csdid))
+  inner_join(db_drivetime_data, by = join_by(dbid, csdid, csd_name))
 
 csd_drivetime_map_data <- csd_shapefile %>%
   inner_join(csd_drivetime_data, by = join_by(csdid, csd_name))
@@ -92,17 +95,18 @@ csd_drivetime_map_data <- csd_shapefile %>%
 # build map - this is where we provide options for build map function
 #------------------------------------------------------------------------------
 
+region <- "Dissemination Block"
+map_data  <- db_drivetime_map_data
+
+if(region == "Dissemination Area"){
+  map_data  <- da_drivetime_map_data
+}
+
 # user-defined map parameters
 var <- "n_address"  # colnames(map_data) for other options
 var_title <- "Count of Addresses"
-region_title <- "Dissemination Block"
+
 plot_subtitle <- ""
-
-map_data  <- db_drivetime_map_data
-
-if(region_title == "Dissemination Area"){
-  map_data  <- da_drivetime_map_data
-}
 
 # filter on desired csd here
 for (csd in csd_drivetime_map_data %>% pull(csd_name)){
