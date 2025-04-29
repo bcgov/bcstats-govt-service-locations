@@ -57,11 +57,15 @@ calculate_drivetime_stats <- function(df, group_cols) {
   # aggregate and apply calculations as defined above
   # ------------------------------------------------------------------------
   
+  # add time in minutes 
+  df <- df %>%
+    mutate(drv_time_min = drv_time_sec / 60) # convert to minutes
+
   data <- df %>%
     group_by(across(all_of(group_cols))) %>%
     summarise(
       # Apply stats to specified numeric variables
-      across(c(drv_dist, drv_time_sec), numeric_stats, .names = "{col}_{fn}"),
+      across(c(drv_dist, drv_time_sec, drv_time_min), numeric_stats, .names = "{col}_{fn}"),
       # add calculations that apply to the whole group
       n_address = n_distinct(fid),
       .groups = "drop")
