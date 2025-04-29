@@ -35,14 +35,14 @@ source("R/fxns/plots.r")
 #------------------------------------------------------------------------------
 
 db_stats_raw <-
-  read_csv(glue("{SRC_DATA_FOLDER}/temp/db_average_times_dist_all_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv")
                , col_types = cols(.default = "c"))
 
 # Identify columns expected to be numeric based on naming convention
 numeric_cols_pattern <- "(dist|time|area|households|n_address|population|dwellings)" # Adjust if needed
 numeric_cols <- names(db_stats_raw)[str_detect(names(db_stats_raw), numeric_cols_pattern)]
 
-db_stats_plot_data <- db_stats_raw %>%
+db_stats_raw <- db_stats_raw %>%
   mutate(across(all_of(numeric_cols), as.numeric)) %>%
   mutate(municipality = as.factor(csd_name))
 
@@ -50,35 +50,31 @@ db_stats_plot_data <- db_stats_raw %>%
 # Comparative Box and Violin Plots (Distribution by region)
 #------------------------------------------------------------------------------
 
-# user-defined plot parameters
-y_var <- "drv_time_sec_qnt100"  # colnames(map_data) for other options
-x_var <- "municipality"
-region <- "DB"
+region <- "Dissemination Block"
+plot_data  <- db_stats_plot_data %>%
+  filter(csd_name %in% c("Langford", "Dawson Creek", "Smithers", "Kamloops"))
 
-y_title <- glue("Drive Time 100th Percentile (Seconds)")
-x_title <- "Municipality"
-
-# dynamic plot parameters
-plot_data  <- db_stats_plot_data
-region_title <- "dissemination block"
-
-if (region == "DA") {
-  region_title <- "Dissemination Area"
-  plot_data  <- NULL # replace with DA data if we want this functionality later
+if(region == "Dissemination Area"){
+  map_data  <- NULL # replace with DA data if we want this functionality later
 }
 
-plot_title <- glue("Distribution of Driving Time to Nearest Service BC Location")
-plot_subtitle <- glue("Comparison across municipalities, by {region_title}")
+# user-defined plot parameters
+y_var <- "drv_dist_mean"  # colnames(map_data) for other options
+x_var <- "municipality"
 
-plot_data <- plot_data %>%
-  filter(csd_name %in% c("Langford", "Dawson Creek", "Smithers", "Kamloops"))
+y_title <- "Mean Driving Distance"
+y_unit <- "km"
+x_title <- "Municipality"
+
+plot_title <- glue("Distribution of {y_title} to Nearest Service BC Office")
+plot_subtitle <- glue("Comparison across municipalities")
 
 # --- Box Plot (Distribution by region) ---
 
 message("Generating Box Plot...")
 
 outfile <- to_snake_case(glue("box plot {y_var} by {region}"))
-outfile <- glue("temp/{outfile}.svg")
+outfile <- glue("csd-drive-distance-maps/{outfile}.svg")
 
 box_plot <- build_boxplot(
   data = plot_data,
@@ -121,7 +117,7 @@ violin_plot <- build_violinplot(
 
 # Save the plot
 outfile <- to_snake_case(glue("violin plot {y_var} by {region}"))
-outfile <- glue("temp/{outfile}.svg")
+outfile <- glue("csd-drive-distance-maps/{outfile}.svg")
 ggsave(
   filename = outfile,
   path = VISUALS_OUT,
@@ -132,3 +128,6 @@ ggsave(
 )
 
 message(glue("Violin plot saved to: {VISUALS_OUT}/temp/{outfile}"))
+
+rm(list = ls())
+gc()
