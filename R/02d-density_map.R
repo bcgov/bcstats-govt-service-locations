@@ -32,25 +32,25 @@ source("R/settings.R")
 # Read data points into one data frame
 # -----------------------------------------------------------------------------------------------------
 crosswalk <-
-  read_csv(glue("{SRC_DATA_FOLDER}/temp/csd-da-db-loc-crosswalk.csv"), col_types = cols(.default = "c")) %>%
+  read_csv(glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"), col_types = cols(.default = "c")) %>%
   clean_names()
 
 drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/temp/processed-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 drivetime_data <- drivetime_data %>% 
-  inner_join(crosswalk, by = c("dbid", "daid"))
+  inner_join(crosswalk, by = c("dbid", "daid", "csdid", "csd_name", "csd_desc"))
 
-pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/temp/population-db.csv"), col_types = cols(.default = "c")) %>%
+pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
 #------------------------------------------------------------------------------
 # Read service bc location data from source folder
 #------------------------------------------------------------------------------
-servicebc <- read_csv(glue("{SRC_DATA_FOLDER}/temp/service_bc_locs.csv")
+servicebc <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv")
            , col_types = cols(.default = "c")) %>%
   clean_names() %>%
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
@@ -68,32 +68,54 @@ shp_csd_all <- census_subdivision() %>%
 # make map data
 # -----------------------------------------------------------------------------------------------------
 
-shp_csd <- shp_csd_all %>% filter(census_subdivision_name == "Smithers")
+for (csd in shp_csd_all %>% pull(census_subdivision_name)){
+
+message(glue("Generating map for {csd} ..."))
 
 points <- drivetime_data %>% 
   st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005) %>%
   st_intersection(shp_csd)
 
 # lets get the density of this thing
+# Assign weights to each spatial point based on driving time
+points$weights <- points$drv_time_sec
+
+# Convert to ppp object with weights
 stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd))
-plot(stats_ppp)
+marks(stats_ppp) <- points$drv_dist
 
-pop_db
-
-w0 <- 1
-w1 <- if_else(points$dwellings == 0, 1, points$population/points$dwellings)
-w2 <- if_else(is.na(points$drv_dist_mean), 0, points$drv_dist_mean)
-
-density_stats_stars <- stars::st_as_stars(density(stats_ppp, weights = w0, dymx = 300))
-plot(density_stats_stars)
+density_stats_stars <- stars::st_as_stars(Smooth(stats_ppp, sigma = 1000))
 
 #lets convert back to sf so it's compatible with ggplot2::geom_sf()
 density_stats_sf <- st_as_sf(density_stats_stars) %>%
   st_set_crs(3005)
 
-ggplot() +
+map_plot <- ggplot() +
   geom_sf(data = density_stats_sf, aes(fill = v), color = NA) +
-  geom_sf(data = shp_csd, fill = NA, color = "black", linewidth = 0.25) +
-  geom_sf(data = points, size = 0.1, color = "grey80", alpha = 0.5) +
+  geom_sf(data = shp_csd, fill = NA, color = "grey70", linewidth = 1) +
+  geom_sf(data = points, size = 0.25, color = "grey25", alpha = 0.1) +
+  coord_sf(crs = 3005) +
   FILL_THEME +
-  coord_sf(crs = 3005)
+  MAP_THEME +
+  labs(
+    #title = "Weighted Service BC Locations in Kamloops",
+    #subtitle = "Density map showing population distribution and Service BC locations",
+    #fill = "Density (people per unit area)",
+    x = "\nLongitude",
+    y = "Latitude\n"
+  )
+ print(map_plot)
+
+   # Save the plot
+  fn <- to_snake_case(glue("stars-{csd}"))
+
+  ggsave(
+    filename = glue("csd-drive-distance-maps/temp/{fn}.svg"),
+    path = MAP_OUT,
+    plot = map_plot,
+    width = 8,
+    height = 7,
+    device = "svg"
+  )
+
+}
