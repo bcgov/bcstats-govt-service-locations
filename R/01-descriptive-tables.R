@@ -75,7 +75,7 @@ message(glue("({percent(na_prop)}) of NAs in DA map data"))
 low_counts_prop <- sum(drivetime_stats_da$n_address < 5) / nrow(drivetime_stats_da)
 message(glue("({percent(low_counts_prop)}) of DA regions contain fewer than 5 observations"))
 
-investigate_da <- drivetime_stats_da %>% 
+investigate_da <- drivetime_stats_da %>%
   filter(dwellings > 0 & n_address > 4 & n_address/as.numeric(dwellings) > 0.01)
 
 na_prop <- sum(is.na(drivetime_stats_db$n_address))/ nrow(drivetime_stats_db)
