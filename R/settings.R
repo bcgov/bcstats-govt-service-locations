@@ -97,7 +97,7 @@ MAP_THEME <- theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
     plot.title = element_text(size = 14, face = "bold"),
-    plot.subtitle = element_text(hsize = 12),
+    plot.subtitle = element_text(size = 12),
     legend.title = element_text(size = 10, face = "bold"),
     legend.text = element_text(size = 9),
     axis.text = element_text(size = 8),
