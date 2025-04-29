@@ -16,6 +16,27 @@
 # municipality of interest in BC (loc). It produces maps at the dissemination block level 
 # displaying quantitative information on basic descriptive statisics
 
+# ------------------------------------------------------------------------
+# Script: 02d-density_map.R
+
+# Description: Creates spatial density maps showing drive times to the 
+# nearest Service BC office for different census subdivisions in British Columbia.
+# Uses kernel density estimation to create smoothed heatmaps of drive times.
+
+# Requirements:
+#   - Requires R packages: `tidyverse`, `glue`, `janitor`, `sf`, `tigris`, 
+#     `spatstat`, `stars`, `bcmaps`, `terra`, `fs`
+#   - Depends on `settings.R` for paths and constants.
+#   - Requires input CSV data files with drive times, population data,
+#     Service BC location data, and census subdivision shapefiles.
+#   - Requires read/write access to the map output folder.
+
+# Side Effects/Outputs:
+#   - Creates SVG maps in the "{MAP_OUT}/csd-drive-distance-maps/temp" directory
+#   - Each map shows the spatial distribution of drive times to the nearest
+#     Service BC office for a specific census subdivision
+# ------------------------------------------------------------------------
+
 library(tidyverse)
 library(glue)
 library(janitor)
@@ -47,16 +68,16 @@ drivetime_data <-
   clean_names() %>%
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
-drivetime_data <- drivetime_data %>% 
+drivetime_data <- drivetime_data %>%
   inner_join(crosswalk, by = c("dbid", "daid", "csdid", "csd_name", "csd_desc"))
 
 pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
-#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 # Read service bc location data from source folder
-#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 servicebc <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv")
            , col_types = cols(.default = "c")) %>%
   clean_names() %>%
