@@ -84,7 +84,7 @@ build_map <- function(
     geom_sf(
         data = map_data,
         aes(fill = !!varname_sym),
-        color = "gray50",
+        color = "gray40",
         lwd = 0.1
     ) +
     fill_theme +
