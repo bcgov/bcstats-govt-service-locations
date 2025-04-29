@@ -25,8 +25,15 @@ library(spatstat)
 library(stars)
 library(bcmaps)
 library(terra)
+library(fs)      # For directory operations
 
 source("R/settings.R")
+
+# Ensure output directory exists
+if (!dir_exists(glue("{MAP_OUT}/csd-drive-distance-maps/temp"))) {
+  dir_create(glue("{MAP_OUT}/csd-drive-distance-maps/temp"), recurse = TRUE)
+  message("Created output directory: ", glue("{MAP_OUT}/csd-drive-distance-maps/temp"))
+}
 
 # -----------------------------------------------------------------------------------------------------
 # Read data points into one data frame
@@ -64,6 +71,11 @@ shp_csd_all <- census_subdivision() %>%
   filter(CENSUS_SUBDIVISION_NAME %in% (servicebc %>% pull(csd_name))) %>%
   clean_names()
 
+# Check if we have any matching CSDs
+if (nrow(shp_csd_all) == 0) {
+  stop("No matching census subdivisions found. Check the 'csd_name' values in the Service BC locations data.")
+}
+
 # -----------------------------------------------------------------------------------------------------
 # make map data
 # -----------------------------------------------------------------------------------------------------
@@ -78,15 +90,26 @@ points <- drivetime_data %>%
   st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005) %>%
   st_intersection(shp_csd)
 
-# lets get the density of this thing
-# Assign weights to each spatial point based on driving time
-points$weights <- points$drv_time_sec
+# Check if there are any points in this CSD
+if (nrow(points) == 0) {
+  warning(glue("No points found in census subdivision {csd}. Skipping this map."))
+  next
+}
 
 # Convert to ppp object with weights
 stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd))
-marks(stats_ppp) <- points$drv_dist
+marks(stats_ppp) <- points$drv_time_sec/60
 
-density_stats_stars <- stars::st_as_stars(Smooth(stats_ppp, sigma = 1000))
+# Use tryCatch to handle potential errors in smoothing
+density_stats_stars <- tryCatch({
+  stars::st_as_stars(Smooth(stats_ppp, sigma = 1000))
+}, error = function(e) {
+  warning(glue("Error generating density map for {csd}: {e$message}"))
+  return(NULL)
+})
+
+# Skip to next iteration if density calculation failed
+if (is.null(density_stats_stars)) next
 
 #lets convert back to sf so it's compatible with ggplot2::geom_sf()
 density_stats_sf <- st_as_sf(density_stats_stars) %>%
@@ -100,23 +123,23 @@ map_plot <- ggplot() +
   FILL_THEME +
   MAP_THEME +
   labs(
-    #title = "Weighted Service BC Locations in Kamloops",
-    #subtitle = "Density map showing population distribution and Service BC locations",
-    #fill = "Density (people per unit area)",
+    title = "Spatial Distribution of Drive Times",
+    subtitle = glue("Estimated Drive Times to Nearest Service BC Office - {csd} (Smoothed Data)"),
+    fill = "Drive time (minutes)",
     x = "\nLongitude",
     y = "Latitude\n"
-)
-
-   # Save the plot
-  fn <- to_snake_case(glue("stars-{csd}"))
-
-  ggsave(
-    filename = glue("csd-drive-distance-maps/temp/{fn}.svg"),
-    path = MAP_OUT,
-    plot = map_plot,
-    width = 8,
-    height = 7,
-    device = "svg"
   )
 
+  # Save the plot
+  fn <- to_snake_case(glue("stars-{csd}"))
+  
+      ggsave(
+      filename = glue("{fn}.svg"),
+      path = glue("{MAP_OUT}/csd-drive-distance-maps/temp"),
+      plot = map_plot,
+      width = 8,
+      height = 7,
+      device = "svg"
+    )
+    
 }
