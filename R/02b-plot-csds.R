@@ -87,6 +87,15 @@ db_shapefile <-
   st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
+# db populations (for checking empty DBs)
+pop_db <- read_csv(
+  glue("{SRC_DATA_FOLDER}/population-db.csv"),
+  col_types = cols(.default = "c")
+) %>%
+  clean_names() %>%
+  mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
+
+
 #-----------------------------------------------------------------------------
 # build map 1: - CSDs of interest only
 #-----------------------------------------------------------------------------
@@ -349,15 +358,31 @@ ggsave(
   dpi = 300
 )
 
-# find the most northern one that doesn't seem to have a region
-coords <- st_coordinates(all_sbc_locs)
-  
-# Find the index of the maximum Y coordinate 
-max_y_index <- which.max(coords[, "Y"])
+# save the list of unassigned dbs, together with their 2021 census pops
+db_check <- db_shapefile %>% 
+  left_join(assigned_facility, by = "dbid") %>% 
+  left_join(pop_db, by='dbid') %>% 
+  mutate(has_assignee = if_else(is.na(assigned), "No", "Yes"))  %>% 
+  select(dbid, has_assignee, assigned, population) %>% 
+  st_drop_geometry()  %>% 
+  tibble()
 
-# Return the northernmost point
-northernmost_point <- all_sbc_locs[max_y_index, ]
+# look at populations of unassigned dbs
+db_check  %>% 
+  group_by(has_assignee) %>% 
+  summarize(
+    n = n_distinct(dbid),
+    average_pop = mean(population, na.rm = TRUE),
+    min_pop = min(population, na.rm = TRUE),
+    max_pop = max(population, na.rm = TRUE),
+    median_pop = median(population, na.rm = TRUE),
+    pct_zero_pop = sum(population == 0, na.rm = TRUE) / n(),
+    pct_na_pop = sum(is.na(population)) / n(),
+    .groups = "drop"
+    )
 
-# turns out it does, it's just tiny.
-assigned_facility %>% 
-  filter(assigned == 'Service BC - Atlin')
+# save the list of dbs that do/don't have assignees for further investigation
+db_check  %>% 
+  filter(has_assignee == "No") %>%
+  select(-has_assignee, -assigned) %>%
+  write_csv(glue("{TABLES_OUT}/unassigned_dbs.csv"))
