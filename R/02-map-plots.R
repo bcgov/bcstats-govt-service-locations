@@ -103,17 +103,15 @@ if(region == "Dissemination Area"){
 }
 
 # user-defined map parameters
-var <- "n_address"  # colnames(map_data) for other options
-var_title <- "Count of Addresses"
-
-plot_subtitle <- ""
+var <- "drv_dist_mean"  # colnames(map_data) for other options
+var_title <- "Mean Driving Distance (km)"
 
 # filter on desired csd here
 for (csd in csd_drivetime_map_data %>% pull(csd_name)){
 
-  message(glue("Generating map for {csd} ..."))
+  plot_title <- glue("Mean Driving Distance to Nearest Service BC Office - {csd}")
 
-  plot_title <- glue("{var_title} by {region_title}, {csd}")
+  message(glue("Generating map for {csd} ..."))
 
   map_plot <- build_map(
     data = map_data,
@@ -124,7 +122,7 @@ for (csd in csd_drivetime_map_data %>% pull(csd_name)){
     map_theme = MAP_THEME,
     fill_scale = FILL_THEME,
     plot_title = plot_title,
-    plot_subtitle = plot_subtitle,
+    plot_subtitle = "",
     legend_title = var_title
   )
 
@@ -132,7 +130,7 @@ for (csd in csd_drivetime_map_data %>% pull(csd_name)){
   show(map_plot)
   
   # Save the plot
-  fn <- to_snake_case(glue("{var}-by-{region_title}-{csd}"))
+  fn <- to_snake_case(glue("{var}-by-{region}-{csd}"))
 
   ggsave(
     filename = glue("{fn}.svg"),
