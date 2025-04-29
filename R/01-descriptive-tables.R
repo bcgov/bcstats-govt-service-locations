@@ -84,10 +84,14 @@ message(glue("({percent(na_prop)}) of NAs in DB map data"))
 low_counts_prop <- sum(drivetime_stats_db$n_address < 5) / nrow(drivetime_stats_db)
 message(glue("({percent(low_counts_prop)}) of DB regions have fewer than 5 observations"))
 
-investigate_db <- drivetime_stats_db %>% 
-  filter(dwellings > 0 & n_address > 4 & n_address/as.numeric(dwellings) > 0.01)
+low_counts <- drivetime_stats_db %>% 
+  group_by(csd_name, csdid) %>%
+  summarise(n_db_blocks = n(), 
+            n_db_blocks_under_5n_addresses = sum(n_address < 5, na.rm = TRUE))
 
-# check the extra da's outside of CSD
+drivetime_stats_csd  <- 
+  drivetime_stats_csd %>% 
+  left_join(low_counts, by = c("csd_name", "csdid"))
 
 #------------------------------------------------------------------------------
 # Write descriptive tables to source folder

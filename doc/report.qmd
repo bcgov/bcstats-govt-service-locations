@@ -1,0 +1,189 @@
+---
+title: "Improving Access to Government Services in BC"
+subtitle: "A Spatial Analysis of Service Delivery"
+format: html
+---
+
+## Executive Summary
+
+\[Placeholder: This section will provide a concise overview of our key findings and recommendations, highlighting the geographic disparities in service access and potential strategies for optimization.\]
+
+## 1. Introduction
+
+### 1.1 The Importance of Accessible Government Services
+
+Access to government services is a fundamental aspect of civic life, directly impacting residents' ability to engage with essential programs and fulfill administrative requirements. In British Columbia's diverse geographic landscape—spanning dense urban centers, growing suburban communities, and remote rural areas—ensuring equitable access presents unique challenges.
+
+This report examines the geographic accessibility of Service BC locations across four pilot municipalities: Langford, Dawson Creek, Smithers, and Kamloops. These communities were selected to represent the province's varied geography and population distribution patterns.
+
+### 1.2 Challenges in Service Delivery
+
+Government service delivery in BC faces several geographic challenges. Terrain barriers such as mountains, water bodies, and limited road networks can create natural obstacles to service access. Seasonal weather conditions can significantly affect travel times in certain regions throughout the year. The distribution of population between urban centers and dispersed rural communities presents a constant balancing act for service placement. Additionally, rapidly growing communities may outpace existing service infrastructure, creating emerging gaps in accessibility.
+
+These challenges raise important questions about how to optimize government service locations to maximize accessibility while managing resource constraints.
+
+### 1.3 Research Objectives
+
+Our analysis aims to map the current landscape of geographic accessibility to Service BC locations in our pilot regions. We seek to identify potential service gaps where residents face significant travel barriers and quantify accessibility disparities across different communities and neighborhoods. Ultimately, this work will develop evidence-based recommendations for optimizing government service locations.
+
+By combining spatial analysis with population data, we seek to create a foundation for data-driven decision-making that balances operational efficiency with equitable service access.
+
+### 1.4 Report Structure
+
+This report unfolds across five main sections. The Literature Review examines theoretical frameworks and previous research on spatial accessibility. The Methodology section details our data sources and analytical approach. The Analysis and Results presents our findings on service accessibility patterns. The Recommendations section offers practical strategies for service optimization, and the Conclusion highlights key implications and potential next steps.
+
+Throughout, we integrate visual presentations of our findings to complement the narrative analysis.
+
+## 2. Literature Review
+
+### 2.1 Theoretical Framework
+
+Spatial accessibility theory provides the foundation for understanding how geographic distance impacts service utilization. This framework recognizes that access exists along a continuum, influenced by physical proximity, transportation infrastructure, and socioeconomic factors that affect mobility.
+
+Our analysis draws particularly on the concept of "spatial equity"—the principle that public services should be distributed in ways that provide fair access opportunities across diverse communities, rather than simple equality of distance.
+
+### 2.2 Previous Research
+
+Previous studies on government service accessibility have demonstrated several consistent patterns. Travel distance significantly impacts service utilization rates, with sharp declines beyond threshold distances. Rural residents typically experience substantially longer travel times to access government services. Certain demographic groups face compounded barriers when services require significant travel.
+
+Our work builds on these findings while focusing specifically on the British Columbia context, where unique geography and settlement patterns create distinctive accessibility challenges.
+
+### 2.3 Research Gap
+
+While considerable research exists on healthcare accessibility in Canada, fewer studies have examined access to administrative government services. Additionally, most accessibility analyses focus on major urban centers, with less attention to small cities and rural communities that make up significant portions of British Columbia.
+
+This project addresses these gaps by incorporating both urban and rural communities in our analysis and focusing specifically on Service BC locations that provide essential administrative services.
+
+## 3. Methodology
+
+### 3.1 Data Sources
+
+Our analysis integrates multiple data sources to create a comprehensive picture of service accessibility:
+
+**Nearest Facility Analysis (NFA) Output**: Contains driving time and distance data between residential addresses and the nearest Service BC location, including dissemination block identifiers and precise geographic coordinates. This data forms the foundation of our accessibility metrics.
+
+**Geographic Boundary Files**: Boundary definitions for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) were retrieved programmatically using the following R packages:
+
+-   The `bcmaps` package ([GitHub](https://github.com/bcgov/bcmaps)) was used to access CSD and DA boundary files directly from the BC Data Catalog.
+
+-   The `bcdata` package ([GitHub](https://github.com/bcgov/bcdata)) was used to query and retrieve DB boundary files. Both packages provide standardized access to BC's authoritative geographic datasets, ensuring consistent and up-to-date boundaries.
+
+**Population Data**: Demographic information at the DB, DA, and CSD levels was retrieved using the `cancensus` package ([CRAN](https://cran.r-project.org/web/packages/cancensus/vignettes/cancensus.html)), which provides direct access to Statistics Canada census data. This includes population counts, dwelling counts, and geographic area measurements.
+
+**Service Location Data**: Coordinates and attributes of Service BC, hospital, and education facilities from the BC Data Catalog, providing precise service location information.
+
+**Address Data**: A comprehensive dataset of civic addresses from the BC Address Geocoder, quality-assured and containing precise coordinates for residential and commercial properties.
+
+### 3.2 Geographic Units of Analysis
+
+We examined service accessibility at three geographic levels, each offering different analytical advantages:
+
+**Dissemination Block (DB)** is the smallest geographic unit in the census framework, typically bounded by roads or other visible features. DBs provide the most granular view of accessibility patterns but may contain very few households in some areas. [More information](https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/az/definition-eng.cfm?ID=geo014)
+
+**Dissemination Area (DA)** is a small geographic area composed of one or more adjacent dissemination blocks, containing 400-700 persons on average. DAs offer a balance between granularity and statistical reliability, making them useful for identifying neighborhood-level patterns. [More information](https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/az/definition-eng.cfm?ID=geo021)
+
+**Census Subdivision (CSD)** represents municipal boundaries that allow for community-level comparisons and align with local government jurisdictions. For our analysis, we selected four CSDs—Langford, Dawson Creek, Smithers, and Kamloops—that represent diverse geographic and demographic contexts across British Columbia. These selections were strategic: Smithers and Dawson Creek provide insights into service accessibility in smaller northern communities, with Dawson Creek's proximity to Fort St. John creating interesting dynamics in regional service allocation. Kamloops, with approximately 100,000 residents, offers a case study of a mid-sized city with challenging geographic features—its spread-out development pattern and bisection by two rivers creates natural barriers to service access. Langford, the fastest-growing municipality in British Columbia, presents an opportunity to inform future service location decisions in a rapidly developing area that currently lacks a Service BC office. Together, these four municipalities provide a representative cross-section of the accessibility challenges faced across the province.
+
+### 3.3 Analytical Approach
+
+Our analysis employed several complementary techniques:
+
+**Nearest Facility Analysis**: For each residential address, we identified the Service BC location with the shortest drive time using an algorithm based on Euclidean distance and road network data.
+
+**Descriptive Statistics**: We calculated comprehensive statistical measures to characterize the distribution of drive times and distances at each geographic level. These metrics include:
+
+- **Mean**: The arithmetic average of drive times and distances, providing a central tendency measure.
+- **Variance**: A measure of how spread out the data is from the mean, indicating the variability in access times.
+- **Quantiles**: Values that divide the dataset into equal portions (0%, 25%, 50%, 75%, and 100%), where the 50th percentile represents the median. These values help understand the distribution of drive times and distances.
+- **Skewness**: Measures the asymmetry of the probability distribution. We used Type 1 skewness (g1 = m3/m3/2₂) from the e1071 package, where values near zero indicate symmetry, positive values indicate right-skew (tail extending toward higher values), and negative values indicate left-skew.
+- **Kurtosis**: Measures the "tailedness" of the probability distribution. We used Type 1 kurtosis (g2 = m4/m2² - 3) from the e1071 package, which is the typical definition used in many older textbooks. Kurtosis values indicate whether data have heavy tails (more outliers) compared to a normal distribution. A normal distribution has a kurtosis of 0 under this formula, with positive values indicating heavier tails and negative values indicating lighter tails than normal. This measure helps identify geographic areas with unusual accessibility patterns that may require special attention.
+
+The descriptive statistics were primarily calculated at the Census Subdivision (CSD) level to provide community-level insights across each municipality. This approach allows for meaningful comparisons between the four pilot communities and supports policy recommendations at the municipal level. Additionally, we conducted some complementary analysis at the Dissemination Area (DA) level to explore intra-municipal patterns where appropriate.
+
+**Spatial Analysis**: Using GIS techniques, we mapped accessibility patterns to identify clusters of high/low accessibility and examine spatial relationships.
+
+**Statistical Analysis**: We examined correlations between accessibility metrics and factors such as population density to identify potential determinants of service access.
+
+### 3.4 Data Processing Considerations
+
+Two important methodological considerations shaped our analysis:
+
+**Correct Side Routing**: Our analysis accounts for the reality that drivers typically plan routes to arrive on the correct side of the road. While this assumption had minimal impact in most cases, it eliminated one significant outlier with an unrealistically long drive distance.
+
+**Minimum Distance Handling**: Special consideration was given to cases with zero distance values, which can occur when a Service BC office shares coordinates with other addresses (e.g., in multi-unit buildings) or when the office itself appears in the address dataset. We implemented a systematic approach to distinguish between valid zero distances and self-references.
+
+### 3.5 Data Coverage Limitations
+
+While our address database contains over 2 million data points across British Columbia, it's important to note that not all Census Subdivisions (CSDs), Dissemination Areas (DAs), or Dissemination Blocks (DBs) are represented in our dataset. This limitation primarily affects sparsely populated areas where address points may not exist or where data collection challenges occurred. 
+
+Our analysis revealed that approximately 8.1% of Dissemination Block regions contain fewer than 5 observations. This percentage varied across the four pilot municipalities, representing between 6% and 14% of all DBs depending on the municipality. DB regions with low observation counts are more common in areas with lower population density or newly developed areas.
+
+A comprehensive review of missing geographic units was outside the scope of this project, but should be considered when interpreting results, particularly for rural and remote regions.
+
+## 4. Analysis and Results
+
+### 4.1 Accessibility Patterns
+
+\[This section will present the key findings from our statistical analysis of drive times and distances, organized by geographic level. It will include data visualizations showing the distribution of accessibility metrics.\]
+
+Mean Drive Time: \[Placeholder for results\]
+
+Median Drive Time: \[Placeholder for results\] Variance in Drive Time: \[Placeholder for results\]
+
+Mean Drive Distance: \[Placeholder for results\]
+
+Median Drive Distance: \[Placeholder for results\] Variance in Drive Distance: \[Placeholder for results\]
+
+### 4.2 Spatial Distribution of Accessibility
+
+\[This section will examine how accessibility varies geographically within and between the four pilot municipalities, identifying patterns in service access.\]
+
+Hotspot Analysis: \[Placeholder for results about areas with particularly long drive times\] Geographic Patterns: \[Placeholder for observations about spatial clustering\]
+
+### 4.3 Factors Influencing Accessibility
+
+\[This section will explore the relationship between accessibility and factors such as population density, demographics, and infrastructure.\]
+
+Correlation with Population Density: \[Placeholder for findings\] Relationship with Road Network: \[Placeholder for findings\]
+
+### 4.4 Visual Insights
+
+\[This section will feature key visualizations that illustrate our findings about accessibility patterns.\]
+
+## 5. Recommendations
+
+### 5.1 Optimizing Service BC Locations
+
+Based on our analysis of accessibility patterns, we recommend the following approaches to optimize the location of government service buildings:
+
+Strategic New Locations: \[Placeholder for specific recommendations\] Mobile Service Expansion: \[Placeholder for specific recommendations\] Service Hour Adjustments: \[Placeholder for specific recommendations\]
+
+### 5.2 Policy Applications
+
+Our findings suggest several policy directions that could improve service accessibility:
+
+Evidence-Based Resource Allocation: \[Placeholder for specific recommendations\] Multi-Service Integration: \[Placeholder for specific recommendations\] Digital Service Enhancement: \[Placeholder for specific recommendations\]
+
+### 5.3 Further Research Opportunities
+
+To build on this initial analysis, we recommend several directions for future research:
+
+Expanded Geographic Coverage: \[Placeholder for specific recommendations\] Multi-Modal Transportation Analysis: \[Placeholder for specific recommendations\] Socioeconomic Factors: \[Placeholder for specific recommendations\]
+
+## 6. Conclusion
+
+### 6.1 Key Findings
+
+\[This section will summarize the most important findings about Service BC accessibility in our pilot municipalities.\]
+
+### 6.2 Broader Implications
+
+\[This section will discuss what our findings mean for government service delivery across British Columbia.\]
+
+## References
+
+\[Placeholder: This section will include a comprehensive list of cited sources.\]
+
+## Appendices
+
+\[Placeholder: This section will contain detailed technical information, additional data tables, and supplementary visualizations.\]
