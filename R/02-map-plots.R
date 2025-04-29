@@ -49,19 +49,19 @@ db_shapefile <-
 #------------------------------------------------------------------------------
 
 da_drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/da_average_times_dist_all_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced_da_average_times_dist_all_locs.csv")
           , col_types = cols(.default = "c")) %>%
   clean_names()  %>%
   mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
 
 db_drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/db_average_times_dist_all_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv")
           , col_types = cols(.default = "c"))  %>%
   clean_names() %>%
   mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
 
 csd_drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/csd_average_times_dist_all_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced_csd_average_times_dist_all_locs.csv")
           , col_types = cols(.default = "c"))  %>%
   clean_names() %>%
   mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
@@ -104,12 +104,13 @@ if(region == "Dissemination Area"){
 
 # user-defined map parameters
 var <- "drv_dist_mean"  # colnames(map_data) for other options
-var_title <- "Mean Driving Distance (km)"
+var_title <- "Mean Driving Distance"
+unit <- "km"
 
 # filter on desired csd here
 for (csd in csd_drivetime_map_data %>% pull(csd_name)){
 
-  plot_title <- glue("Mean Driving Distance to Nearest Service BC Office - {csd}")
+  plot_title <- glue("{var_title} to Nearest Service BC Office - {csd}")
 
   message(glue("Generating map for {csd} ..."))
 
@@ -123,17 +124,17 @@ for (csd in csd_drivetime_map_data %>% pull(csd_name)){
     fill_scale = FILL_THEME,
     plot_title = plot_title,
     plot_subtitle = "",
-    legend_title = var_title
+    legend_title = glue("{var_title} ({unit})")
   )
 
   # show the plot
   show(map_plot)
-  
+
   # Save the plot
   fn <- to_snake_case(glue("{var}-by-{region}-{csd}"))
 
   ggsave(
-    filename = glue("{fn}.svg"),
+    filename = glue("csd-drive-distance-maps/{fn}.svg"),
     path = MAP_OUT,
     plot = map_plot,
     width = 8,
