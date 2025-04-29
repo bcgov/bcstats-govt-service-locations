@@ -72,6 +72,8 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
 
 message(glue("Generating map for {csd} ..."))
 
+shp_csd <- shp_csd_all %>% filter(census_subdivision_name == csd)
+
 points <- drivetime_data %>% 
   st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005) %>%
   st_intersection(shp_csd)
@@ -103,8 +105,7 @@ map_plot <- ggplot() +
     #fill = "Density (people per unit area)",
     x = "\nLongitude",
     y = "Latitude\n"
-  )
- print(map_plot)
+)
 
    # Save the plot
   fn <- to_snake_case(glue("stars-{csd}"))
