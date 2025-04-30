@@ -25,7 +25,7 @@
 
 # Requirements:
 #   - Requires R packages: `tidyverse`, `glue`, `janitor`, `sf`, `tigris`, 
-#     `spatstat`, `stars`, `bcmaps`, `terra`, `fs`
+#     `spatstat`, `stars`, `bcmaps`, `terra`, `fs`, `snakecase`
 #   - Depends on `settings.R` for paths and constants.
 #   - Requires input CSV data files with drive times, population data,
 #     Service BC location data, and census subdivision shapefiles.
@@ -47,13 +47,17 @@ library(stars)
 library(bcmaps)
 library(terra)
 library(fs)      # For directory operations
+library(snakecase) # For to_snake_case function
 
 source("R/settings.R")
 
+output_subdir <- "no-common-scale"  # Subdirectory to save maps
+
 # Ensure output directory exists
-if (!dir_exists(glue("{MAP_OUT}/csd-drive-distance-maps/temp"))) {
-  dir_create(glue("{MAP_OUT}/csd-drive-distance-maps/temp"), recurse = TRUE)
-  message("Created output directory: ", glue("{MAP_OUT}/csd-drive-distance-maps/temp"))
+output_path <- glue("{MAP_OUT}/csd-drive-distance-maps/{output_subdir}")
+if (!dir_exists(output_path)) {
+  dir_create(output_path, recurse = TRUE)
+  message("Created output directory: ", output_path)
 }
 
 # -----------------------------------------------------------------------------------------------------
@@ -75,9 +79,9 @@ pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 # Read service bc location data from source folder
-#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------
 servicebc <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv")
            , col_types = cols(.default = "c")) %>%
   clean_names() %>%
@@ -101,14 +105,18 @@ if (nrow(shp_csd_all) == 0) {
 # make map data
 # -----------------------------------------------------------------------------------------------------
 
-# --- User-defined marks and labels, etc. ---
-plotvar <- "drv_time_min"
-drivetime_data$plotvar <- drivetime_data$drv_time_sec/60 # this is the variable we want to plot
+# --- User-defined settings for plots ---
+map_title <- "Spatial Distribution of Drive Times"
 subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
-fill_label <- "Drive time (minutes)"
-common_scale <- FALSE
+fill_label <- "Drive time (Minutes)"
+common_scale <- FALSE    # Whether to use a common scale for all maps
 
-# Set limits prior to subsetting points
+
+# Calculate drive times in minutes for plotting
+drivetime_data <- drivetime_data %>% 
+  mutate(plotvar = drv_time_sec / 60)
+
+# Set limits prior to subsetting points if using common scale
 fill_theme <- FILL_THEME$clone()
 if (common_scale == TRUE){
   fill_theme$limits <- range(drivetime_data$plotvar, na.rm = TRUE)
@@ -137,7 +145,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
 
   # Use tryCatch to handle potential errors in smoothing
   smooth_stats_stars <- tryCatch({
-    stars::st_as_stars(Smooth(stats_ppp, sigma = 1000, dimyx=300))
+    stars::st_as_stars(Smooth(stats_ppp, sigma = 1000, dimyx =300))
   }, error = function(e) {
     warning(glue("Error generating spatial smooth map for {csd}: {e$message}"))
     return(NULL)
@@ -158,23 +166,25 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
     fill_theme +
     MAP_THEME +
     labs(
-      title = title,
+      title = map_title,
       subtitle = glue("{subtitle_pref} - {csd} (Smoothed Data)"),
-      fill = fill_label,,
+      fill = fill_label,
       x = "\nLongitude",
       y = "Latitude\n"
     )
 
   # Save the plot
-  fn <- snakecase::to_snake_case(glue("{plotvar}-smoothed-{csd}"))
+  fn <- to_snake_case(glue("drv_time_min-smoothed-{csd}"))
 
   ggsave(
     filename = glue("{fn}.svg"),
-    path = glue("{MAP_OUT}/csd-drive-distance-maps/no-common-scale/"),
+    path = output_path,
     plot = map_plot,
     width = 8,
     height = 7,
     device = "svg"
   )
+  
+  message(glue("Map for {csd} saved to {output_path}/{fn}.svg"))
 }
 
