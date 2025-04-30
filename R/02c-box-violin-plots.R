@@ -1,22 +1,24 @@
 # ------------------------------------------------------------------------
+# ------------------------------------------------------------------------
 # Script: 02c-box-violin-plots.R
 
-# Description: Loads processed DA and Locality level summary statistics.
-#              Performs comparative analysis across the different localities,
-#              generating plots (boxplots, violin plots) and summary tables
-#              comparing key accessibility metrics (e.g., drive time).
+# Description: Creates statistical visualizations (box plots and violin plots) 
+# showing the distribution of drive times to Service BC offices across different 
+# regions of British Columbia. Compares access metrics between census subdivisions 
+# and demographic groups.
 
 # Requirements:
-#   - Requires R packages: `tidyverse`, `glue`, `ggplot2`, `scales`.
-#   - Depends on `settings.R` for constants (paths, locality map, filenames).
-#   - Requires output CSV files from `01-descriptive-tables.R` to exist in
-#     the `SRC_DATA_FOLDER`.
-#   - Requires write access to `OUTPUT_DIR`.
+#   - Requires R packages: `tidyverse`, `glue`, `janitor`, `ggplot2`, `forcats`,
+#     `patchwork`, `scales`, `stringr`, `fs`
+#   - Depends on `settings.R` for paths and constants.
+#   - Requires input CSV data files with drive times, population data,
+#     demographic information, and census subdivision metadata.
+#   - Requires read/write access to the plot output folder.
 
 # Side Effects/Outputs:
-#   - Creates and saves PNG plots comparing drive time distributions.
-#   - Creates and saves a CSV summary table comparing localities.
-#   - Prints plots and tables to the console/RStudio Plots pane.
+#   - Creates PNG plot showing statistical distribution of drive times via box plots,
+#     violin plots, or combined visualizations, grouped by relevant factors
+#   - Summary statistics are saved to a CSV file in the same directory
 # ------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
