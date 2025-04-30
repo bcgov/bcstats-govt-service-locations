@@ -101,6 +101,19 @@ if (nrow(shp_csd_all) == 0) {
 # make map data
 # -----------------------------------------------------------------------------------------------------
 
+# --- User-defined marks and labels ---
+drivetime_data$plotvar <- drivetime_data$drv_time_sec/60 # this is the variable we want to plot
+subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
+fill_label <- "Drive time (minutes)"
+common_scale <- FALSE
+
+# Set limits prior to subsetting points
+fill_theme <- FILL_THEME$clone()
+if(common_scale == TRUE){
+  fill_theme$limits <- range(drivetime_data$plotvar, na.rm = TRUE)
+  fill_theme$oob <- scales::squish
+}
+
 for (csd in shp_csd_all %>% pull(census_subdivision_name)){
 
   message(glue("Generating map for {csd} ..."))
@@ -119,7 +132,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
 
   # Convert to ppp object with weights
   stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd))
-  marks(stats_ppp) <- points$drv_time_sec/60
+  marks(stats_ppp) <- points$plotvar
 
   # Use tryCatch to handle potential errors in smoothing
   density_stats_stars <- tryCatch({
@@ -132,7 +145,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
   # Skip to next iteration if density calculation failed
   if (is.null(density_stats_stars)) next
 
-  #lets convert back to sf so it's compatible with ggplot2::geom_sf()
+  # Convert back to sf so it's compatible with ggplot2::geom_sf()
   density_stats_sf <- st_as_sf(density_stats_stars) %>%
     st_set_crs(3005)
 
@@ -141,12 +154,12 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
     geom_sf(data = shp_csd, fill = NA, color = "grey70", linewidth = 1) +
     geom_sf(data = points, size = 0.25, color = "grey25", alpha = 0.1) +
     coord_sf(crs = 3005) +
-    FILL_THEME +
+    fill_theme +
     MAP_THEME +
     labs(
-      title = "Spatial Distribution of Drive Times",
-      subtitle = glue("Estimated Drive Times to Nearest Service BC Office - {csd} (Smoothed Data)"),
-      fill = "Drive time (minutes)",
+      title = title,
+      subtitle = glue("{subtitle_pref} - {csd} (Smoothed Data)"),
+      fill = fill_label,,
       x = "\nLongitude",
       y = "Latitude\n"
     )
