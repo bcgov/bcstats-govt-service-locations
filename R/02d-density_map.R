@@ -104,23 +104,23 @@ if (nrow(shp_csd_all) == 0) {
 for (csd in shp_csd_all %>% pull(census_subdivision_name)){
 
   message(glue("Generating map for {csd} ..."))
-  
+
   shp_csd <- shp_csd_all %>% filter(census_subdivision_name == csd)
-  
+
   points <- drivetime_data %>% 
     st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005) %>%
     st_intersection(shp_csd)
-  
+
   # Check if there are any points in this CSD
   if (nrow(points) == 0) {
     warning(glue("No points found in census subdivision {csd}. Skipping this map."))
     next
   }
-  
+
   # Convert to ppp object with weights
   stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd))
   marks(stats_ppp) <- points$drv_time_sec/60
-  
+
   # Use tryCatch to handle potential errors in smoothing
   density_stats_stars <- tryCatch({
     stars::st_as_stars(Smooth(stats_ppp, sigma = 1000))
@@ -128,14 +128,14 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
     warning(glue("Error generating density map for {csd}: {e$message}"))
     return(NULL)
   })
-  
+
   # Skip to next iteration if density calculation failed
   if (is.null(density_stats_stars)) next
-  
+
   #lets convert back to sf so it's compatible with ggplot2::geom_sf()
   density_stats_sf <- st_as_sf(density_stats_stars) %>%
     st_set_crs(3005)
-  
+
   map_plot <- ggplot() +
     geom_sf(data = density_stats_sf, aes(fill = v), color = NA) +
     geom_sf(data = shp_csd, fill = NA, color = "grey70", linewidth = 1) +
@@ -150,17 +150,17 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
       x = "\nLongitude",
       y = "Latitude\n"
     )
-  
-    # Save the plot
-    fn <- to_snake_case(glue("stars-{csd}"))
-    
-        ggsave(
-        filename = glue("{fn}.svg"),
-        path = glue("{MAP_OUT}/csd-drive-distance-maps/temp"),
-        plot = map_plot,
-        width = 8,
-        height = 7,
-        device = "svg"
-      )
+
+  # Save the plot
+  fn <- to_snake_case(glue("stars-{csd}"))
+
+  ggsave(
+    filename = glue("{fn}.svg"),
+    path = glue("{MAP_OUT}/csd-drive-distance-maps/temp"),
+    plot = map_plot,
+    width = 8,
+    height = 7,
+    device = "svg"
+  )
       
 }
