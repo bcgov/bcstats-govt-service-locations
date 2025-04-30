@@ -101,7 +101,7 @@ if (nrow(shp_csd_all) == 0) {
 # make map data
 # -----------------------------------------------------------------------------------------------------
 
-# --- User-defined marks and labels ---
+# --- User-defined marks and labels, etc. ---
 plotvar <- "drv_time_min"
 drivetime_data$plotvar <- drivetime_data$drv_time_sec/60 # this is the variable we want to plot
 subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
@@ -110,7 +110,7 @@ common_scale <- FALSE
 
 # Set limits prior to subsetting points
 fill_theme <- FILL_THEME$clone()
-if(common_scale == TRUE){
+if (common_scale == TRUE){
   fill_theme$limits <- range(drivetime_data$plotvar, na.rm = TRUE)
   fill_theme$oob <- scales::squish
 }
@@ -137,7 +137,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
 
   # Use tryCatch to handle potential errors in smoothing
   smooth_stats_stars <- tryCatch({
-    stars::st_as_stars(Smooth(stats_ppp, sigma = 1000))
+    stars::st_as_stars(Smooth(stats_ppp, sigma = 1000, dimyx=300))
   }, error = function(e) {
     warning(glue("Error generating spatial smooth map for {csd}: {e$message}"))
     return(NULL)
@@ -153,7 +153,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
   map_plot <- ggplot() +
     geom_sf(data = smooth_stats_sf, aes(fill = v), color = NA) +
     geom_sf(data = shp_csd, fill = NA, color = "grey70", linewidth = 1) +
-    geom_sf(data = points, size = 0.25, color = "grey25", alpha = 0.1) +
+    geom_sf(data = points, size = 0.25, color = "grey40", alpha = 0.5) +
     coord_sf(crs = 3005) +
     fill_theme +
     MAP_THEME +
@@ -170,12 +170,11 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
 
   ggsave(
     filename = glue("{fn}.svg"),
-    path = glue("{MAP_OUT}/csd-drive-distance-maps/temp"),
+    path = glue("{MAP_OUT}/csd-drive-distance-maps/no-common-scale/"),
     plot = map_plot,
     width = 8,
     height = 7,
     device = "svg"
   )
-      
 }
 
