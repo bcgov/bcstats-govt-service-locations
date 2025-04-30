@@ -51,10 +51,10 @@ library(snakecase) # For to_snake_case function
 
 source("R/settings.R")
 
-output_subdir <- "no-common-scale"  # Subdirectory to save maps
+output_subdir <- "csd-drive-distance-maps"  # Subdirectory to save maps
 
 # Ensure output directory exists
-output_path <- glue("{MAP_OUT}/csd-drive-distance-maps/{output_subdir}")
+output_path <- glue("{MAP_OUT}/{output_subdir}")
 if (!dir_exists(output_path)) {
   dir_create(output_path, recurse = TRUE)
   message("Created output directory: ", output_path)
@@ -109,8 +109,7 @@ if (nrow(shp_csd_all) == 0) {
 map_title <- "Spatial Distribution of Drive Times"
 subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
 fill_label <- "Drive time (Minutes)"
-common_scale <- FALSE    # Whether to use a common scale for all maps
-
+common_scale <- TRUE    # Whether to use a common scale for all maps
 
 # Calculate drive times in minutes for plotting
 drivetime_data <- drivetime_data %>% 
@@ -127,6 +126,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
 
   message(glue("Generating map for {csd} ..."))
 
+  sbclocation <- servicebc %>% filter(csd_name == csd)
   shp_csd <- shp_csd_all %>% filter(census_subdivision_name == csd)
 
   points <- drivetime_data %>% 
@@ -162,8 +162,14 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
     geom_sf(data = smooth_stats_sf, aes(fill = v), color = NA) +
     geom_sf(data = shp_csd, fill = NA, color = "grey70", linewidth = 1) +
     geom_sf(data = points, size = 0.25, color = "grey40", alpha = 0.5) +
+    geom_sf(data = sbclocation, aes(shape = "Nearest Service BC Location"),
+            fill = 'yellow', color = 'black', size = 2, stroke = 1.1) +
     coord_sf(crs = 3005) +
     fill_theme +
+    scale_shape_manual(
+      name = NULL,
+      values = c("Nearest Service BC Location" = 23) 
+    ) +
     MAP_THEME +
     labs(
       title = map_title,
@@ -171,20 +177,25 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
       fill = fill_label,
       x = "\nLongitude",
       y = "Latitude\n"
+    )  +
+    guides(
+      shape = guide_legend(
+        override.aes = list(
+          fill = "yellow", 
+          size = 4)
+      )
     )
 
   # Save the plot
-  fn <- to_snake_case(glue("drv_time_min-smoothed-{csd}"))
+  fn <- to_snake_case(glue("drv-time-smoothed-commonscale={common_scale}-{csd}"))
 
   ggsave(
-    filename = glue("{fn}.svg"),
+    filename = glue("{fn}.png"),
     path = output_path,
     plot = map_plot,
     width = 8,
     height = 7,
-    device = "svg"
+    device = "png"
   )
-  
-  message(glue("Map for {csd} saved to {output_path}/{fn}.svg"))
-}
 
+}
