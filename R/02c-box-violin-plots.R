@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------
-# Script: 03-comparative-analysis.R
+# Script: 02c-box-violin-plots.R
 
 # Description: Loads processed DA and Locality level summary statistics.
 #              Performs comparative analysis across the different localities,
@@ -26,9 +26,14 @@ library(tidyverse)
 library(glue)
 library(ggplot2)
 library(scales)
+library(snakecase)
 
 source("R/settings.R")
 source("R/fxns/plots.r")
+
+
+# Ensure output directory exists
+output_dir <- file.path(VISUALS_OUT, "csd-drive-distance-plots")
 
 #------------------------------------------------------------------------------
 # Load DB-level plot data
@@ -51,12 +56,8 @@ db_stats_raw <- db_stats_raw %>%
 #------------------------------------------------------------------------------
 
 region <- "Dissemination Block"
-plot_data  <- db_stats_raw %>%
-  filter(csd_name %in% c("Langford", "Dawson Creek", "Smithers", "Kamloops"))
-
-if(region == "Dissemination Area"){
-  plot_data  <- NULL # replace with DA data if we want this functionality later
-}
+plot_data <- db_stats_raw %>%
+  filter(csd_name %in% CSD_NAMES)
 
 # user-defined plot parameters
 y_var <- "drv_time_min_mean"  # colnames(plot_data) for other options
@@ -70,11 +71,9 @@ plot_title <- glue("Distribution of {y_title} to Nearest Service BC Office")
 plot_subtitle <- glue("Comparison across municipalities")
 
 # --- Box Plot (Distribution by region) ---
-
 message("Generating Box Plot...")
 
 outfile <- to_snake_case(glue("box plot {y_var} by {region}"))
-outfile <- glue("csd-drive-distance-plots/{outfile}.svg")
 
 box_plot <- build_boxplot(
   data = plot_data,
@@ -90,18 +89,19 @@ box_plot <- build_boxplot(
 
 # Save the plot
 ggsave(
-  filename = outfile,
-  path = VISUALS_OUT,
-  plot = box_plot,
+  filename = glue("{output_dir}/{outfile}.png"),
+    plot = box_plot,
   width = 8,
   height = 7,
-  device = "svg"
+  device = "png"
 )
 
+message(glue("Box plot saved to: {outfile}"))
 
 # --- Violin Plot (Distribution by region) ---
-
 message("Generating Violin Plot...")
+
+outfile <- to_snake_case(glue("violin plot {y_var} by {region}"))
 
 violin_plot <- build_violinplot(
   data = plot_data,
@@ -116,18 +116,15 @@ violin_plot <- build_violinplot(
 )
 
 # Save the plot
-outfile <- to_snake_case(glue("violin plot {y_var} by {region}"))
-outfile <- glue("csd-drive-distance-plots/{outfile}.svg")
 ggsave(
-  filename = outfile,
-  path = VISUALS_OUT,
+  filename = glue("{output_dir}/{outfile}.png"),
   plot = violin_plot,
   width = 8,
   height = 7,
-  device = "svg"
+  device = "png"
 )
 
-message(glue("Violin plot saved to: {VISUALS_OUT}/temp/{outfile}"))
+message(glue("Violin plot saved to: {outfile}"))
 
 rm(list = ls())
 gc()
