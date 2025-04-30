@@ -102,6 +102,7 @@ if (nrow(shp_csd_all) == 0) {
 # -----------------------------------------------------------------------------------------------------
 
 # --- User-defined marks and labels ---
+plotvar <- "drv_time_min"
 drivetime_data$plotvar <- drivetime_data$drv_time_sec/60 # this is the variable we want to plot
 subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
 fill_label <- "Drive time (minutes)"
@@ -135,22 +136,22 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
   marks(stats_ppp) <- points$plotvar
 
   # Use tryCatch to handle potential errors in smoothing
-  density_stats_stars <- tryCatch({
+  smooth_stats_stars <- tryCatch({
     stars::st_as_stars(Smooth(stats_ppp, sigma = 1000))
   }, error = function(e) {
-    warning(glue("Error generating density map for {csd}: {e$message}"))
+    warning(glue("Error generating spatial smooth map for {csd}: {e$message}"))
     return(NULL)
   })
 
   # Skip to next iteration if density calculation failed
-  if (is.null(density_stats_stars)) next
+  if (is.null(smooth_stats_stars)) next
 
   # Convert back to sf so it's compatible with ggplot2::geom_sf()
-  density_stats_sf <- st_as_sf(density_stats_stars) %>%
+  smooth_stats_sf <- st_as_sf(smooth_stats_stars) %>%
     st_set_crs(3005)
 
   map_plot <- ggplot() +
-    geom_sf(data = density_stats_sf, aes(fill = v), color = NA) +
+    geom_sf(data = smooth_stats_sf, aes(fill = v), color = NA) +
     geom_sf(data = shp_csd, fill = NA, color = "grey70", linewidth = 1) +
     geom_sf(data = points, size = 0.25, color = "grey25", alpha = 0.1) +
     coord_sf(crs = 3005) +
@@ -165,7 +166,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
     )
 
   # Save the plot
-  fn <- to_snake_case(glue("stars-{csd}"))
+  fn <- snakecase::to_snake_case(glue("{plotvar}-smoothed-{csd}"))
 
   ggsave(
     filename = glue("{fn}.svg"),
@@ -177,3 +178,4 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
   )
       
 }
+
