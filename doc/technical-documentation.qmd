@@ -203,39 +203,28 @@ The `02b-plot-localities.R` script creates a map that highlights the pilot munic
 
 While the thematic maps provide spatial representations of accessibility metrics, the `02c-box-violin-plots.R` script generates statistical visualizations that reveal the distribution patterns of drive times or distances across different municipalities. These plots complement the spatial maps by providing a comparative statistical perspective on service accessibility.
 
-#### Available Visualization Types
+**Required files:** the aggregated statistics from the `01-descriptive-tables.R` script, primarily at the dissemination block level for greatest detail. This allows for customization to any metric present in the dataset such as mean drive time (minutes), mean drive distance (kilometers) and population density.
 
-1.  **Box Plots**: Show the central tendency, dispersion, and potential outliers in drive time/distance distributions.
-    -   Central line represents the median
-    -   Box spans from the first quartile (25th percentile) to the third quartile (75th percentile)
-    -   Whiskers extend to the range of non-outlier data points
-    -   Individual points represent actual data values (address locations)
-2.  **Violin Plots**: Combine box plot characteristics with kernel density estimation to show the full distribution shape.
-    -   Width of the "violin" indicates frequency density at different values
-    -   Allows visual comparison of probability density across municipalities
-    -   Shows whether distributions are bimodal, skewed, or have unusual features
+**Box Plots**: Show the central tendency, dispersion, and potential outliers in drive time/distance distributions.
 
-#### Implementation Details
+-   Central line represents the median
+-   Box spans from the first quartile (25th percentile) to the third quartile (75th percentile)
+-   Whiskers extend to the range of non-outlier data points
+-   Individual points represent actual data values (address locations)
+-   Implemented through specialized function `build_boxplot()`
 
--   **Data Source**: Uses the aggregated statistics from the `01-descriptive-tables.R` script, primarily at the dissemination block level for greatest detail.
+**Violin Plots**: Combine box plot characteristics with kernel density estimation to show the full distribution shape.
 
--   **Customizable Variables**: Can visualize any numeric metric present in the dataset:
+-   Width of the "violin" indicates frequency density at different values
+-   Allows visual comparison of probability density across municipalities
+-   Shows whether distributions are bimodal, skewed, or have unusual features
+-   Implemented through specialized function `build_violinplot()`
 
-    -   Mean drive time (minutes)
-    -   Mean drive distance (kilometers)
-    -   Population density
-    -   Other statistical measures (variance, skewness, etc.)
+**Consistent Styling**: Leverages the predefined theme constants from `settings.R`:
 
--   **Consistent Styling**: Leverages the predefined theme constants from `settings.R`:
-
-    -   `BOX_PLOT_THEME`: Specialized theme with rotated x-axis labels for better readability
-    -   `VIOLIN_PLOT_THEME`: Similar theme adapted for violin plots
-    -   `FILL_THEME_D`: Discrete color scale for distinguishing between municipalities
-
--   **Functionality**: Implemented through specialized functions in plots.R:
-
-    -   `build_boxplot()`: Configurable function for generating box plots
-    -   `build_violinplot()`: Corresponding function for violin plots
+-   `BOX_PLOT_THEME`: Specialized theme with rotated x-axis labels for better readability
+-   `VIOLIN_PLOT_THEME`: Similar theme adapted for violin plots
+-   `FILL_THEME_D`: Discrete color scale for distinguishing between municipalities
 
 These statistical visualizations are particularly valuable for: - Comparing accessibility across different municipalities - Identifying municipalities with greater disparity in service access - Detecting unusual patterns that might not be apparent from maps alone - Providing quantifiable metrics for policy decisions
 
