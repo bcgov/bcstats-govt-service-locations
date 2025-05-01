@@ -70,6 +70,7 @@ OUTPUT_LOC_STATS_FILENAME <- "loc_average_times_dist_all_locs.csv"
 
 SHAPEFILE_OUT <- glue("{SRC_DATA_FOLDER}/shapefiles/")
 MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
+VISUALS_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
 TABLES_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/tables")
 
 # Patterns for cleaning
@@ -90,10 +91,13 @@ POP_COLS <- c("region_name", "area_sq_km", "population", "dwellings", "household
 FACILITY_TAG <- "servicebc"
 
 # Constants for visualizations
+# noting for later: these are almost the same and could be collaped into 1
+# only difference is axis.text.x
 MAP_THEME <- theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5, size = 10),
+    panel.grid.major.x = element_blank(),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
     legend.title = element_text(size = 10, face = "bold"),
     legend.text = element_text(size = 9),
     axis.text = element_text(size = 8),
@@ -102,5 +106,36 @@ MAP_THEME <- theme_minimal() +
     legend.box = "horizontal",
     legend.title.position = "top")
 
- FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.75, na.value = "red")
+BOX_PLOT_THEME <- theme_minimal() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 9),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.title.position = "top", 
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
+
+  VIOLIN_PLOT_THEME <- theme_minimal() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 9),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.title.position = "top", 
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
+
+ FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.6, na.value = "red")
+ FILL_THEME_D <- scale_fill_viridis_d(option = "mako", alpha = 0.6)
 
