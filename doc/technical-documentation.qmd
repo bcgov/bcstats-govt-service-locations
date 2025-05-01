@@ -18,50 +18,48 @@ This is technical documentation for the project and is **under construction**.
 
 The file `setting.R` contains the settings for the project, including global constants (written in all caps) and the paths to the data files. These constants are used throughout the project to ensure consistency and simplify configuration.
 
-<div style="font-size: 0.9em;">
-
+::: {style="font-size: 0.9em;"}
 #### General Project Settings
 
-- **CSD_NAMES**: A list of municipalities of interest for the analysis (`Langford`, `Dawson Creek`, `Smithers`, `Kamloops`). This constant is used extensively throughout the project to filter data and focus analyses on these specific localities.
-- **CENSUS_BASIS**: The census year used for the analysis (2021). This defines which year's data files and statistics are used.
-- **CANCENSUS_YEAR**: The formatted census year string (`CA21`) for use with the `cancensus` package. Automatically constructed from CENSUS_BASIS.
+-   **CSD_NAMES**: A list of municipalities of interest for the analysis (`Langford`, `Dawson Creek`, `Smithers`, `Kamloops`). This constant is used extensively throughout the project to filter data and focus analyses on these specific localities.
+-   **CENSUS_BASIS**: The census year used for the analysis (2021). This defines which year's data files and statistics are used.
+-   **CANCENSUS_YEAR**: The formatted census year string (`CA21`) for use with the `cancensus` package. Automatically constructed from CENSUS_BASIS.
 
 #### File and Directory Paths
 
-- **LAN_FOLDER**: The base folder for the project, configured using the `safepaths::use_network_path()` function. This provides a consistent root directory for all data resources.
-- **SRC_DATA_FOLDER**: The folder containing processed source data files, derived from the LAN_FOLDER. These are intermediate files produced by the pipeline.
-- **RAW_DATA_FOLDER**: The folder containing unprocessed input data files, derived from the LAN_FOLDER.
-- **RAW_POP_FILEPATH**: Full path to the raw population data file from Statistics Canada.
-- **DT_DATA_FOLDER**: The folder containing raw drive time data collected for the nearest facility analysis.
-- **SHAPEFILE_OUT**: Destination folder where processed geospatial shapefiles are saved after processing.
-- **MAP_OUT**: Destination folder where map visualizations (PNG, SVG files) are saved for reporting.
-- **VISUALS_OUT**: Base folder for all visualization outputs, including maps and charts.
-- **TABLES_OUT**: Destination folder where tabular outputs like summary statistics are saved.
+-   **LAN_FOLDER**: The base folder for the project, configured using the `safepaths::use_network_path()` function. This provides a consistent root directory for all data resources.
+-   **SRC_DATA_FOLDER**: The folder containing processed source data files, derived from the LAN_FOLDER. These are intermediate files produced by the pipeline.
+-   **RAW_DATA_FOLDER**: The folder containing unprocessed input data files, derived from the LAN_FOLDER.
+-   **RAW_POP_FILEPATH**: Full path to the raw population data file from Statistics Canada.
+-   **DT_DATA_FOLDER**: The folder containing raw drive time data collected for the nearest facility analysis.
+-   **SHAPEFILE_OUT**: Destination folder where processed geospatial shapefiles are saved after processing.
+-   **MAP_OUT**: Destination folder where map visualizations (PNG, SVG files) are saved for reporting.
+-   **VISUALS_OUT**: Base folder for all visualization outputs, including maps and charts.
+-   **TABLES_OUT**: Destination folder where tabular outputs like summary statistics are saved.
 
 #### File Naming and Path Patterns
 
-- **CROSSWALK_FILEPATH**: Path to the crosswalk file that links different geographic identifiers.
-- **DA_SHAPE_FILEPATH**: Path to the raw dissemination area shapefile from Statistics Canada.
-- **DB_SHAPE_FILEPATH**: Path to the raw dissemination block shapefile from Statistics Canada.
-- **SBCLOC_FILEPATH**: Path to the file containing Service BC office locations.
-- **NO_ERRS_FILE_PATTERN**: Regular expression pattern (`no_errors.csv`) used to identify valid drive time files without errors.
-- **INPUT_ADDR_DA_PATTERN**: Pattern (`address_with_da.*`) for identifying address files with dissemination area information.
+-   **CROSSWALK_FILEPATH**: Path to the crosswalk file that links different geographic identifiers.
+-   **DA_SHAPE_FILEPATH**: Path to the raw dissemination area shapefile from Statistics Canada.
+-   **DB_SHAPE_FILEPATH**: Path to the raw dissemination block shapefile from Statistics Canada.
+-   **SBCLOC_FILEPATH**: Path to the file containing Service BC office locations.
+-   **NO_ERRS_FILE_PATTERN**: Regular expression pattern (`no_errors.csv`) used to identify valid drive time files without errors.
+-   **INPUT_ADDR_DA_PATTERN**: Pattern (`address_with_da.*`) for identifying address files with dissemination area information.
 
 #### Data Columns and Tags
 
-- **REQUIRED_COLS**: The required column names in the input data files, including spatial coordinates and drive metrics.
-- **POP_COLS**: Column names for population-related data (`region_name`, `area_sq_km`, `population`, `dwellings`, `households`).
-- **FACILITY_TAG**: Identifier tag (`servicebc`) used to filter rows related specifically to Service BC locations.
+-   **REQUIRED_COLS**: The required column names in the input data files, including spatial coordinates and drive metrics.
+-   **POP_COLS**: Column names for population-related data (`region_name`, `area_sq_km`, `population`, `dwellings`, `households`).
+-   **FACILITY_TAG**: Identifier tag (`servicebc`) used to filter rows related specifically to Service BC locations.
 
 #### Visualization Settings
 
-- **MAP_THEME**: A predefined ggplot2 theme object for map visualizations, ensuring consistent styling across all maps in the project. Specifies text sizes, positioning, grid appearance, and other aesthetic properties.
-- **BOX_PLOT_THEME**: Theme settings specifically optimized for box plots, including rotated x-axis labels for better readability.
-- **VIOLIN_PLOT_THEME**: Theme settings specifically optimized for violin plots, similar to box plot theme but with specialized settings.
-- **FILL_THEME**: A predefined scale for continuous color fills using the viridis color palette (`mako` option), with specified alpha transparency and handling for NA values.
-- **FILL_THEME_D**: A similar fill scale but optimized for discrete (categorical) data.
-
-</div>
+-   **MAP_THEME**: A predefined ggplot2 theme object for map visualizations, ensuring consistent styling across all maps in the project. Specifies text sizes, positioning, grid appearance, and other aesthetic properties.
+-   **BOX_PLOT_THEME**: Theme settings specifically optimized for box plots, including rotated x-axis labels for better readability.
+-   **VIOLIN_PLOT_THEME**: Theme settings specifically optimized for violin plots, similar to box plot theme but with specialized settings.
+-   **FILL_THEME**: A predefined scale for continuous color fills using the viridis color palette (`mako` option), with specified alpha transparency and handling for NA values.
+-   **FILL_THEME_D**: A similar fill scale but optimized for discrete (categorical) data.
+:::
 
 ------------------------------------------------------------------------
 
@@ -71,27 +69,55 @@ The file `00-make-data.R` prepares the data required for subsequent analysis, su
 
 1.  **Pre-processing Driving distance data files**:
 
-    -   The script reads raw drive time files for each locality, cleans the data, and extracts relevant columns. (Note this is outdated) as we now have the full dataset. The single raw data file is read in and pre-processed. The processed files are saved to the `SRC_DATA_FOLDER`.
+    The script utilizes the `preprocess_locs` function to handle raw drive time files. Originally, this function was designed to handle separate data files for each municipality, cleaning and extracting relevant columns before merging them together. While the current dataset now arrives as a single consolidated file, the function has been maintained for compatibility with the existing pipeline structure to avoid extensive refactoring. The function:
+
+    -   Reads the CSV data
+    -   Cleans column names using `janitor::clean_names()`
+    -   Filters for rows matching the specified tag (typically 'servicebc')
+    -   Renames key columns for consistency ('site_albers_x' to 'address_albers_x', etc.)
+    -   Derives dissemination area IDs (daid) from dissemination block IDs (dbid
+
+    The processed data is then consolidated and saved to the `SRC_DATA_FOLDER` for use in subsequent analysis steps.
 
 2.  **Shapefiles**:
 
-    -   Shapefiles for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) are created using the `bcmaps` and `bcdata` packages. These shapefiles are saved to the `SHAPEFILE_OUT` folder.
+    Shapefiles for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) are created using the `bcmaps` and `bcdata` packages. Two sets of shapefiles are generated:
+
+    -   **Full shapefiles**: Contain geographic boundaries for all areas across British Columbia. These comprehensive files serve as the master reference but can be computationally intensive to work with.
+
+    -   **Reduced shapefiles**: Filtered to include only the four municipalities of interest (Langford, Dawson Creek, Smithers, Kamloops). These optimized files significantly improve processing efficiency for visualization and analysis tasks.
+
+    All shapefiles are saved to the `SHAPEFILE_OUT` folder in GPKG (GeoPackage) format, which offers better performance and compression than traditional shapefiles.
 
 3.  **Crosswalk**:
 
-    -   A crosswalk is created to link dissemination blocks (DBs) to dissemination areas (DAs) and Census Subdivisions (CSDs. This crosswalk is used to aggregate data at different geographic levels. A correspondence file contains all DB's in BC, and the crosswalk file contains only those used in the analysis.
+    A crosswalk is created to link dissemination blocks (DBs) to dissemination areas (DAs) and Census Subdivisions (CSDs). This crosswalk is used to aggregate data at different geographic levels. Two crosswalk files are generated:
+
+    **Correspondence file**: Contains all DB's in BC with their hierarchical relationships
+
+    **Crosswalk file**: Contains only the DBs used in the analysis with links to higher geographic levels. This may become obsolete as the correspondence file retains the full picture of BC.
 
 4.  **Population Data**:
 
     -   Population data for DAs, DBs, and CSDs is retrieved using the `cancensus` package. The data is pruned and cleaned and saved for use in later scripts.
 
+    -   **API Key Requirement**: The first time a user runs this script, they will need a CensusMapper API key. Users can obtain a free key by signing up at [CensusMapper](https://censusmapper.ca/). Once obtained, the key should be set using:
+
+    ``` r
+    cancensus::set_cancensus_api_key('YOUR_API_KEY', install = TRUE)
+    ```
+
+    This will store the key in the user's R environment for future use. API quotas are generally sufficient for standard analysis, but users performing extensive operations may need to request higher limits.
+
+    Similar to shapefiles, both full (province-wide) and reduced (municipalities of interest only) versions are created for computational efficiency.
+
 5.  **Service BC Location Data**:
 
-    -   An aggregated data set containing the count of addresses considered "nearest" to each Service BC locations is saved.
+    An aggregated data set containing the count of addresses considered "nearest" to each Service BC location is saved. Coordinates are stored in the Albers equal-area projection (EPSG:3005), which is specifically optimized for British Columbia.
 
 6.  **Output Files**:
 
-    -   The processed data is saved in both full and reduced formats (filtered by the municipalities of interest) for use in subsequent scripts.
+    The processed data is saved in both full and reduced formats (filtered by the municipalities of interest) for use in subsequent scripts. Consistent naming conventions with "full-" and "reduced-" prefixes help distinguish between province-wide and municipality-specific datasets.
 
 ## Descriptive Tables (01-descriptive-tables.R)
 
