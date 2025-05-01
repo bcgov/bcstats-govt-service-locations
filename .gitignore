@@ -5,5 +5,9 @@ README_files/
 README.html
 .Rproj.user
 .Rhistory
+<<<<<<< HEAD
 doc/technical-documentation_files
 doc/technical-documentation.hmtl
+=======
+doc/
+>>>>>>> comparitive-plots
