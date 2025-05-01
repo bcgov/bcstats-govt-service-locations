@@ -554,7 +554,7 @@ for (facility in facilities) {
 # Take up to 4 facilities for a nice grid layout
 if (length(facilities) > 1) {
   combined_pyramids <- cowplot::plot_grid(
-    plotlist = population_pyramids[1:min(4, length(facilities))],
+    plotlist = population_pyramids[seq_len(min(4, length(facilities)))],
     ncol = 2
   )
   
