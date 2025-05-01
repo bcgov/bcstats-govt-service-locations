@@ -47,17 +47,22 @@ build_map <- function(
     varname,
     csd_name,
     csd_col = "",
+    sbc_col = NULL,  # New parameter for filtering servicebc_data
     plot_title = "",
     plot_subtitle = "",
     legend_title = "",
     map_theme = theme_minimal(),
     fill_scale = scale_fill_viridis_c(option = "viridis"),
-    scale_limits = NULL
+    scale_limits = NULL,
+    na_color = "#E41A1C"  # Default light red color for NA values
 ) {
 
   # --- Prepare arguments as symbols ---
   varname_sym <- rlang::sym(varname)
   csd_col_sym <- rlang::sym(csd_col)
+  
+  # Use sbc_col if provided, otherwise default to csd_col
+  sbc_col_sym <- if (!is.null(sbc_col)) rlang::sym(sbc_col) else csd_col_sym
 
   # --- Prepare titles as strings --
   default_title <- glue::glue("{varname} for {csd_name}")
@@ -66,28 +71,49 @@ build_map <- function(
 
   # dynamically set limits
   fill_theme <- fill_scale$clone()
-  fill_theme$limits <- range(data[[varname_sym]])
+  fill_theme$limits <- range(data[[varname_sym]], na.rm = TRUE)
   fill_theme$oob <- scales::squish
+  
+  # Filter data for the specified location
+  map_data <- data[data[[csd_col_sym]] == csd_name,]
+  
+  # Split the data into those with and without the variable value
+  map_data_na <- map_data[is.na(map_data[[varname_sym]]),]
+  map_data_with_values <- map_data[!is.na(map_data[[varname_sym]]),]
 
-  map_data <- map_data <- data[data[[csd_col_sym]] == csd_name,]
-
-  points_data <- servicebc_data[servicebc_data[[csd_col_sym]] == csd_name,]
+  # Only filter servicebc_data if the column exists, otherwise use all points
+  if (sbc_col %in% names(servicebc_data)) {
+    points_data <- servicebc_data[servicebc_data[[sbc_col_sym]] == csd_name,]
+  } else {
+    # If no column specified or not found, use all service locations
+    points_data <- servicebc_data
+  }
 
   # Check if filtering resulted in data
   if (nrow(map_data) == 0) {
-    warning(glue("Warning: No data found for loc_id '{loc_id}'"))
-    return(ggplot() + theme_void() + labs(title = glue("No data for {csd_name}")))
+    warning(glue::glue("Warning: No data found for csd_name '{csd_name}' in column '{csd_col}'"))
+    return(ggplot() + theme_void() + labs(title = glue::glue("No data for {csd_name}")))
   }
 
   ## Build the ggplot object
-  map <-  ggplot() +
+  map <- ggplot() +
+    # First draw the polygons with NA values in gentle red
     geom_sf(
-        data = map_data,
+        data = map_data_na,
+        fill = na_color,
+        color = "gray50",
+        lwd = 0.1,
+        alpha = 0.5  # Gentle transparency for the red
+    ) +
+    # Then draw the polygons with values using the color scale
+    geom_sf(
+        data = map_data_with_values,
         aes(fill = !!varname_sym),
         color = "gray50",
         lwd = 0.1
     ) +
     fill_theme +
+    # Add Service BC locations
     geom_sf(data = points_data,
       aes(shape = "Nearest Service BC Location"),
       fill = 'yellow',
@@ -103,6 +129,13 @@ build_map <- function(
         override.aes = list(
           fill = "yellow", 
           size = 4)
+      ),
+      fill = guide_colorbar(
+        title = legend_title,
+        title.position = "top",
+        label.position = "bottom",
+        barwidth = 10,
+        barheight = 0.5
       )
     ) +
     labs(
@@ -110,9 +143,14 @@ build_map <- function(
       subtitle = plot_subtitle,
       fill = legend_title,
       x = "\nLongitude",
-      y = "Latitude\n"
+      y = "Latitude\n",
+      caption = "Note: Areas in red indicate no drive data available"
     ) +
-    map_theme
+    map_theme +
+    # Adjust the legend position to make room for the caption
+    theme(
+      plot.caption = element_text(hjust = 0, face = "italic", size = 9)
+    )
 
   return(map)
 
@@ -298,7 +336,7 @@ create_drive_distance_histogram <- function(data, facility_name = NULL, facet = 
   plot_data <- plot_data |>
     group_by(assigned) |>
     mutate(
-      drv_dist_mean = mean(drv_dist),
+      drv_dist_mean = mean(drv_dist, na.rm = TRUE),
       # Ensure there are no zero values for better visualization
       drv_dist = if_else(drv_dist == 0, 0.01, drv_dist)
     ) |>
