@@ -67,57 +67,53 @@ The file `setting.R` contains the settings for the project, including global con
 
 The file `00-make-data.R` prepares the data required for subsequent analysis, such as visuals and tables. It processes raw input files, generates shape files, and creates crosswalks for different geographic units.
 
-1.  **Pre-processing Driving distance data files**:
+**Pre-processing Driving distance data files**:
 
-    The script utilizes the `preprocess_locs` function to handle raw drive time files. Originally, this function was designed to handle separate data files for each municipality, cleaning and extracting relevant columns before merging them together. While the current dataset now arrives as a single consolidated file, the function has been maintained for compatibility with the existing pipeline structure to avoid extensive refactoring. The function:
+The script utilizes the `preprocess_locs` function to handle raw drive time files. Originally, this function was designed to handle separate data files for each municipality, cleaning and extracting relevant columns before merging them together. While the current dataset now arrives as a single consolidated file, the function has been maintained for compatibility with the existing pipeline structure to avoid extensive refactoring. The function:
 
-    -   Reads the raw CSV data
-    -   Cleans column names using `janitor::clean_names()`
-    -   Filters for rows matching the specified tag (typically 'servicebc')
-    -   Renames key columns for consistency ('site_albers_x' to 'address_albers_x', etc.)
-    -   Derives dissemination area IDs (daid) from dissemination block IDs (dbid
+-   Reads the raw CSV data
+-   Cleans column names using `janitor::clean_names()`
+-   Filters for rows matching the specified tag (typically 'servicebc')
+-   Renames key columns for consistency ('site_albers_x' to 'address_albers_x', etc.)
+-   Derives dissemination area IDs (daid) from dissemination block IDs (dbid
 
-    The processed data is then consolidated and saved to the `SRC_DATA_FOLDER` for use in subsequent analysis steps.
+The processed data is then consolidated and saved to the `SRC_DATA_FOLDER` for use in subsequent analysis steps.
 
-2.  **Shapefiles**:
+**Shapefiles**:
 
-    Shapefiles for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) are created using the `bcmaps` and `bcdata` packages. Two sets of shapefiles are generated:
+Shapefiles for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) are created using the `bcmaps` and `bcdata` packages. Two sets of shapefiles are generated:
 
-    -   **Full shapefiles**: Contain geographic boundaries for all areas across British Columbia. These comprehensive files serve as the master reference but can be computationally intensive to work with.
+-   **Full shapefiles**: Contain geographic boundaries for all areas across British Columbia. These comprehensive files serve as the master reference but can be computationally intensive to work with.
 
-    -   **Reduced shapefiles**: Filtered to include only the four municipalities of interest (Langford, Dawson Creek, Smithers, Kamloops). These optimized files significantly improve processing efficiency for visualization and analysis tasks.
+-   **Reduced shapefiles**: Filtered to include only the four municipalities of interest (Langford, Dawson Creek, Smithers, Kamloops). These optimized files significantly improve processing efficiency for visualization and analysis tasks.
 
-    All shapefiles are saved to the `SHAPEFILE_OUT` folder in GPKG (GeoPackage) format, which offers better performance and compression than traditional shapefiles.
+All shapefiles are saved to the `SHAPEFILE_OUT` folder in GPKG (GeoPackage) format, which offers better performance and compression than traditional shapefiles.
 
-3.  **Crosswalk**:
+**Crosswalk**:
 
-    A crosswalk is created to link dissemination blocks (DBs) to dissemination areas (DAs) and Census Subdivisions (CSDs). This crosswalk is used to aggregate data at different geographic levels. Two crosswalk files are generated:
+A crosswalk is created to link dissemination blocks (DBs) to dissemination areas (DAs) and Census Subdivisions (CSDs). This crosswalk is used to aggregate data at different geographic levels. Two crosswalk files are generated:
 
-    **Correspondence file**: Contains all DB's in BC with their hierarchical relationships
+**Correspondence file**: Contains all DB's in BC with their hierarchical relationships
 
-    **Crosswalk file**: Contains only the DBs used in the analysis with links to higher geographic levels. This may become obsolete as the correspondence file retains the full picture of BC.
+**Crosswalk file**: Contains only the DBs used in the analysis with links to higher geographic levels. This may become obsolete as the correspondence file retains the full picture of BC.
 
-4.  **Population Data**:
+**Population Data**:
 
-    -   Population data for DAs, DBs, and CSDs is retrieved using the `cancensus` package. The data is pruned and cleaned and saved for use in later scripts.
+-   Population data for DAs, DBs, and CSDs is retrieved using the `cancensus` package. The data is pruned and cleaned and saved for use in later scripts.
 
-    -   **API Key Requirement**: The first time a user runs this script, they will need a CensusMapper API key. Users can obtain a free key by signing up at [CensusMapper](https://censusmapper.ca/). Once obtained, the key should be set using:
+-   **API Key Requirement**: The first time a user runs this script, they will need a CensusMapper API key. Users can obtain a free key by signing up at [CensusMapper](https://censusmapper.ca/). Once obtained, the key should be set using:
 
-    ``` r
-    cancensus::set_cancensus_api_key('YOUR_API_KEY', install = TRUE)
-    ```
+``` r
+cancensus::set_cancensus_api_key('YOUR_API_KEY', install = TRUE)
+```
 
-    This will store the key in the user's R environment for future use. API quotas are generally sufficient for standard analysis, but users performing extensive operations may need to request higher limits.
+This will store the key in the user's R environment for future use. API quotas are generally sufficient for standard analysis, but users performing extensive operations may need to request higher limits.
 
-    Similar to shapefiles, both full (province-wide) and reduced (municipalities of interest only) versions are created for computational efficiency.
+Similar to shapefiles, both full (province-wide) and reduced (municipalities of interest only) versions are created for computational efficiency.
 
-5.  **Service BC Location Data**:
+**Service BC Location Data**:
 
-    An aggregated data set containing the count of addresses considered "nearest" to each Service BC location is saved. Coordinates are stored in the Albers equal-area projection (EPSG:3005), which is specifically optimized for British Columbia.
-
-6.  **Output Files**:
-
-    The processed data is saved in both full and reduced formats (filtered by the municipalities of interest) for use in subsequent scripts. Consistent naming conventions with "full-" and "reduced-" prefixes help distinguish between province-wide and municipality-specific datasets.
+An aggregated data set containing the count of addresses considered "nearest" to each Service BC location is saved. Coordinates are stored in the Albers equal-area projection (EPSG:3005), which is specifically optimized for British Columbia.
 
 ## Descriptive Tables (01-descriptive-tables.R)
 
@@ -125,11 +121,11 @@ This script generates comprehensive statistical summaries of drive times and dis
 
 ### Geographic Levels of Analysis
 
-1.  **Dissemination Block (DB)**: The smallest geographic unit for which population and dwelling counts are available (\~500-750 people). Provides the most granular view of accessibility patterns.
+**Dissemination Block (DB)**: The smallest geographic unit for which population and dwelling counts are available (\~500-750 people). Provides the most granular view of accessibility patterns.
 
-2.  **Dissemination Area (DA)**: A small geographic unit composed of one or more adjacent dissemination blocks (\~400-700 people). Serves as an intermediate level of analysis.
+**Dissemination Area (DA)**: A small geographic unit composed of one or more adjacent dissemination blocks (\~400-700 people). Serves as an intermediate level of analysis.
 
-3.  **Census Subdivision (CSD)**: Municipal-level geography (e.g., cities, towns, villages) used for census data dissemination. Provides a broad overview of access patterns.
+**Census Subdivision (CSD)**: Municipal-level geography (e.g., cities, towns, villages) used for census data dissemination. Provides a broad overview of access patterns.
 
 ### Statistical Metrics Produced
 
@@ -205,6 +201,8 @@ While the thematic maps provide spatial representations of accessibility metrics
 
 **Required files:** the aggregated statistics from the `01-descriptive-tables.R` script, primarily at the dissemination block level for greatest detail. This allows for customization to any metric present in the dataset such as mean drive time (minutes), mean drive distance (kilometers) and population density.
 
+All outputs are saved to the `VISUALS_OUT` directory with systematic naming conventions based on the plot type and variables visualized.
+
 **Box Plots**: Show the central tendency, dispersion, and potential outliers in drive time/distance distributions.
 
 -   Central line represents the median
@@ -226,12 +224,7 @@ While the thematic maps provide spatial representations of accessibility metrics
 -   `VIOLIN_PLOT_THEME`: Similar theme adapted for violin plots
 -   `FILL_THEME_D`: Discrete color scale for distinguishing between municipalities
 
-These statistical visualizations are particularly valuable for: - Comparing accessibility across different municipalities - Identifying municipalities with greater disparity in service access - Detecting unusual patterns that might not be apparent from maps alone - Providing quantifiable metrics for policy decisions
-
-All outputs are saved to the `VISUALS_OUT` directory with systematic naming conventions based on the plot type and variables visualized.
-
 ## Future Work
 
 -   Expand the analysis to include additional municipalities and public services.
 -   Incorporate socio-economic and demographic factors into the analysis.
--   Improve the documentation for each script and function.
