@@ -125,45 +125,53 @@ This script generates comprehensive statistical summaries of drive times and dis
 
 ### Geographic Levels of Analysis
 
-1. **Dissemination Block (DB)**: The smallest geographic unit for which population and dwelling counts are available (~500-750 people). Provides the most granular view of accessibility patterns.
+1.  **Dissemination Block (DB)**: The smallest geographic unit for which population and dwelling counts are available (\~500-750 people). Provides the most granular view of accessibility patterns.
 
-2. **Dissemination Area (DA)**: A small geographic unit composed of one or more adjacent dissemination blocks (~400-700 people). Serves as an intermediate level of analysis.
+2.  **Dissemination Area (DA)**: A small geographic unit composed of one or more adjacent dissemination blocks (\~400-700 people). Serves as an intermediate level of analysis.
 
-3. **Census Subdivision (CSD)**: Municipal-level geography (e.g., cities, towns, villages) used for census data dissemination. Provides a broad overview of access patterns.
+3.  **Census Subdivision (CSD)**: Municipal-level geography (e.g., cities, towns, villages) used for census data dissemination. Provides a broad overview of access patterns.
 
 ### Statistical Metrics Produced
 
 For each geographic unit, the output includes:
 
-- **Count metrics**: Number of addresses, number of DB blocks with insufficient data
-- **Time metrics**: Drive time statistics in both seconds and minutes
-- **Distance metrics**: Drive distance statistics in kilometers
-- **Population metrics**: Area size, population count, dwelling count, household count
-- **Data quality metrics**: Counts of DB blocks with insufficient address data
+-   **Count metrics**: Number of addresses, number of DB blocks with insufficient data
+-   **Time metrics**: Drive time statistics in both seconds and minutes
+-   **Distance metrics**: Drive distance statistics in kilometers
+-   **Population metrics**: Area size, population count, dwelling count, household count
+-   **Data quality metrics**: Counts of DB blocks with insufficient address data
 
 These tables form the analytical foundation for all subsequent visualizations, allowing accessibility patterns to be examined at different geographic scales and in relation to population distribution.
 
-## Thematic Maps for Accessibility Metrics (02-map-plots.R: )
+## Thematic Maps for Accessibility Metrics
 
-The `02-map-plots.R` script generates thematic maps that visualize accessibility metrics, such as average drive times and the number of addresses, at various geographic levels. These maps provide insights into potential disparities in service access.
+### Standard Choropleth Maps (02-map-plots.R)
 
--   **Data Integration**: Combines processed shapefiles and summary statistics from earlier scripts.
+The `02-map-plots.R` script generates thematic maps that visualize accessibility metrics at various geographic levels. These maps provide insights into potential disparities in service access by coloring each dissemination block based on drive time or distance.
 
-    -   **Shapefiles**: Geographic boundaries for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs).
+**Required files:** Include the boundaries for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) and aggregated metrics from the output of `01-descriptive-tables.R.`
 
-    -   **Summary Statistics**: Aggregated metrics from `01-descriptive-tables.R`.
+**Geographic Focus**: Filters data to include only the municipalities of interest (`Langford`, `Dawson Creek`, `Smithers`, `Kamloops`).
 
--   **Geographic Focus**: Filters data to include only the municipalities of interest (`Langford`, `Dawson Creek`, `Smithers`, `Kamloops`).
+**Customizable Metrics**: Different accessibility metrics are available for visualization including; mean drive times (in seconds or minutes), mean drive distances (in kilometers), address counts (population coverage) and others.
 
--   **Custom Visualizations**: Uses `ggplot2` to create maps with color-coded fill scales and custom themes.
+**Spatial Gaps**: Some dissemination blocks may appear blank on the maps because either no addresses exist within certain blocks (e.g., parks, undeveloped areas) or the data was collected for those areas.
 
-    -   **Pilot Regions Map**: Highlights the pilot municipalities and their Service BC locations.
+### Smoothed Density Maps (02d-density_map.R)
 
-    -   **Accessibility Metrics Map**: Visualizes metrics like average drive times at the Dissemination Block (DB) level.
+The `02d-density_map.R` script addresses the spatial gaps in the standard choropleth maps by using kernel density estimation to create continuous surfaces representing drive time or distance. This approach generates more visually complete maps by interpolating values across the entire geographic area.
 
--   **Output File Location**: Maps are saved as image files in the `MAP_OUT` folder.
+**Spatial Smoothing**: Kernel density estimation via the `spatstat` package is used to convert point-based data to continuous surfaces and fill gaps in DB's with interpolated values. They provide an alternative and in some cases more complete visual representation of accessibility patterns.
 
-#### 
+**Technical Approach**: Address points with drive time/distance values are converted into spatial point patterns. Smoothing applied, with a specified bandwidth (sigma = 1000). A high-resolution grid (300x300) is used for the smoothed surface which is clipped to the municipality boundary.
+
+**Parameterization**:
+
+-   Supports consistent scaling across municipalities for comparability
+-   Allows custom color scales through the `FILL_THEME` setting
+-   Includes standard map elements like titles, legends, and Service BC locations
+
+Both mapping approaches are complementary, with the standard choropleth maps providing precise block-level statistics and the smoothed maps offering a more complete spatial representation of accessibility patterns.
 
 ### Mapping Pilot Municipalities (02b-plot-localities.R)
 
@@ -191,7 +199,47 @@ The `02b-plot-localities.R` script creates a map that highlights the pilot munic
 
 ------------------------------------------------------------------------
 
-### 
+### Statistical Visualizations (02c-box-violin-plots.R)
+
+While the thematic maps provide spatial representations of accessibility metrics, the `02c-box-violin-plots.R` script generates statistical visualizations that reveal the distribution patterns of drive times or distances across different municipalities. These plots complement the spatial maps by providing a comparative statistical perspective on service accessibility.
+
+#### Available Visualization Types
+
+1.  **Box Plots**: Show the central tendency, dispersion, and potential outliers in drive time/distance distributions.
+    -   Central line represents the median
+    -   Box spans from the first quartile (25th percentile) to the third quartile (75th percentile)
+    -   Whiskers extend to the range of non-outlier data points
+    -   Individual points represent actual data values (address locations)
+2.  **Violin Plots**: Combine box plot characteristics with kernel density estimation to show the full distribution shape.
+    -   Width of the "violin" indicates frequency density at different values
+    -   Allows visual comparison of probability density across municipalities
+    -   Shows whether distributions are bimodal, skewed, or have unusual features
+
+#### Implementation Details
+
+-   **Data Source**: Uses the aggregated statistics from the `01-descriptive-tables.R` script, primarily at the dissemination block level for greatest detail.
+
+-   **Customizable Variables**: Can visualize any numeric metric present in the dataset:
+
+    -   Mean drive time (minutes)
+    -   Mean drive distance (kilometers)
+    -   Population density
+    -   Other statistical measures (variance, skewness, etc.)
+
+-   **Consistent Styling**: Leverages the predefined theme constants from `settings.R`:
+
+    -   `BOX_PLOT_THEME`: Specialized theme with rotated x-axis labels for better readability
+    -   `VIOLIN_PLOT_THEME`: Similar theme adapted for violin plots
+    -   `FILL_THEME_D`: Discrete color scale for distinguishing between municipalities
+
+-   **Functionality**: Implemented through specialized functions in plots.R:
+
+    -   `build_boxplot()`: Configurable function for generating box plots
+    -   `build_violinplot()`: Corresponding function for violin plots
+
+These statistical visualizations are particularly valuable for: - Comparing accessibility across different municipalities - Identifying municipalities with greater disparity in service access - Detecting unusual patterns that might not be apparent from maps alone - Providing quantifiable metrics for policy decisions
+
+All outputs are saved to the `VISUALS_OUT` directory with systematic naming conventions based on the plot type and variables visualized.
 
 ## Future Work
 
