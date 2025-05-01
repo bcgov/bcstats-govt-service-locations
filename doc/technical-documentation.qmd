@@ -121,24 +121,27 @@ The file `00-make-data.R` prepares the data required for subsequent analysis, su
 
 ## Descriptive Tables (01-descriptive-tables.R)
 
-This script loads the processed data files created in `00-make-data.R` and calculates summary statistics for drive times and distances. The results are aggregated at three geographic levels:
+This script generates comprehensive statistical summaries of drive times and distances to Service BC offices. The data is aggregated at three distinct geographic levels to support multi-scale analysis:
 
-1.  **Dissemination Block (DB)**: The smallest geographic unit for which population and dwelling counts are disseminated.
-2.  **Dissemination Area (DA)**: A small, relatively stable geographic unit composed of one or more adjacent dissemination blocks.
-3.  **Census Subdivision (CSD)**: A municipality or equivalent geographic area used for census purposes.
+### Geographic Levels of Analysis
 
-### Key Steps in Summary Table Creation
+1. **Dissemination Block (DB)**: The smallest geographic unit for which population and dwelling counts are available (~500-750 people). Provides the most granular view of accessibility patterns.
 
-1.  **Loading Processed Data**:
-    -   The script reads the processed drive time and population data files created in `00-make-data.R`.
-2.  **Calculating Summary Statistics**:
-    -   Summary statistics such as mean, variance, skewness, kurtosis, and quantiles are calculated for drive times and distances.
-    -   The statistics are grouped by the geographic levels (DB, DA, and CSD).
-3.  **Data Validation**:
-    -   The script performs data checks to identify missing or low-count regions.
-    -   Regions with fewer than five observations are flagged for further investigation.
-4.  **Output Files**:
-    -   The aggregated summary tables are saved to the `TABLES_OUT` folder for use in subsequent scripts.
+2. **Dissemination Area (DA)**: A small geographic unit composed of one or more adjacent dissemination blocks (~400-700 people). Serves as an intermediate level of analysis.
+
+3. **Census Subdivision (CSD)**: Municipal-level geography (e.g., cities, towns, villages) used for census data dissemination. Provides a broad overview of access patterns.
+
+### Statistical Metrics Produced
+
+For each geographic unit, the output includes:
+
+- **Count metrics**: Number of addresses, number of DB blocks with insufficient data
+- **Time metrics**: Drive time statistics in both seconds and minutes
+- **Distance metrics**: Drive distance statistics in kilometers
+- **Population metrics**: Area size, population count, dwelling count, household count
+- **Data quality metrics**: Counts of DB blocks with insufficient address data
+
+These tables form the analytical foundation for all subsequent visualizations, allowing accessibility patterns to be examined at different geographic scales and in relation to population distribution.
 
 ## Thematic Maps for Accessibility Metrics (02-map-plots.R: )
 
