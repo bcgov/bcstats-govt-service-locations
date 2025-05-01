@@ -28,9 +28,9 @@ The file `setting.R` contains the settings for the project, including global con
 #### File and Directory Paths
 
 -   **LAN_FOLDER**: The base folder for the project, configured using the `safepaths::use_network_path()` function. This provides a consistent root directory for all data resources.
--   **SRC_DATA_FOLDER**: The folder containing processed source data files, derived from the LAN_FOLDER. These are intermediate files produced by the pipeline.
--   **RAW_DATA_FOLDER**: The folder containing unprocessed input data files, derived from the LAN_FOLDER.
--   **RAW_POP_FILEPATH**: Full path to the raw population data file from Statistics Canada.
+-   **SRC_DATA_FOLDER**: The folder containing processed source data files, a sub folder of the LAN_FOLDER. These are intermediate files produced by the pipeline.
+-   **RAW_DATA_FOLDER**: The folder containing unprocessed input data files, a sub folder of the LAN_FOLDER.
+-   **RAW_POP_FILEPATH**: Full path to the raw population data file from Statistics Canada. (outdated?)
 -   **DT_DATA_FOLDER**: The folder containing raw drive time data collected for the nearest facility analysis.
 -   **SHAPEFILE_OUT**: Destination folder where processed geospatial shapefiles are saved after processing.
 -   **MAP_OUT**: Destination folder where map visualizations (PNG, SVG files) are saved for reporting.
@@ -40,8 +40,8 @@ The file `setting.R` contains the settings for the project, including global con
 #### File Naming and Path Patterns
 
 -   **CROSSWALK_FILEPATH**: Path to the crosswalk file that links different geographic identifiers.
--   **DA_SHAPE_FILEPATH**: Path to the raw dissemination area shapefile from Statistics Canada.
--   **DB_SHAPE_FILEPATH**: Path to the raw dissemination block shapefile from Statistics Canada.
+-   **DA_SHAPE_FILEPATH**: Path to the raw dissemination area shapefile from Statistics Canada (outdated?).
+-   **DB_SHAPE_FILEPATH**: Path to the raw dissemination block shapefile from Statistics Canada (outdated?).
 -   **SBCLOC_FILEPATH**: Path to the file containing Service BC office locations.
 -   **NO_ERRS_FILE_PATTERN**: Regular expression pattern (`no_errors.csv`) used to identify valid drive time files without errors.
 -   **INPUT_ADDR_DA_PATTERN**: Pattern (`address_with_da.*`) for identifying address files with dissemination area information.
@@ -71,7 +71,7 @@ The file `00-make-data.R` prepares the data required for subsequent analysis, su
 
     The script utilizes the `preprocess_locs` function to handle raw drive time files. Originally, this function was designed to handle separate data files for each municipality, cleaning and extracting relevant columns before merging them together. While the current dataset now arrives as a single consolidated file, the function has been maintained for compatibility with the existing pipeline structure to avoid extensive refactoring. The function:
 
-    -   Reads the CSV data
+    -   Reads the raw CSV data
     -   Cleans column names using `janitor::clean_names()`
     -   Filters for rows matching the specified tag (typically 'servicebc')
     -   Renames key columns for consistency ('site_albers_x' to 'address_albers_x', etc.)
