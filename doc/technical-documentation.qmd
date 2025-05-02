@@ -1,18 +1,15 @@
 ---
 title: "Technical Documentation"
-output: 
-    html_document:
-        toc: true
-        toc_depth: 2
-        number_sections: true
-        theme: cerulean
-        highlight: tango
-        code_folding: hide
-        fig_caption: true
-        self_contained: false
+format:
+  html:
+    toc: true
+    toc-location: right
+    toc-depth: 3
+    number-sections: false
+    theme: cerulean
+    code-fold: true
+    fig-caption: true
 ---
-
-This is technical documentation for the project and is **under construction**.
 
 ## Configuration Settings (setting.R)
 
@@ -67,7 +64,7 @@ The file `setting.R` contains the settings for the project, including global con
 
 The file `00-make-data.R` prepares the data required for subsequent analysis, such as visuals and tables. It processes raw input files, generates shape files, and creates crosswalks for different geographic units.
 
-**Pre-processing Driving distance data files**:
+#### Pre-processing Driving distance data files
 
 The script utilizes the `preprocess_locs` function to handle raw drive time files. Originally, this function was designed to handle separate data files for each municipality, cleaning and extracting relevant columns before merging them together. While the current dataset now arrives as a single consolidated file, the function has been maintained for compatibility with the existing pipeline structure to avoid extensive refactoring. The function:
 
@@ -79,7 +76,7 @@ The script utilizes the `preprocess_locs` function to handle raw drive time file
 
 The processed data is then consolidated and saved to the `SRC_DATA_FOLDER` for use in subsequent analysis steps.
 
-**Shapefiles**:
+#### Shapefiles:
 
 Shapefiles for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) are created using the `bcmaps` and `bcdata` packages. Two sets of shapefiles are generated:
 
@@ -89,7 +86,7 @@ Shapefiles for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissem
 
 All shapefiles are saved to the `SHAPEFILE_OUT` folder in GPKG (GeoPackage) format, which offers better performance and compression than traditional shapefiles.
 
-**Crosswalk**:
+#### Crosswalk:
 
 A crosswalk is created to link dissemination blocks (DBs) to dissemination areas (DAs) and Census Subdivisions (CSDs). This crosswalk is used to aggregate data at different geographic levels. Two crosswalk files are generated:
 
@@ -97,7 +94,7 @@ A crosswalk is created to link dissemination blocks (DBs) to dissemination areas
 
 **Crosswalk file**: Contains only the DBs used in the analysis with links to higher geographic levels. This may become obsolete as the correspondence file retains the full picture of BC.
 
-**Population Data**:
+#### Population Data:
 
 -   Population data for DAs, DBs, and CSDs is retrieved using the `cancensus` package. The data is pruned and cleaned and saved for use in later scripts.
 
@@ -111,13 +108,13 @@ This will store the key in the user's R environment for future use. API quotas a
 
 Similar to shapefiles, both full (province-wide) and reduced (municipalities of interest only) versions are created for computational efficiency.
 
-**Service BC Location Data**:
+#### Service BC Location Data:
 
 An aggregated data set containing the count of addresses considered "nearest" to each Service BC location is saved. Coordinates are stored in the Albers equal-area projection (EPSG:3005), which is specifically optimized for British Columbia.
 
 ## Descriptive Tables (01-descriptive-tables.R)
 
-This script generates comprehensive statistical summaries of drive times and distances to Service BC offices. The data is aggregated at three distinct geographic levels to support multi-scale analysis:
+This script \`01-descriptive-tables.R\` generates comprehensive statistical summaries of drive times and distances to Service BC offices. The data is aggregated at three distinct geographic levels to support multi-scale analysis:
 
 ### Geographic Levels of Analysis
 
@@ -145,84 +142,134 @@ These tables form the analytical foundation for all subsequent visualizations, a
 
 The `02-map-plots.R` script generates thematic maps that visualize accessibility metrics at various geographic levels. These maps provide insights into potential disparities in service access by coloring each dissemination block based on drive time or distance.
 
-**Required files:** Include the boundaries for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) and aggregated metrics from the output of `01-descriptive-tables.R.`
+#### Required Files
 
-**Geographic Focus**: Filters data to include only the municipalities of interest (`Langford`, `Dawson Creek`, `Smithers`, `Kamloops`).
+-   **Shapefiles**: Processed geographical boundaries from `SHAPEFILE_OUT` folder:
+    -   Census Subdivision (CSD) level shapefiles (`reduced-csd-with-location.gpkg`)
+    -   Dissemination Area (DA) level shapefiles (`reduced-da-with-location.gpkg`)
+    -   Dissemination Block (DB) level shapefiles (`reduced-db-with-location.gpkg`)
+-   **Statistical Data**: Aggregated metrics from the output of `01-descriptive-tables.R`:
+    -   DA-level summary statistics (`reduced_da_average_times_dist_all_locs.csv`)
+    -   DB-level summary statistics (`reduced_db_average_times_dist_all_locs.csv`)
+    -   CSD-level summary statistics (`reduced_csd_average_times_dist_all_locs.csv`)
+-   **Location Data**:
+    -   Service BC office locations (`service_bc_locs.csv`)
 
-**Customizable Metrics**: Different accessibility metrics are available for visualization including; mean drive times (in seconds or minutes), mean drive distances (in kilometers), address counts (population coverage) and others.
+#### Customization and Styling
 
-**Spatial Gaps**: Some dissemination blocks may appear blank on the maps because either no addresses exist within certain blocks (e.g., parks, undeveloped areas) or the data was collected for those areas.
+-   **Variable Selection**: Can visualize different accessibility metrics:
+
+    -   Mean drive times (in seconds or minutes)
+    -   Mean drive distances (in kilometers)
+    -   Address counts (population coverage)
+
+-   **Geographic Focus**: Filters data to include only the municipalities of interest (`CSD_NAMES`)
+
+-   **Map Titles and Legends**: Customizable through function parameters
+
+-   Uses the predefined `MAP_THEME` from settings.R for consistent visual appearance
+
+-   Applies the `FILL_THEME` for continuous color scales
+
+-   Includes Service BC location markers for geographic reference
+
+#### Visualization Specifics
+
+-   **Spatial Gaps**: Some dissemination blocks may appear blank on the maps because:
+    -   No addresses exist within certain blocks (e.g., parks, undeveloped areas)
+    -   Insufficient data was collected for those areas
+    -   The minimum threshold for address counts wasn't met
+-   **Output Format**: Saves maps as SVG files in the `MAP_OUT/csd-drive-distance-maps` directory
 
 ### Smoothed Density Maps (02d-density_map.R)
 
-The `02d-density_map.R` script addresses the spatial gaps in the standard choropleth maps by using kernel density estimation to create continuous surfaces representing drive time or distance. This approach generates more visually complete maps by interpolating values across the entire geographic area.
+The `02d-density_map.R` script addresses the spatial gaps in the standard choropleth maps by using kernel density estimation to create continuous surfaces representing drive time or distance across entire geographic areas.
 
-**Spatial Smoothing**: Kernel density estimation via the `spatstat` package is used to convert point-based data to continuous surfaces and fill gaps in DB's with interpolated values. They provide an alternative and in some cases more complete visual representation of accessibility patterns.
+#### Required Files
 
-**Technical Approach**: Address points with drive time/distance values are converted into spatial point patterns. Smoothing applied, with a specified bandwidth (sigma = 1000). A high-resolution grid (300x300) is used for the smoothed surface which is clipped to the municipality boundary.
+-   **Address Data**: Point-level drive time data (`reduced-drivetime-data.csv`)
+-   **Crosswalk File**: Geographic identifier relationships (`csd-da-db-loc-crosswalk.csv`)
+-   **Population Data**: DB-level population statistics (`population-db.csv`)
+-   **Location Data**: Service BC office locations (`reduced-service_bc_locs.csv`)
+-   **Shape Data**: CSD boundaries (retrieved dynamically from bcmaps package)
 
-**Parameterization**:
+#### Parameterization and Styling
 
--   Supports consistent scaling across municipalities for comparability
--   Allows custom color scales through the `FILL_THEME` setting
--   Includes standard map elements like titles, legends, and Service BC locations
+-   **Smoothing Parameters**:
+    -   Kernel bandwidth (sigma = 1000)
+    -   Grid resolution (300x300 cells)
+    -   Clipping to municipality boundaries
+-   **Common Scale Option**: Toggle for consistent color scale across all maps
+    -   When enabled, ensures direct visual comparability between municipalities
+    -   When disabled, optimizes color range for each individual municipality
+-   Uses the predefined `MAP_THEME` from settings.R for consistent visual appearance
+-   Applies the `FILL_THEME` for continuous color scales
+-   Includes Service BC location markers for geographic reference
 
-Both mapping approaches are complementary, with the standard choropleth maps providing precise block-level statistics and the smoothed maps offering a more complete spatial representation of accessibility patterns.
+#### Visualization Specifics
+
+-   **Spatial Smoothing**: Uses kernel density estimation via the `spatstat` package to:
+    -   Convert point-based data to continuous surfaces
+    -   Fill gaps between known data points with interpolated values
+    -   Provide a more complete visual representation of accessibility patterns
+-   **Output Format**: Saves maps as PNG files in the `MAP_OUT/csd-drive-distance-maps` directory
 
 ### Mapping Pilot Municipalities (02b-plot-localities.R)
 
-The `02b-plot-localities.R` script creates a map that highlights the pilot municipalities (`Langford`, `Dawson Creek`, `Smithers`, `Kamloops`) and plots the locations of Service BC offices. This map provides a high-level overview of the geographic distribution of the selected localities.
+The `02b-plot-localities.R` script creates a map that highlights the pilot municipalities and plots the locations of Service BC offices, providing a high-level overview of the geographic distribution of the selected localities.
 
-#### **Key Features**
+#### Required Files
 
--   **BC Base Map**: Uses the `bcmaps` package to generate a map of British Columbia, transformed to CRS 3005.
+-   **BC Boundary**: Provincial outline from the `bcmaps` package
+-   **CSD Shapefiles**: Processed Census Subdivision boundaries (`SHAPEFILE_OUT/processed_csd_with_location.gpkg`)
+-   **Location Data**: Service BC office coordinates (`SRC_DATA_FOLDER/reduced-service_bc_locs.csv`)
 
--   **Data Integration**:
+#### Parameterization and Styling
 
-    -   **Shapefiles**: Processed CSD shapefiles from `SHAPEFILE_OUT`.
+-   **Label Placement**: Calculates and adjusts centroids for municipality labels to avoid overlap
+-   **CSD Selection**: Automatically includes all municipalities defined in `CSD_NAMES`
+-   Uses standard ggplot styling with customized colors and label formatting
+-   Represents Service BC offices as yellow markers on the map
+-   Includes a simple legend identifying Service BC locations
 
-    -   **Service BC Locations**: CSV file containing the geographic coordinates of Service BC offices.
+#### Visualization Specifics
 
--   **Custom Visualizations**:
-
-    -   **Pilot Regions Map**: A map showing the pilot municipalities and their Service BC locations.
-
-    -   **Centroid Adjustments**: Calculates and adjusts centroids for municipality labels to avoid overlap.
-
-    -   **Service BC Locations**: Plots Service BC offices as yellow markers on the map.
-
--   **File Location**: The map is saved as `pilot_regions.png` in the `MAP_OUT` folder.
-
-------------------------------------------------------------------------
+-   **Geographic Context**: Shows the location of pilot municipalities within the broader context of British Columbia
+-   **Output Format**: Saves a single map as `pilot_regions.png` in the `MAP_OUT` folder
 
 ### Statistical Visualizations (02c-box-violin-plots.R)
 
-While the thematic maps provide spatial representations of accessibility metrics, the `02c-box-violin-plots.R` script generates statistical visualizations that reveal the distribution patterns of drive times or distances across different municipalities. These plots complement the spatial maps by providing a comparative statistical perspective on service accessibility.
+The `02c-box-violin-plots.R` script generates statistical visualizations that reveal the distribution patterns of drive times or distances across different municipalities, complementing the spatial maps with comparative statistical perspectives.
 
-**Required files:** the aggregated statistics from the `01-descriptive-tables.R` script, primarily at the dissemination block level for greatest detail. This allows for customization to any metric present in the dataset such as mean drive time (minutes), mean drive distance (kilometers) and population density.
+#### Required Files
 
-All outputs are saved to the `VISUALS_OUT` directory with systematic naming conventions based on the plot type and variables visualized.
+-   **Statistical Data**: DB-level summary statistics (`reduced_db_average_times_dist_all_locs.csv`)
+-   **Configuration**: Uses constants defined in `settings.R`
+-   **Plot Functions**: Relies on custom functions defined in `plots.r`
 
-**Box Plots**: Show the central tendency, dispersion, and potential outliers in drive time/distance distributions.
+#### Parameterization and Styling
 
--   Central line represents the median
--   Box spans from the first quartile (25th percentile) to the third quartile (75th percentile)
--   Whiskers extend to the range of non-outlier data points
--   Individual points represent actual data values (address locations)
--   Implemented through specialized function `build_boxplot()`
+-   **Variable Selection**: Can visualize any numeric metric in the dataset:
+    -   Mean drive time (minutes)
+    -   Mean drive distance (kilometers)
+    -   Other statistical measures (variance, skewness, etc.)
+-   **Plot Titles and Labels**: Customizable through function parameters
+-   **Plot Types**: Configurable to generate box plots, violin plots, or both
+-   Uses specialized theme constants from `settings.R`:
+    -   `BOX_PLOT_THEME`: Optimized for box plots with rotated axis labels
+    -   `VIOLIN_PLOT_THEME`: Adapted for violin plots
+    -   `FILL_THEME_D`: Discrete color scale for distinguishing municipalities
 
-**Violin Plots**: Combine box plot characteristics with kernel density estimation to show the full distribution shape.
+#### Visualization Specifics
 
--   Width of the "violin" indicates frequency density at different values
--   Allows visual comparison of probability density across municipalities
--   Shows whether distributions are bimodal, skewed, or have unusual features
--   Implemented through specialized function `build_violinplot()`
-
-**Consistent Styling**: Leverages the predefined theme constants from `settings.R`:
-
--   `BOX_PLOT_THEME`: Specialized theme with rotated x-axis labels for better readability
--   `VIOLIN_PLOT_THEME`: Similar theme adapted for violin plots
--   `FILL_THEME_D`: Discrete color scale for distinguishing between municipalities
+-   **Box Plots**: Show central tendency, dispersion, and outliers
+    -   Central line represents the median
+    -   Box spans from first to third quartile (interquartile range)
+    -   Whiskers show range of non-outlier data
+-   **Violin Plots**: Display full distribution shape
+    -   Width indicates frequency density at different values
+    -   Shows distribution characteristics like bimodality or skewness
+-   **Output Format**: Saves plots as PNG files in the `VISUALS_OUT/csd-drive-distance-plots` directory
 
 ## Future Work
 
