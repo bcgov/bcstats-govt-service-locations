@@ -202,28 +202,6 @@ Visualization styling leverages predefined theme elements from settings.R to mai
     -   Provide a more complete visual representation of accessibility patterns
 -   **Output Format**: Saves maps as PNG files in the `MAP_OUT/csd-drive-distance-maps` directory
 
-### Mapping Pilot Municipalities (02b-plot-localities.R)
-
-The `02b-plot-localities.R` script creates a map that highlights the pilot municipalities and plots the locations of Service BC offices, providing a high-level overview of the geographic distribution of the selected localities.
-
-#### Required Files
-
--   **BC Boundary**: Provincial outline from the `bcmaps` package
--   **CSD Shapefiles**: Processed Census Subdivision boundaries (`SHAPEFILE_OUT/processed_csd_with_location.gpkg`)
--   **Location Data**: Service BC office coordinates (`SRC_DATA_FOLDER/reduced-service_bc_locs.csv`)
-
-#### Parameterization and Styling
-
--   **Label Placement**: Calculates and adjusts centroids for municipality labels to avoid overlap
--   **CSD Selection**: Automatically includes all municipalities defined in `CSD_NAMES`
--   Uses standard ggplot styling with customized colors and label formatting
--   Represents Service BC offices as yellow markers on the map
--   Includes a simple legend identifying Service BC locations
-
-#### Visualization Specifics
-
--   **Geographic Context**: Shows the location of pilot municipalities within the broader context of British Columbia
--   **Output Format**: Saves a single map as `pilot_regions.png` in the `MAP_OUT` folder
 
 ### Statistical Visualizations (02c-box-violin-plots.R)
 
