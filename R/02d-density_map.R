@@ -82,7 +82,7 @@ pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols
 servicebc <-
   read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
-  st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
+  st_as_sf(coords = c("coord_x", "coord_y"), remove = TRUE, crs = 3005)
 
 # --- CSD shapefiles
 shp_csd_all <- census_subdivision() %>%
