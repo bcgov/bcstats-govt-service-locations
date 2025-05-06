@@ -126,57 +126,5 @@ ggsave(
   device = "png"
 )
 
-
-# --- Quantile Bar Plot (Distribution by region) ---
-
-# user-defined plot parameters
-y_title <- "Driving Time"
-y_unit <- "minutes"
-x_title <- "Municipality"
-
-# Create bar plot
-plot_title <- glue("{y_title} Quantiles to Nearest Service BC Office")
-plot_subtitle <- "Comparison across municipalities"
-
-# Reshape data to long format for quantile plotting
-db_quantiles <- db_stats_raw %>%
-  filter(csd_name %in% CSD_NAMES) %>%
-  select(municipality, matches("drv_time_min_qnt")) %>%
-  pivot_longer(
-    cols = matches("drv_time_min_qnt"),
-    names_to = "quantile",
-    values_to = "drive_time_minutes"
-  ) %>%
-  # Extract the quantile number for better labeling
-  mutate(
-    quantile = str_extract(quantile, "([0-9]+)"),
-    quantile_label = glue("{quantile}%"),
-    quantile_label = factor(quantile_label, levels = c("0%", "25%", "50%", "75%", "100%"))
-  )
-
-message("Generating Quantile Plot...")
-
-quantile_bar_plot <- ggplot(db_quantiles, aes(x = municipality, y = drive_time_minutes, fill = quantile_label)) +
-  geom_col(position = position_dodge(width = 0.9), width = 0.8) +
-  scale_fill_viridis_d(option = "mako", name = "Quantile") +
-  labs(
-    title = plot_title,
-    subtitle = plot_subtitle,
-    x = x_title,
-    y = y_title
-  ) +
-  BOX_PLOT_THEME
-
-outfile <- to_snake_case(glue("quantile plot {y_title} by municipality"))
-ggsave(
-  filename = glue("{output_dir}/{outfile}.png"),
-  plot = quantile_bar_plot,
-  width = 10,
-  height = 7,
-  device = "png"
-)
-
-message(glue("Quantile plot saved to: {output_dir}/{outfile}.png"))
-
 rm(list = ls())
 gc()
