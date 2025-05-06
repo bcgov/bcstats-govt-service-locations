@@ -161,4 +161,15 @@ db_quantiles <- db_stats_raw %>%
 
 message("Generating Quantile Plot...")
 
+quantile_bar_plot <- ggplot(db_quantiles, aes(x = municipality, y = drive_time_minutes, fill = quantile_label)) +
+  geom_col(position = position_dodge(width = 0.9), width = 0.8) +
+  scale_fill_viridis_d(option = "mako", name = "Quantile") +
+  labs(
+    title = plot_title,
+    subtitle = plot_subtitle,
+    x = x_title,
+    y = y_title
+  ) +
+  BOX_PLOT_THEME
+
 outfile <- to_snake_case(glue("quantile plot {y_title} by municipality"))
