@@ -134,6 +134,15 @@ gc()
 
 # --- Quantile Bar Plot (Distribution by region) ---
 
+# user-defined plot parameters
+y_title <- "Driving Time"
+y_unit <- "minutes"
+x_title <- "Municipality"
+
+# Create bar plot
+plot_title <- glue("{y_title} Quantiles to Nearest Service BC Office")
+plot_subtitle <- "Comparison across municipalities"
+
 # Reshape data to long format for quantile plotting
 db_quantiles <- db_stats_raw %>%
   filter(csd_name %in% CSD_NAMES) %>%
@@ -150,4 +159,6 @@ db_quantiles <- db_stats_raw %>%
     quantile_label = factor(quantile_label, levels = c("0%", "25%", "50%", "75%", "100%"))
   )
 
-  
+message("Generating Quantile Plot...")
+
+outfile <- to_snake_case(glue("quantile plot {y_title} by municipality"))
