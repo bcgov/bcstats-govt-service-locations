@@ -233,10 +233,6 @@ Visualization styling implements specialized theme constants from settings.R tai
 -   **Violin Plots**: Display full distribution shape
     -   Width indicates frequency density at different values
     -   Shows distribution characteristics like bimodality or skewness
--   **Quantile Bar Plots**: Compare specific distribution points across municipalities
-    -   Side-by-side bars represent 0%, 25%, 50%, 75%, and 100% quantiles
-    -   Allows direct visual comparison of driving time thresholds across locations
-    -   More accessible format for non-technical audiences to understand distribution differences
 -   **Output Format**: Saves plots as PNG files in the `VISUALS_OUT/csd-drive-distance-plots` directory
 
 ## Future Work
