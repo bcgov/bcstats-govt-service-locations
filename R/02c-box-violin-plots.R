@@ -126,7 +126,5 @@ ggsave(
   device = "png"
 )
 
-message(glue("Violin plot saved to: {outfile}"))
-
 rm(list = ls())
 gc()

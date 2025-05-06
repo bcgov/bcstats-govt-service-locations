@@ -5,5 +5,4 @@ README_files/
 README.html
 .Rproj.user
 .Rhistory
-doc/
-!doc/technical-documentation.qmd
+
