@@ -46,8 +46,8 @@ library(spatstat)
 library(stars)
 library(bcmaps)
 library(terra)
-library(fs)      # For directory operations
-library(snakecase) # For to_snake_case function
+library(fs)
+library(snakecase)
 
 source("R/settings.R")
 
@@ -61,36 +61,27 @@ if (!dir_exists(output_path)) {
 }
 
 # -----------------------------------------------------------------------------------------------------
-# Read data points into one data frame
+# Read required data data
 # -----------------------------------------------------------------------------------------------------
-crosswalk <-
-  read_csv(glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"), col_types = cols(.default = "c")) %>%
-  clean_names()
 
+# --- Drive time data containing columns for address coordinates (address_albers_x, address_albers_y),
 drivetime_data <-
   read_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
-drivetime_data <- drivetime_data %>%
-  inner_join(crosswalk, by = c("dbid", "daid", "csdid", "csd_name", "csd_desc"))
-
+# --- Population data for DB's containing columns for area, population, dwellings, and households
 pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
-#------------------------------------------------------------------------------
-# Read service bc location data from source folder
-#------------------------------------------------------------------------------
+# --- Service BC location data
 servicebc <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv")
            , col_types = cols(.default = "c")) %>%
   clean_names() %>%
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
 
-# -----------------------------------------------------------------------------------------------------
-# read csd shapefiles
-# -----------------------------------------------------------------------------------------------------
-
+# --- CSD shapefiles
 shp_csd_all <- census_subdivision() %>%
   select(4) %>%
   filter(CENSUS_SUBDIVISION_NAME %in% (servicebc %>% pull(csd_name))) %>%
@@ -102,7 +93,7 @@ if (nrow(shp_csd_all) == 0) {
 }
 
 # -----------------------------------------------------------------------------------------------------
-# make map data
+# Configure map settings common to all CSD's
 # -----------------------------------------------------------------------------------------------------
 
 # --- User-defined settings for plots ---
@@ -111,17 +102,22 @@ subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
 fill_label <- "Drive time (Minutes)"
 common_scale <- TRUE    # Whether to use a common scale for all maps
 
-# Calculate drive times in minutes for plotting
+# -- Calculate drive times in minutes for plotting
 drivetime_data <- drivetime_data %>% 
   mutate(plotvar = drv_time_sec / 60)
 
-# Set limits prior to subsetting points if using common scale
+# --- Set limits prior to subsetting points if using common scale
 fill_theme <- FILL_THEME$clone()
 if (common_scale == TRUE){
   fill_theme$limits <- range(drivetime_data$plotvar, na.rm = TRUE)
   fill_theme$oob <- scales::squish
 }
 
+# -----------------------------------------------------------------------------------------------------
+# Create individual maps
+# -----------------------------------------------------------------------------------------------------
+
+# --- Loop over each census subdivision (CSD) to create maps
 for (csd in shp_csd_all %>% pull(census_subdivision_name)){
 
   message(glue("Generating map for {csd} ..."))
@@ -158,6 +154,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
   smooth_stats_sf <- st_as_sf(smooth_stats_stars) %>%
     st_set_crs(3005)
 
+  # build map
   map_plot <- ggplot() +
     geom_sf(data = smooth_stats_sf, aes(fill = v), color = NA) +
     geom_sf(data = shp_csd, fill = NA, color = "grey70", linewidth = 1) +
