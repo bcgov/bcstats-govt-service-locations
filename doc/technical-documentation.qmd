@@ -207,7 +207,6 @@ Visualization styling leverages predefined theme elements from settings.R to mai
 
 The `02c-box-violin-plots.R` script generates statistical visualizations that reveal the distribution patterns of drive times or distances across different municipalities, complementing the spatial maps with comparative statistical perspectives.
 
-
 #### Required Files
 
 -   **Statistical Data**: DB-level summary statistics (`reduced_db_average_times_dist_all_locs.csv`)
@@ -217,7 +216,6 @@ The `02c-box-violin-plots.R` script generates statistical visualizations that re
 #### Parameterization and Customization
 
 The script supports visualization of multiple numeric metrics including mean drive time (minutes), mean drive distance (kilometers), and statistical distribution measures (variance, skewness). Function parameters enable customization of plot titles and labels for analytical context. Plot type configuration allows generation of box plots, violin plots, or both based on analytical requirements and visualization objectives.
-
 
 #### Styling
 
