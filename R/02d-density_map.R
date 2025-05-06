@@ -64,20 +64,23 @@ if (!dir_exists(output_path)) {
 # Read required data data
 # -----------------------------------------------------------------------------------------------------
 
-# --- Drive time data containing columns for address coordinates (address_albers_x, address_albers_y),
+# --- Drive time data containing columns for address coordinates (address_albers_x, address_albers_y)
+# as an fyi, the data also contains coordinates for the nearest Service BC location (coord_x, coord_y)
 drivetime_data <-
   read_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric)) %>% 
+  st_as_sf(coords = c("address_albers_x", "address_albers_y"), remove = TRUE, crs = 3005) %>%
+  select(-c(coord_x, coord_y)) # remove the Service BC location coordinates
 
 # --- Population data for DB's containing columns for area, population, dwellings, and households
 pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
-# --- Service BC location data
-servicebc <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv")
-           , col_types = cols(.default = "c")) %>%
+# --- Service BC location data containing columns for address coordinates (coord_x, coord_x)
+servicebc <-
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
 
@@ -100,10 +103,10 @@ if (nrow(shp_csd_all) == 0) {
 map_title <- "Spatial Distribution of Drive Times"
 subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
 fill_label <- "Drive time (Minutes)"
-common_scale <- TRUE    # Whether to use a common scale for all maps
+common_scale <- FALSE    # Whether to use a common scale for all maps
 
 # -- Calculate drive times in minutes for plotting
-drivetime_data <- drivetime_data %>% 
+drivetime_data <- drivetime_data %>%
   mutate(plotvar = drv_time_sec / 60)
 
 # --- Set limits prior to subsetting points if using common scale
@@ -125,8 +128,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
   sbclocation <- servicebc %>% filter(csd_name == csd)
   shp_csd <- shp_csd_all %>% filter(census_subdivision_name == csd)
 
-  points <- drivetime_data %>% 
-    st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005) %>%
+  points <- drivetime_data %>%
     st_intersection(shp_csd)
 
   # Check if there are any points in this CSD
