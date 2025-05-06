@@ -86,8 +86,7 @@ servicebc <-
 
 # --- CSD shapefiles
 shp_csd_all <- census_subdivision() %>%
-  select(4) %>%
-  filter(CENSUS_SUBDIVISION_NAME %in% (servicebc %>% pull(csd_name))) %>%
+  select(CENSUS_SUBDIVISION_NAME, CENSUS_SUBDIVISION_ID) %>%
   clean_names()
 
 # Check if we have any matching CSDs
@@ -121,12 +120,12 @@ if (common_scale == TRUE){
 # -----------------------------------------------------------------------------------------------------
 
 # --- Loop over each census subdivision (CSD) to create maps
-for (csd in shp_csd_all %>% pull(census_subdivision_name)){
-
+for (csd in servicebc %>% pull(csdid)){
+ 
   message(glue("Generating map for {csd} ..."))
 
-  sbclocation <- servicebc %>% filter(csd_name == csd)
-  shp_csd <- shp_csd_all %>% filter(census_subdivision_name == csd)
+  sbclocation <- servicebc %>% filter(csdid == csd)
+  shp_csd <- shp_csd_all %>% filter(census_subdivision_id == csdid)
 
   points <- drivetime_data %>%
     st_intersection(shp_csd)
@@ -143,7 +142,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
 
   # Use tryCatch to handle potential errors in smoothing
   smooth_stats_stars <- tryCatch({
-    stars::st_as_stars(Smooth(stats_ppp, sigma = 1000, dimyx =300))
+    stars::st_as_stars(Smooth(stats_ppp, sigma = 1000, dimyx = 300))
   }, error = function(e) {
     warning(glue("Error generating spatial smooth map for {csd}: {e$message}"))
     return(NULL)
