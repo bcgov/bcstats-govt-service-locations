@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script loads aggregated csv data files containing spatial data for 
-# municipality of interest in BC (loc). 
-# It plots the locations on top of a map of B.C. 
+# This script loads aggregated csv data files containing spatial data for
+# municipality of interest in BC (loc).
+# It plots the locations on top of a map of B.C.
 
 # ------------------------------------------------------------------------
 # Script: 02b-plot-localities.R
@@ -66,7 +66,7 @@ csd_centroids_nudged <- csd_centroids |>
       ) %>%
   st_set_crs(st_crs(csd_centroids))
 
-# locations of all nearby SBC locations 
+# locations of all nearby SBC locations
 sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")) |>
   st_as_sf(
     coords = c('coord_x', 'coord_y'),
@@ -88,8 +88,8 @@ sbc_locs <- sbc_locs |>
 
 out <- ggplot() + 
   geom_sf(
-    data = bc_map, 
-    fill = 'white', 
+    data = bc_map,
+    fill = 'white',
     color='black'
     ) +
   geom_sf(
@@ -123,7 +123,7 @@ out <- ggplot() +
   ) +
   MAP_THEME +
   theme(
-    legend.position="none",
+    legend.position = "none",
     axis.title = element_blank()
     )
 
@@ -136,5 +136,5 @@ ggsave(
    plot = out,
    width = 8,
    height = 7,
- dpi = 300
+   dpi = 300
 )
