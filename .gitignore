@@ -6,3 +6,4 @@ README.html
 .Rproj.user
 .Rhistory
 doc/
+!doc/technical-documentation.qmd
