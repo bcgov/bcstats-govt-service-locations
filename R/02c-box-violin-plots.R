@@ -126,11 +126,6 @@ ggsave(
   device = "png"
 )
 
-message(glue("Violin plot saved to: {outfile}"))
-
-rm(list = ls())
-gc()
-
 
 # --- Quantile Bar Plot (Distribution by region) ---
 
@@ -173,3 +168,15 @@ quantile_bar_plot <- ggplot(db_quantiles, aes(x = municipality, y = drive_time_m
   BOX_PLOT_THEME
 
 outfile <- to_snake_case(glue("quantile plot {y_title} by municipality"))
+ggsave(
+  filename = glue("{output_dir}/{outfile}.png"),
+  plot = quantile_bar_plot,
+  width = 10,
+  height = 7,
+  device = "png"
+)
+
+message(glue("Quantile plot saved to: {output_dir}/{outfile}.png"))
+
+rm(list = ls())
+gc()
