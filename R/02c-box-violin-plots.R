@@ -130,3 +130,24 @@ message(glue("Violin plot saved to: {outfile}"))
 
 rm(list = ls())
 gc()
+
+
+# --- Quantile Bar Plot (Distribution by region) ---
+
+# Reshape data to long format for quantile plotting
+db_quantiles <- db_stats_raw %>%
+  filter(csd_name %in% CSD_NAMES) %>%
+  select(municipality, matches("drv_time_min_qnt")) %>%
+  pivot_longer(
+    cols = matches("drv_time_min_qnt"),
+    names_to = "quantile",
+    values_to = "drive_time_minutes"
+  ) %>%
+  # Extract the quantile number for better labeling
+  mutate(
+    quantile = str_extract(quantile, "([0-9]+)"),
+    quantile_label = glue("{quantile}%"),
+    quantile_label = factor(quantile_label, levels = c("0%", "25%", "50%", "75%", "100%"))
+  )
+
+  
