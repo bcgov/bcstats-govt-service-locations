@@ -64,23 +64,26 @@ if (!dir_exists(output_path)) {
 # Read required data data
 # -----------------------------------------------------------------------------------------------------
 
+# --- Population data for DB's containing columns for area, population, dwellings, and households
+pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
+  clean_names() %>%
+  mutate(across(c(area_sq_km, population, dwellings, households), as.numeric)) %>%
+  mutate(people_per_household = population / households) %>%
+  select(-c(region_name, population, dwellings, households, area_sq_km))
+
 # --- Drive time data containing columns for address coordinates (address_albers_x, address_albers_y)
 # as an fyi, the data also contains coordinates for the nearest Service BC location (coord_x, coord_y)
 drivetime_data <-
   read_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(drv_time_sec, drv_dist), as.numeric)) %>% 
+  mutate(drv_time_min = drv_time_sec / 60) %>% # Calculate drive times in minutes for plotting
   st_as_sf(coords = c("address_albers_x", "address_albers_y"), remove = TRUE, crs = 3005) %>%
   select(-c(coord_x, coord_y)) # remove the Service BC location coordinates
 
-# -- Calculate drive times in minutes for plotting
+# add population information to the drive time data
 drivetime_data <- drivetime_data %>%
-  mutate(drv_time_min = drv_time_sec / 60)
-
-# --- Population data for DB's containing columns for area, population, dwellings, and households
-pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
-  clean_names() %>%
-  mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
+  left_join(pop_db, by = join_by(dbid)) 
 
 # --- Service BC location data containing columns for address coordinates (coord_x, coord_x)
 servicebc <-
@@ -144,8 +147,7 @@ for (id in servicebc %>% pull(csdid)) {
 
   # Convert to ppp object with weights
   # Ignore warnings about duplicate points - these are likely due to multi-unit housing
-  stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd))
-  marks(stats_ppp) <- points[[plotvar]]
+  stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd), marks =  points[[plotvar]])
   
   # Use tryCatch to handle potential errors in smoothing
   smooth_stats_stars <- tryCatch({
