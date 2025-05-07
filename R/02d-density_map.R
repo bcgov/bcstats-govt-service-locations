@@ -73,6 +73,10 @@ drivetime_data <-
   st_as_sf(coords = c("address_albers_x", "address_albers_y"), remove = TRUE, crs = 3005) %>%
   select(-c(coord_x, coord_y)) # remove the Service BC location coordinates
 
+# -- Calculate drive times in minutes for plotting
+drivetime_data <- drivetime_data %>%
+  mutate(drv_time_min = drv_time_sec / 60)
+
 # --- Population data for DB's containing columns for area, population, dwellings, and households
 pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
@@ -99,14 +103,11 @@ if (nrow(shp_csd_all) == 0) {
 # -----------------------------------------------------------------------------------------------------
 
 # --- User-defined settings for plots ---
+plotvar <- "drv_time_min" 
 map_title <- "Spatial Distribution of Drive Times"
 subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
 fill_label <- "Drive time (Minutes)"
-common_scale <- FALSE    # Whether to use a common scale for all maps
-
-# -- Calculate drive times in minutes for plotting
-drivetime_data <- drivetime_data %>%
-  mutate(plotvar = drv_time_sec / 60)
+common_scale <- TRUE    # Whether to use a common scale for all maps
 
 # --- Set limits prior to subsetting points if using common scale
 fill_theme <- FILL_THEME$clone()
@@ -120,15 +121,18 @@ if (common_scale == TRUE){
 # -----------------------------------------------------------------------------------------------------
 
 # --- Loop over each census subdivision (CSD) to create maps
-for (csd in servicebc %>% pull(csdid)){
- 
-  message(glue("Generating map for {csd} ..."))
+for (id in servicebc %>% pull(csdid)) {
 
-  sbclocation <- servicebc %>% filter(csdid == csd)
-  shp_csd <- shp_csd_all %>% filter(census_subdivision_id == csdid)
+  sbclocation <- servicebc %>%
+    filter(csdid == id)
+
+  shp_csd <- shp_csd_all %>%
+    filter(census_subdivision_id == id)
 
   points <- drivetime_data %>%
     st_intersection(shp_csd)
+
+  csd <- sbclocation$csd_name
 
   # Check if there are any points in this CSD
   if (nrow(points) == 0) {
@@ -136,10 +140,12 @@ for (csd in servicebc %>% pull(csdid)){
     next
   }
 
+  message(glue("Generating map for {csd} ..."))
+
   # Convert to ppp object with weights
   stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd))
-  marks(stats_ppp) <- points$plotvar
-
+  marks(stats_ppp) <- points[[plotvar]]
+  
   # Use tryCatch to handle potential errors in smoothing
   smooth_stats_stars <- tryCatch({
     stars::st_as_stars(Smooth(stats_ppp, sigma = 1000, dimyx = 300))
