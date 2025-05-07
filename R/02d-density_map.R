@@ -143,6 +143,7 @@ for (id in servicebc %>% pull(csdid)) {
   message(glue("Generating map for {csd} ..."))
 
   # Convert to ppp object with weights
+  # Ignore warnings about duplicate points - these are likely due to multi-unit housing
   stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd))
   marks(stats_ppp) <- points[[plotvar]]
   
