@@ -107,12 +107,12 @@ plotvar <- "drv_time_min"
 map_title <- "Spatial Distribution of Drive Times"
 subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
 fill_label <- "Drive time (Minutes)"
-common_scale <- TRUE    # Whether to use a common scale for all maps
+common_scale <- FALSE    # Whether to use a common scale for all maps
 
 # --- Set limits prior to subsetting points if using common scale
 fill_theme <- FILL_THEME$clone()
 if (common_scale == TRUE){
-  fill_theme$limits <- range(drivetime_data$plotvar, na.rm = TRUE)
+  fill_theme$limits <- range(drivetime_data[[plotvar]], na.rm = TRUE)
   fill_theme$oob <- scales::squish
 }
 
