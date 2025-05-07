@@ -68,8 +68,8 @@ if (!dir_exists(output_path)) {
 pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric)) %>%
-  mutate(people_per_household = population / households) %>%
-  select(-c(region_name, population, dwellings, households, area_sq_km))
+  mutate(people_per_household = population / dwellings) %>%
+  select(-c(region_name, dwellings, households, area_sq_km, population))
 
 # --- Drive time data containing columns for address coordinates (address_albers_x, address_albers_y)
 # as an fyi, the data also contains coordinates for the nearest Service BC location (coord_x, coord_y)
@@ -83,7 +83,7 @@ drivetime_data <-
 
 # add population information to the drive time data
 drivetime_data <- drivetime_data %>%
-  left_join(pop_db, by = join_by(dbid)) 
+  left_join(pop_db, by = join_by(dbid))
 
 # --- Service BC location data containing columns for address coordinates (coord_x, coord_x)
 servicebc <-
@@ -147,7 +147,8 @@ for (id in servicebc %>% pull(csdid)) {
 
   # Convert to ppp object with weights
   # Ignore warnings about duplicate points - these are likely due to multi-unit housing
-  stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd), marks =  points[[plotvar]])
+  stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd))
+  marks(stats_ppp) <- points[[plotvar]]
   
   # Use tryCatch to handle potential errors in smoothing
   smooth_stats_stars <- tryCatch({
