@@ -136,6 +136,6 @@ BOX_PLOT_THEME <- theme_minimal() +
     axis.text.x = element_text(angle = 30, hjust = 1)
   )
 
- FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.6, na.value = "red")
+ FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.6, na.value = "red") # add limits = c(0, NA) to start scaling at 0.
  FILL_THEME_D <- scale_fill_viridis_d(option = "mako", alpha = 0.6)
 
