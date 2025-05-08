@@ -77,9 +77,14 @@ db_shapefile <-
   mutate(across(c(landarea), as.numeric))
 
 # Read the pre-computed assignment data 
-complete_assignments <- 
-  read_csv(glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")) %>%
-  mutate(across(c(dbid, assigned, assignment_method), as.character))
+complete_assignments <- read_csv(
+  glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
+  ) %>%
+  mutate(
+    across(
+      c(dbid, assigned, assignment_method), 
+      as.character)
+      )
 
 # Filter to relevant datasets for the maps
 csds <- csd_shapefile |>
