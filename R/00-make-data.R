@@ -47,6 +47,7 @@ file_paths <- file.info(list.files(DT_DATA_FOLDER,
   rownames_to_column("fn") %>%
   select(fn)
 
+
 processed_files <- purrr::map_dfr(
   .x = file_paths$fn,
   .f = preprocess_locs
