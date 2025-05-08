@@ -482,7 +482,7 @@ loc_col <- "assigned"
 plot_title <- glue("Driving Distances for {loc_id}")
 var_title <- "Driving Distance (km)"
 
-loc_id <- unique(map_data$assigned)[4]
+loc_id <- unique(map_data$assigned)[1]
 example_map <- build_map(
   data = map_data,
   servicebc_data = sbc_locs,
@@ -503,7 +503,6 @@ print(example_map)
 # =========================================================================== #
 
 # Prepare data for population pyramids by joining with location assignment data
-# KEY CHANGE: Use the pre-computed complete assignments
 pyramid_data <- complete_assignments |>
   select(dbid, assigned, assignment_method) |>
   inner_join(
