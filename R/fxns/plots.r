@@ -299,7 +299,24 @@ build_violinplot <- function(
   return(violinplot)
 }
 
-# Function to create population pyramids
+# ------------------------------------------------------------------------
+# Function: create_population_pyramid
+
+# Description: Generates a population pyramid plot for a given location
+# and years, showing the distribution of population by age group and gender.
+# Includes projections for future years as step lines.
+
+# Inputs:
+#   - data: A data frame containing population data with columns for
+#     assigned location, gender, age group, year, and population.
+#   - location_name: Character string specifying the location to filter data for.
+#   - years: Numeric vector of years to include in the plot. Defaults to
+#     the current year, 5 years ahead, and 10 years ahead.
+
+# Outputs:
+#   - Returns a ggplot object representing the population pyramid with
+#     bars for the current year and step lines for projections.
+# ------------------------------------------------------------------------
 create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)) {
   # Define the correct ordering for age groups
   age_group_order <- c(
@@ -467,7 +484,24 @@ create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEA
     )
 }
 
-# Function to create drive distance histograms
+# ------------------------------------------------------------------------
+# Function: create_drive_distance_histogram
+
+# Description: Generates a histogram of driving distances to Service BC
+# locations, with optional faceting by facility.
+
+# Inputs:
+#   - data: A data frame containing driving distance data with columns for
+#     assigned location and drive distance.
+#   - facility_name: Optional character string specifying a single facility
+#     to filter data for. Defaults to NULL (all facilities).
+#   - facet: Logical indicating whether to facet the plot by facility.
+#     Defaults to FALSE.
+
+# Outputs:
+#   - Returns a ggplot object representing the histogram of driving distances,
+#     with a vertical line and label for the mean distance.
+# ------------------------------------------------------------------------
 create_drive_distance_histogram <- function(data, facility_name = NULL, facet = FALSE) {
   # Filter to facility if specified
   plot_data <- data
