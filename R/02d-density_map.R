@@ -46,8 +46,8 @@ library(spatstat)
 library(stars)
 library(bcmaps)
 library(terra)
-library(fs)      # For directory operations
-library(snakecase) # For to_snake_case function
+library(fs)
+library(snakecase)
 
 source("R/settings.R")
 
@@ -61,39 +61,39 @@ if (!dir_exists(output_path)) {
 }
 
 # -----------------------------------------------------------------------------------------------------
-# Read data points into one data frame
+# Read required data data
 # -----------------------------------------------------------------------------------------------------
-crosswalk <-
-  read_csv(glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"), col_types = cols(.default = "c")) %>%
-  clean_names()
 
+# --- Population data for DB's containing columns for area, population, dwellings, and households
+pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
+  clean_names() %>%
+  mutate(across(c(area_sq_km, population, dwellings, households), as.numeric)) %>%
+  mutate(people_per_household = population / dwellings) %>%
+  select(-c(region_name, dwellings, households, area_sq_km, population))
+
+# --- Drive time data containing columns for address coordinates (address_albers_x, address_albers_y)
+# as an fyi, the data also contains coordinates for the nearest Service BC location (coord_x, coord_y)
 drivetime_data <-
   read_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric)) %>% 
+  mutate(drv_time_min = drv_time_sec / 60) %>% # Calculate drive times in minutes for plotting
+  st_as_sf(coords = c("address_albers_x", "address_albers_y"), remove = TRUE, crs = 3005) %>%
+  select(-c(coord_x, coord_y)) # remove the Service BC location coordinates
 
+# add population information to the drive time data
 drivetime_data <- drivetime_data %>%
-  inner_join(crosswalk, by = c("dbid", "daid", "csdid", "csd_name", "csd_desc"))
+  left_join(pop_db, by = join_by(dbid))
 
-pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
+# --- Service BC location data containing columns for address coordinates (coord_x, coord_x)
+servicebc <-
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
-  mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
+  st_as_sf(coords = c("coord_x", "coord_y"), remove = TRUE, crs = 3005)
 
-#------------------------------------------------------------------------------
-# Read service bc location data from source folder
-#------------------------------------------------------------------------------
-servicebc <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv")
-           , col_types = cols(.default = "c")) %>%
-  clean_names() %>%
-  st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
-
-# -----------------------------------------------------------------------------------------------------
-# read csd shapefiles
-# -----------------------------------------------------------------------------------------------------
-
+# --- CSD shapefiles
 shp_csd_all <- census_subdivision() %>%
-  select(4) %>%
-  filter(CENSUS_SUBDIVISION_NAME %in% (servicebc %>% pull(csd_name))) %>%
+  select(CENSUS_SUBDIVISION_NAME, CENSUS_SUBDIVISION_ID) %>%
   clean_names()
 
 # Check if we have any matching CSDs
@@ -102,36 +102,40 @@ if (nrow(shp_csd_all) == 0) {
 }
 
 # -----------------------------------------------------------------------------------------------------
-# make map data
+# Configure map settings common to all CSD's
 # -----------------------------------------------------------------------------------------------------
 
 # --- User-defined settings for plots ---
+plotvar <- "drv_time_min" 
 map_title <- "Spatial Distribution of Drive Times"
 subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
 fill_label <- "Drive time (Minutes)"
-common_scale <- TRUE    # Whether to use a common scale for all maps
+common_scale <- FALSE    # Whether to use a common scale for all maps
 
-# Calculate drive times in minutes for plotting
-drivetime_data <- drivetime_data %>% 
-  mutate(plotvar = drv_time_sec / 60)
-
-# Set limits prior to subsetting points if using common scale
+# --- Set limits prior to subsetting points if using common scale
 fill_theme <- FILL_THEME$clone()
 if (common_scale == TRUE){
-  fill_theme$limits <- range(drivetime_data$plotvar, na.rm = TRUE)
+  fill_theme$limits <- range(drivetime_data[[plotvar]], na.rm = TRUE)
   fill_theme$oob <- scales::squish
 }
 
-for (csd in shp_csd_all %>% pull(census_subdivision_name)){
+# -----------------------------------------------------------------------------------------------------
+# Create individual maps
+# -----------------------------------------------------------------------------------------------------
 
-  message(glue("Generating map for {csd} ..."))
+# --- Loop over each census subdivision (CSD) to create maps
+for (id in servicebc %>% pull(csdid)) {
 
-  sbclocation <- servicebc %>% filter(csd_name == csd)
-  shp_csd <- shp_csd_all %>% filter(census_subdivision_name == csd)
+  sbclocation <- servicebc %>%
+    filter(csdid == id)
 
-  points <- drivetime_data %>% 
-    st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005) %>%
+  shp_csd <- shp_csd_all %>%
+    filter(census_subdivision_id == id)
+
+  points <- drivetime_data %>%
     st_intersection(shp_csd)
+
+  csd <- sbclocation$csd_name
 
   # Check if there are any points in this CSD
   if (nrow(points) == 0) {
@@ -139,13 +143,16 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
     next
   }
 
-  # Convert to ppp object with weights
-  stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd))
-  marks(stats_ppp) <- points$plotvar
+  message(glue("Generating map for {csd} ..."))
 
+  # Convert to ppp object with weights
+  # Ignore warnings about duplicate points - these are likely due to multi-unit housing
+  stats_ppp <- as.ppp(points$geometry, W = as.owin(shp_csd))
+  marks(stats_ppp) <- points[[plotvar]]
+  
   # Use tryCatch to handle potential errors in smoothing
   smooth_stats_stars <- tryCatch({
-    stars::st_as_stars(Smooth(stats_ppp, sigma = 1000, dimyx =300))
+    stars::st_as_stars(Smooth(stats_ppp, sigma = 1000, dimyx = 300))
   }, error = function(e) {
     warning(glue("Error generating spatial smooth map for {csd}: {e$message}"))
     return(NULL)
@@ -158,6 +165,7 @@ for (csd in shp_csd_all %>% pull(census_subdivision_name)){
   smooth_stats_sf <- st_as_sf(smooth_stats_stars) %>%
     st_set_crs(3005)
 
+  # build map
   map_plot <- ggplot() +
     geom_sf(data = smooth_stats_sf, aes(fill = v), color = NA) +
     geom_sf(data = shp_csd, fill = NA, color = "grey70", linewidth = 1) +
