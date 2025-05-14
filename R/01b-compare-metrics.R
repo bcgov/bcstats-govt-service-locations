@@ -68,10 +68,8 @@ scatter_plot <- plot.data %>%
        y = "Driving Time (minutes)\n",
        color = "") +
   SCATTER_PLOT_THEME +
-  # add color theme
-  scale_color_viridis_d(option = "mako", alpha = 0.6) +
-  # facet by csd_name, use free scales and 1 row of plots
-  facet_wrap(~csd_name, scales = "free")
+  COLOR_THEME_D +
+  facet_wrap( ~csd_name, scales = "free")
 
 # Save the plot
 ggsave(

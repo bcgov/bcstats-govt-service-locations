@@ -129,4 +129,5 @@ SCATTER_PLOT_THEME <- BOX_PLOT_THEME +
 
 FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.6, na.value = "red") # add limits = c(0, NA) to start scaling at 0.
 FILL_THEME_D <- scale_fill_viridis_d(option = "mako", alpha = 0.6)
+COLOR_THEME_D <- scale_color_viridis_d(option = "mako", alpha = 0.6)
 
