@@ -87,24 +87,19 @@ message(glue("({scales::percent(low_counts_prop)}) of DB regions have fewer than
 low_counts <- drivetime_stats_db %>%
   group_by(csd_name, csdid) %>%
   summarise(n_db_blocks = n(),
-            n_db_blocks_under_5n_addresses = sum(n_address < 5, na.rm = TRUE))
+            n_under_5_addresses = sum(n_address < 5, na.rm = TRUE),
+            p_under_5_addresses = ifelse(n_db_blocks == 0, 0, n_under_5_addresses / n_db_blocks)) %>%
+  ungroup()
 
-drivetime_stats_csd  <-
-  drivetime_stats_csd %>%
-  left_join(
-    drivetime_stats_db %>%
-    group_by(csd_name, csdid) %>%
-    summarise(n_db_blocks = n(),
-              n_db_blocks_under_5n_addresses = sum(n_address < 5, na.rm = TRUE))
-    , by = c("csd_name", "csdid")
-  )
+drivetime_stats_csd  <- drivetime_stats_csd %>%
+  left_join(low_counts, by = c("csd_name", "csdid"))
 
 #------------------------------------------------------------------------------
 # Write descriptive tables to source folder
 #------------------------------------------------------------------------------
-write_csv(drivetime_stats_da, glue("{SRC_DATA_FOLDER}/reduced_da_average_times_dist_all_locs.csv"))
-write_csv(drivetime_stats_db, glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv"))
-write_csv(drivetime_stats_csd, glue("{SRC_DATA_FOLDER}/reduced_csd_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_da, glue("{TABLES_OUT}/reduced_da_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_db, glue("{TABLES_OUT}/reduced_db_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_csd, glue("{TABLES_OUT}/reduced_csd_average_times_dist_all_locs.csv"))
 
 # clean up the environment
 rm(list = ls())
