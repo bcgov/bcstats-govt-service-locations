@@ -88,18 +88,33 @@ low_counts <- drivetime_stats_db %>%
   group_by(csd_name, csdid) %>%
   summarise(n_db_blocks = n(),
             n_under_5_addresses = sum(n_address < 5, na.rm = TRUE),
-            p_under_5_addresses = ifelse(n_db_blocks == 0, 0, n_under_5_addresses / n_db_blocks)) %>%
+            p_under_5_addresses = scales::percent(ifelse(n_db_blocks == 0, 0, n_under_5_addresses / n_db_blocks),
+            accuracy = 0.1,
+            trim = TRUE)) %>%
   ungroup()
 
+# calculate the number of service BC locations in each CSD
+servicebc_counts <- drivetime_data %>%
+  distinct(csd_name, csdid, nearest_facility, coord_x, coord_y) %>% # keep the coords to gaurd against multiple locations per label
+  group_by(csd_name, csdid, nearest_facility, coord_x, coord_y) %>% 
+  summarise(n_service_bc = n()) %>%
+  ungroup() %>%
+  select(-c(coord_x, coord_y))
+
+
 drivetime_stats_csd  <- drivetime_stats_csd %>%
-  left_join(low_counts, by = c("csd_name", "csdid"))
+  left_join(low_counts, by = c("csd_name", "csdid")) %>%
+  left_join(servicebc_counts, by = c("csd_name", "csdid")) 
 
 #------------------------------------------------------------------------------
 # Write descriptive tables to source folder
 #------------------------------------------------------------------------------
-write_csv(drivetime_stats_da, glue("{TABLES_OUT}/reduced_da_average_times_dist_all_locs.csv"))
-write_csv(drivetime_stats_db, glue("{TABLES_OUT}/reduced_db_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_da, glue("{SRC_DATA_FOLDER}/reduced_da_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_db, glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_csd, glue("{SRC_DATA_FOLDER}/reduced_csd_average_times_dist_all_locs.csv"))
 write_csv(drivetime_stats_csd, glue("{TABLES_OUT}/reduced_csd_average_times_dist_all_locs.csv"))
+write_csv(low_counts, glue("{TABLES_OUT}/reduced_csd_low_counts.csv"))
+write_csv(servicebc_counts, glue("{TABLES_OUT}/reduced_csd_service_bc_counts.csv"))
 
 # clean up the environment
 rm(list = ls())
