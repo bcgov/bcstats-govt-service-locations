@@ -62,11 +62,11 @@ plot_data <- db_stats_raw %>%
   filter(csd_name %in% CSD_NAMES)
 
 # user-defined plot parameters
-y_var <- "drv_time_min_mean"  # colnames(plot_data) for other options
+y_var <- "drv_dist_mean"  # colnames(plot_data) for other options
 x_var <- "municipality"
 
-y_title <- "Mean Driving Time"
-y_unit <- "minutes"
+y_title <- "Mean Driving Distance"
+y_unit <- "km"
 x_title <- "Municipality"
 
 plot_title <- glue("Distribution of {y_title} to Nearest Service BC Office")
