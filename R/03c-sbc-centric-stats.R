@@ -265,6 +265,10 @@ drive_measures <- drivetime_data_reduced |>
     n_addresses = n(),
     mean_drv_time = mean(drv_time_sec, na.rm = TRUE),
     sd_drv_time = sd(drv_time_sec, na.rm = TRUE),
+    var_drv_time = var(drv_time_sec, na.rm = TRUE),# or min(drv_time_sec, na.rm = TRUE)
+    qnt25_drv_time = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),  
+    qnt50_drv_time = quantile(drv_time_sec, probs = 0.50, na.rm = TRUE), # or median(drv_time_sec, na.rm = TRUE)
+    qnt75_drv_time = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),  
     min_drv_time = min(drv_time_sec, na.rm = TRUE),
     max_drv_time = max(drv_time_sec, na.rm = TRUE),
     mean_drv_dist = mean(drv_dist, na.rm = TRUE),
@@ -385,9 +389,9 @@ write_csv(
 # plots ----
 # Create individual histograms for each facility 
 # Create a folder specifically for the histograms
-histogram_folder <- file.path(MAP_OUT, "sbc_drive_distance_histograms")
-if (!dir.exists(histogram_folder)) {
-  dir.create(histogram_folder, recursive = TRUE)
+plot_folder <- file.path(MAP_OUT, "sbc_drive_distance_plots")
+if (!dir.exists(plot_folder)) {
+  dir.create(plot_folder, recursive = TRUE)
 }
 
 # Create and save histograms for each facility
@@ -401,7 +405,7 @@ for (facility in facilities) {
   
   # Save the individual plot
   ggsave(
-    filename = glue("{histogram_folder}/{facility}_drive_distance.png"),
+    filename = glue("{plot_folder}/{facility}_drive_distance.png"),
     plot = p,
     width = 10,
     height = 6,
@@ -423,13 +427,36 @@ print(faceted_plot)
 
 # Save the faceted plot
 ggsave(
-  filename = glue("{histogram_folder}/all_facilities_drive_distance.png"),
+  filename = glue("{plot_folder}/all_facilities_drive_distance.png"),
   plot = faceted_plot,
   width = 16,
   height = 12,
   dpi = 300
 )
 
+# create a box plot for all facilities
+box_plot <- build_boxplot(
+  data = drivetime_data_reduced %>% 
+          group_by(dbid, assigned) %>% 
+          summarize(drv_dist = mean(drv_dist, na.rm=TRUE)),
+  x_var = 'assigned',
+  y_var = 'drv_dist',
+  plot_title = 'Distribution of Driving Distances',
+  plot_subtitle = 'Comparison across Service BC Catchments',
+  x_title = 'Service BC Location',
+  y_title = 'Driving Distance (km)',
+  plot_theme = BOX_PLOT_THEME,
+  fill_scale = FILL_THEME_D
+)
+
+box_plot
+ggsave(
+    filename = glue("{plot_folder}/drive_distance_box_plot.png"),
+    plot = p,
+    width = 10,
+    height = 6,
+    dpi = 300
+  )
 
 # step 2: map of all closest DBs/average drive distances
 map_data <- drivetime_data_reduced |>
