@@ -27,16 +27,18 @@ source("R/settings.R")
 # Read data from source folder
 #------------------------------------------------------------------------------
 
-crosswalk <-
-  read_csv(glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"), col_types = cols(.default = "c")) %>%
-  clean_names()
+# Add error handling for file loading
+drivetime_file <- glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv")
 
 drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
+  read_csv(drivetime_file, col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
+#------------------------------------------------------------------------------
 # bin the data by driving distance and add a column for the bin
+#------------------------------------------------------------------------------
+
 binned_data <- drivetime_data %>%
   mutate(
     bin = case_when(
@@ -48,38 +50,36 @@ binned_data <- drivetime_data %>%
     )
   ) %>%
   summarise(total_count = n(),  .by = c(csd_name, bin)) %>%
-  # add a column for the total count of addresses per bin and the total address count
   mutate(total_address = sum(total_count), .by = c(csd_name)) %>%
-  # add a column for the percentage of addresses in each bin and cummulative percentage
-  mutate(
-    percent = total_count / total_address,
-    bin = factor(bin, levels = c("Under 1 km", "1 to 5 km", "5 to 10 km", "10 to 20 km", "20+ km"))
-  ) %>%
-  select(-total_address)
+  ungroup() %>%
+  mutate( percent = total_count / total_address)
 
-# transform the binned data to a long format
+
+#------------------------------------------------------------------------------
+# Transform data for output
+#------------------------------------------------------------------------------
+
+# Create long format in one step
 binned_data_long <- binned_data %>%
   pivot_longer(
     cols = c(total_count, percent),
     names_to = "metric",
     values_to = "value"
   ) %>%
-  mutate(
-    metric = factor(metric, levels = c("total_count", "percent")),
-    bin = factor(bin, levels = c("Under 1 km", "1 to 5 km", "5 to 10 km", "10 to 20 km", "20+ km"))
-  )
+  mutate(metric = factor(metric, levels = c("total_count", "percent")))
 
-# pivot the binned data so that the bins are the columns and arrange by csd_name
+# Create wide format for reporting
 binned_data_pivot <- binned_data_long %>%
   pivot_wider(
     names_from = bin,
-    values_from = c(value),
+    values_from = value,
     values_fill = 0
   ) %>%
-  select(csd_name, metric, "Under 1 km", "1 to 5 km", "5 to 10 km", "10 to 20 km", "20+ km") %>%
-  arrange(csd_name)
+  arrange(csd_name, metric)
+
+# Check output directory exists
+output_file <- glue("{TABLES_OUT}/reduced-csd-binned-drivetime-data.csv")
+output_dir <- dirname(output_file)
 
 # save the binned data to a csv file
-write_csv(
-  binned_data_pivot,
-    glue("{TABLES_OUT}/reduced-csd-binned-drivetime-data.csv"))
+write_csv(binned_data_pivot, output_file)
