@@ -264,8 +264,8 @@ for (csd_name in unique(pilot_csds$csd_name)) {
       title = map_title,
       subtitle = glue("Catchment for {facility_id}.\nAssociated pilot region {csd_name} outlined in black."),
       fill = fill_label,
-      x = "\nLongitude",
-      y = "Latitude\n"
+      x = element_blank(), # "\nLongitude",
+      y = element_blank() # "Latitude\n"
     ) +
     guides(
       shape = guide_legend(

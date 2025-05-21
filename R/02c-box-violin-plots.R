@@ -62,15 +62,15 @@ plot_data <- db_stats_raw %>%
   filter(csd_name %in% CSD_NAMES)
 
 # user-defined plot parameters
-y_var <- "drv_time_min_mean"  # colnames(plot_data) for other options
+y_var <- "drv_dist_mean"  # colnames(plot_data) for other options
 x_var <- "municipality"
 
-y_title <- "Mean Driving Time"
+y_title <- "Mean Driving Distance"
 y_unit <- "minutes"
-x_title <- "Municipality"
+x_title <- "CSD"
 
 plot_title <- glue("Distribution of {y_title} to Nearest Service BC Office")
-plot_subtitle <- glue("Comparison across municipalities")
+plot_subtitle <- glue("Comparison across CSDs")
 
 # --- Box Plot (Distribution by region) ---
 message("Generating Box Plot...")
@@ -93,8 +93,8 @@ box_plot <- build_boxplot(
 ggsave(
   filename = glue("{output_dir}/{outfile}.png"),
     plot = box_plot,
-  width = 8,
-  height = 7,
+  width = 12,
+  height = 8,
   device = "png"
 )
 

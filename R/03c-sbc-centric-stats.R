@@ -473,8 +473,8 @@ box_plot
 ggsave(
     filename = glue("{plot_folder}/drive_distance_box_plot.png"),
     plot = box_plot,
-    width = 10,
-    height = 6,
+    width = 12,
+    height = 8,
     dpi = 300
   )
 

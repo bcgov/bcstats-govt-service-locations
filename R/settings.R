@@ -110,16 +110,16 @@ MAP_THEME <- theme_minimal() +
 BOX_PLOT_THEME <- theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
-    plot.title = element_text(size = 14, face = "bold"),
-    plot.subtitle = element_text(size = 12),
+    plot.title = element_text(size = 16, face = "bold"),
+    plot.subtitle = element_text(size = 14),
     legend.title = element_text(size = 10, face = "bold"),
     legend.text = element_text(size = 9),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 9),
-    legend.position = "bottom",
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    legend.position = "none",
     legend.box = "horizontal",
     legend.title.position = "top", 
-    axis.text.x = element_text(angle = 30, hjust = 1)
+    axis.text.x = element_text(hjust = 0.5)
   )
 
   VIOLIN_PLOT_THEME <- theme_minimal() +
