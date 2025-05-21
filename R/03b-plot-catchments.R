@@ -298,11 +298,11 @@ complete_map <- ggplot() +
   ) +
   # CSDs of interest as outlined areas
   geom_sf(
-    data = csds, 
+    data = csd_shapefile, 
     fill = NA, 
-    color = 'black',
-    linewidth = 1.2,
-    alpha = 0.9
+    color = "darkgrey", 
+    size = 0.2, 
+    alpha = 0.5
   ) +
   # Service BC locations
   geom_sf(
@@ -323,7 +323,7 @@ complete_map <- ggplot() +
   scale_fill_viridis_d(
     option = "turbo",
     name = 'Service BC Facility',
-    na.value = "darkgray"
+    na.value = "whitesmoke"
   ) +
   # Alpha for assignment method
   scale_alpha_manual(
@@ -333,12 +333,17 @@ complete_map <- ggplot() +
   ) +
   coord_sf(expand = FALSE) + # remove whitespace
   labs(
-    title = 'Service BC Facility Complete Catchment Areas',
-    subtitle = 'All areas assigned to nearest facility\nLighter areas show new assignments based on proximity to facilities'
+    title = "Service BC Catchment Areas: Address Method",
+    subtitle = "With CSD Boundaries and Service BC Office Locations"
   ) +
   MAP_THEME +
-  theme(legend.position = "none")  # Remove legends
-
+  +  theme(
+    legend.position = "None",  
+    axis.title = element_blank(),  # Remove axis titles
+    axis.text = element_blank(),   # Remove axis text
+    axis.ticks = element_blank(),  # Remove axis ticks
+    panel.grid = element_blank()   # Remove background grid lines
+  )
 complete_map
 
 # Save the complete catchments map
