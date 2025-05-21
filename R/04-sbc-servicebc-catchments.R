@@ -83,7 +83,7 @@ map_plot <- ggplot() +  # Add BC outline as base layer
           aes(fill = Nearest_office),, 
           color = "darkgrey", 
           size = 0.2, 
-          alpha = 0.5) +
+          alpha = 0.7) +
   # Add Service BC locations as points
   geom_sf(data = servicebc, 
           shape = 23,  # Diamond shape
@@ -107,7 +107,7 @@ map_plot <- ggplot() +  # Add BC outline as base layer
   # Set fill colors for assigned facilities
   scale_fill_viridis_d(
     option = "turbo",
-    na.value = "white",  # CSDs without assignment get default color
+    na.value = NA,#"white",  # CSDs without assignment get default color
     drop = FALSE
   ) +
   # Use coord_sf for proper projection display

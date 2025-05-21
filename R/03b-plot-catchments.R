@@ -142,9 +142,13 @@ pilot_map <- ggplot() +
   ) +
   MAP_THEME +
   theme(
-    legend.position = "none",
-    axis.title = element_blank()
+    legend.position = "None",  
+    axis.title = element_blank(),  # Remove axis titles
+    axis.text = element_blank(),   # Remove axis text
+    axis.ticks = element_blank(),  # Remove axis ticks
+    panel.grid = element_blank()   # Remove background grid lines
   )
+
 
 pilot_map
 
@@ -323,7 +327,7 @@ complete_map <- ggplot() +
   scale_fill_viridis_d(
     option = "turbo",
     name = 'Service BC Facility',
-    na.value = "whitesmoke"
+    na.value = NA#"whitesmoke"
   ) +
   # Alpha for assignment method
   scale_alpha_manual(
@@ -337,7 +341,7 @@ complete_map <- ggplot() +
     subtitle = "With CSD Boundaries and Service BC Office Locations"
   ) +
   MAP_THEME +
-  +  theme(
+  theme(
     legend.position = "None",  
     axis.title = element_blank(),  # Remove axis titles
     axis.text = element_blank(),   # Remove axis text
@@ -345,14 +349,13 @@ complete_map <- ggplot() +
     panel.grid = element_blank()   # Remove background grid lines
   )
 complete_map
-
 # Save the complete catchments map
 ggsave(
   filename = glue("pilot_complete_catchments.png"),
   path = maps_folder,
   plot = complete_map,
-  width = 12,
-  height = 10,
+  width = 10,
+  height = 8,
   dpi = 300
 )
 
