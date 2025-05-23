@@ -101,14 +101,14 @@ MAP_THEME <- theme_minimal() +
     panel.grid.major.x = element_blank(),
     plot.title = element_text(size = 14, face = "bold"),
     plot.subtitle = element_text(size = 12),
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 9),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 9),
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 11),
+    axis.text = element_text(size = 10),
+    axis.title = element_text(size = 11),
     legend.position = "bottom",
     legend.box = "horizontal",
     legend.title.position = "top")
-
+  
 BOX_PLOT_THEME <- theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
@@ -129,10 +129,10 @@ BOX_PLOT_THEME <- theme_minimal() +
     panel.grid.major.x = element_blank(),
     plot.title = element_text(size = 14, face = "bold"),
     plot.subtitle = element_text(size = 12),
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 9),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 9),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
     legend.position = "bottom",
     legend.box = "horizontal",
     legend.title.position = "top", 
