@@ -57,7 +57,7 @@ pop_projections <- bcdc_get_data(
     )
   )
 
-pop_projections
+pop_projections 
 
 ## census populations
 pop_db <- read_csv(
@@ -189,6 +189,20 @@ db_projections_transformed
 
 
 # =========================================================================== #
+# Population estimates
+# =========================================================================== #
+
+summary_stats <- db_projections_transformed |> 
+  filter(year == 2025, gender == 'T') |>
+  summarise(population = sum(population), .by = c(age, region_name)) |>
+    group_by(region_name) |>
+    summarise(
+      est_population = sum(population, na.rm = TRUE),
+      median_age = median(rep(age, population)))
+
+write_csv(summary_stats, glue("{TABLES_OUT}/csd_population_metrics.csv"))
+
+# =========================================================================== #
 # Population Pyramid Creation ----
 # =========================================================================== #
 
@@ -256,5 +270,7 @@ if (length(regions) > 1) {
     dpi = 300
   )
 }
+
+
 
 combined_pyramids
