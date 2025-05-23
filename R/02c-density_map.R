@@ -106,10 +106,10 @@ if (nrow(shp_csd_all) == 0) {
 # -----------------------------------------------------------------------------------------------------
 
 # --- User-defined settings for plots ---
-plotvar <- "drv_time_min" 
-map_title <- "Spatial Distribution of Drive Times"
-subtitle_pref <- "Estimated Drive Times to Nearest Service BC Office"
-fill_label <- "Drive time (Minutes)"
+plotvar <- "drv_dist" 
+map_title <- "Spatial Distribution of Driving Distance"
+subtitle_pref <- "Distance to Nearest Service BC Office"
+fill_label <- "Driving Distance (km)"
 common_scale <- FALSE    # Whether to use a common scale for all maps
 
 # --- Set limits prior to subsetting points if using common scale
@@ -181,7 +181,7 @@ for (id in servicebc %>% pull(csdid)) {
     MAP_THEME +
     labs(
       title = map_title,
-      subtitle = glue("{subtitle_pref} - {csd} (Smoothed Data)"),
+      subtitle = glue("{subtitle_pref} - {csd}"),
       fill = fill_label,
       x = "\nLongitude",
       y = "Latitude\n"
@@ -195,7 +195,7 @@ for (id in servicebc %>% pull(csdid)) {
     )
 
   # Save the plot
-  fn <- to_snake_case(glue("drv-time-smoothed-commonscale={common_scale}-{csd}"))
+  fn <- to_snake_case(glue("drv-dist-smoothed-commonscale={common_scale}-{csd}"))
 
   ggsave(
     filename = glue("{fn}.png"),
