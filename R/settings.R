@@ -48,7 +48,7 @@ library(tidyverse)
 CSD_NAMES <- c("Langford", "Dawson Creek", "Smithers", "Kamloops")
 CSDIDS <- c(5917044, 5955014, 5951043, 5933042)
 CENSUS_BASIS <- 2021
-CANCENSUS_YEAR <- paste0('CA', str_sub(as.character(CENSUS_BASIS),3,4))
+CANCENSUS_YEAR <- paste0('CA', str_sub(as.character(CENSUS_BASIS), 3, 4))
 CURRENT_YEAR <- 2025
 
 
@@ -100,7 +100,7 @@ MAP_THEME <- theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
     plot.title = element_text(size = 14, face = "bold"),
-    plot.subtitle = element_text(size = 12),
+    plot.subtitle = element_text(size = 14),
     legend.title = element_text(size = 12, face = "bold"),
     legend.text = element_text(size = 11),
     axis.text = element_text(size = 10),
@@ -108,19 +108,20 @@ MAP_THEME <- theme_minimal() +
     legend.position = "bottom",
     legend.box = "horizontal",
     legend.title.position = "top")
+
   
 BOX_PLOT_THEME <- theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
-    plot.title = element_text(size = 16, face = "bold"),
-    plot.subtitle = element_text(size = 14),
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 9),
-    axis.text = element_text(size = 12),
-    axis.title = element_text(size = 12),
+    plot.title = element_text(size = 20, face = "bold"),
+    plot.subtitle = element_text(size = 18),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 13),
+    axis.text = element_text(size = 15),
+    axis.title = element_text(size = 15),
     legend.position = "none",
     legend.box = "horizontal",
-    legend.title.position = "top", 
+    legend.title.position = "top",
     axis.text.x = element_text(hjust = 0.5)
   )
 
@@ -135,7 +136,7 @@ BOX_PLOT_THEME <- theme_minimal() +
     axis.title = element_text(size = 12),
     legend.position = "bottom",
     legend.box = "horizontal",
-    legend.title.position = "top", 
+    legend.title.position = "top",
     axis.text.x = element_text(angle = 30, hjust = 1)
   )
 
