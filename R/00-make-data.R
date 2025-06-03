@@ -132,7 +132,7 @@ pop_db <- cancensus::get_census(
 pop_csd <- cancensus::get_census(
     dataset = CANCENSUS_YEAR,
     regions = list(PR = "59"), # grab only BC
-    level = 'CSD' 
+    level = 'CSD'
   ) %>%
   clean_names() %>%
   select(c(all_of(POP_COLS), geo_uid)) %>%
@@ -181,27 +181,31 @@ processed_files %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"))
 
 da_shapefiles %>%
-  inner_join(corresp %>% filter(csd_name %in% CSD_NAMES)) %>%
+  inner_join(corresp %>% filter(csdid %in% CSDIDS)) %>%
   st_write(glue("{SHAPEFILE_OUT}/reduced-da-with-location.gpkg"), append = FALSE)
 
 db_shapefiles %>%
-  inner_join(corresp  %>% filter(csd_name %in% CSD_NAMES)) %>%
+  inner_join(corresp  %>% filter(csdid %in% CSDIDS)) %>%
   st_write(glue("{SHAPEFILE_OUT}/reduced-db-with-location.gpkg"), append = FALSE)
 
 csd_shapefiles %>%
-  filter(csd_name %in% CSD_NAMES) %>%
+  filter(csdid %in% CSDIDS) %>%
   st_write(glue("{SHAPEFILE_OUT}/reduced-csd-with-location.gpkg"), append = FALSE)
 
 pop_csd %>%
-  filter(csd_name %in% CSD_NAMES) %>%
+  inner_join(crosswalk %>% distinct(csdid, csd_name), by = join_by(csdid)) %>%
+  filter(csdid %in% CSDIDS) %>%
+  select(-csd_name.x) %>%
+  rename(csd_name = csd_name.y) %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-population-csd.csv"))
 
 pop_da %>%
-  filter(csd_name %in% CSD_NAMES) %>%
+  filter(csdid %in% CSDIDS) %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-population-da.csv"))
 
 pop_db %>%
-  filter(csd_name %in% CSD_NAMES) %>%
+  inner_join(crosswalk, by = join_by(dbid)) %>%
+  filter(csdid %in% CSDIDS) %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"))
 
 # clean up the environment
