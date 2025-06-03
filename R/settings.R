@@ -48,6 +48,7 @@ library(tidyverse)
 CSD_NAMES <- c("Langford", "Dawson Creek", "Smithers", "Kamloops")
 CENSUS_BASIS <- 2021
 CANCENSUS_YEAR <- paste0('CA', str_sub(as.character(CENSUS_BASIS),3,4))
+CURRENT_YEAR <- 2025
 
 # File paths
 LAN_FOLDER <- use_network_path()
@@ -56,8 +57,8 @@ RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw
 RAW_POP_FILEPATH <- glue("{RAW_DATA_FOLDER}/statscan/98100015-eng/98100015.csv")
 DT_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/nearest_facility_BC")
 
-CROSSWALK_FILEPATH <- glue("{SRC_DATA_FOLDER}/da-db-loc-crosswalk.csv")
-CORRESP_FILEPATH <-"C:/Users/BASHCROF/Desktop/2021_92-151_X/2021_92-151_X.csv"
+CROSSWALK_FILEPATH <- glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv")
+CORRESP_FILEPATH <- glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv")
 DA_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/lda_000b21a_e/lda_000b21a_e.shp")
 DB_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/ldb_000b21a_e/ldb_000b21a_e.shp")
 SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
@@ -70,6 +71,7 @@ OUTPUT_LOC_STATS_FILENAME <- "loc_average_times_dist_all_locs.csv"
 
 SHAPEFILE_OUT <- glue("{SRC_DATA_FOLDER}/shapefiles/")
 MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
+VISUALS_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
 TABLES_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/tables")
 
 # Patterns for cleaning
@@ -90,10 +92,13 @@ POP_COLS <- c("region_name", "area_sq_km", "population", "dwellings", "household
 FACILITY_TAG <- "servicebc"
 
 # Constants for visualizations
+# noting for later: these are almost the same and could be collaped into 1
+# only difference is axis.text.x
 MAP_THEME <- theme_minimal() +
   theme(
-    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-    plot.subtitle = element_text(hjust = 0.5, size = 10),
+    panel.grid.major.x = element_blank(),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
     legend.title = element_text(size = 10, face = "bold"),
     legend.text = element_text(size = 9),
     axis.text = element_text(size = 8),
@@ -102,5 +107,27 @@ MAP_THEME <- theme_minimal() +
     legend.box = "horizontal",
     legend.title.position = "top")
 
- FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.75, na.value = "red")
+BOX_PLOT_THEME <- theme_minimal() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    legend.title = element_text(size = 10, face = "bold"),
+    legend.text = element_text(size = 9),
+    axis.text = element_text(size = 8),
+    axis.title = element_text(size = 9),
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.title.position = "top", 
+    axis.text.x = element_text(angle = 30, hjust = 1)
+  )
+
+VIOLIN_PLOT_THEME <- BOX_PLOT_THEME
+
+SCATTER_PLOT_THEME <- BOX_PLOT_THEME +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1))
+
+FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.6, na.value = "red") # add limits = c(0, NA) to start scaling at 0.
+FILL_THEME_D <- scale_fill_viridis_d(option = "mako", alpha = 0.6)
+COLOR_THEME_D <- scale_color_viridis_d(option = "mako", alpha = 0.6)
 

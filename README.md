@@ -69,16 +69,30 @@ Run the following scripts in the order specified:
 
 4.  **Mapping Results:**
     *   **Script:** `02-map-plots.R`.
-    *   **Purpose:** Loads the processed DA/DB shapefiles (from `00b-make-map-data.R`) and the drive time summary statistics CSV files (from `01-descriptive-tables.R`). It merges these datasets and uses the `build_map` function (from `R/fxns/plots.r`) to generate and save a series of map visualization based on the configured theme (`MAP_THEME` in `settings.R`).
-    *   **How to Run:** Manually adjust inputs to the `build_map` function, save and source the file: `source("R/02-map-plots.R")`
-    *   **Expected Output:** Check the console for messages about data loading, data quality warnings (e.g., handling NAs or negative values), file overwrite warnings, or errors.  Successful completion will result in a series of map visualizations (e.g., PNG, SVG) saved to the output directory specified within the script or `settings.R`. 
+        *   **Purpose:** Loads the processed DA/DB shapefiles (from `00b-make-map-data.R`) and the drive time summary statistics CSV files (from `01-descriptive-tables.R`). It merges these datasets and uses the `build_map` function (from `R/fxns/plots.r`) to generate and save a series of map visualization based on the configured theme (`MAP_THEME` in `settings.R`).
+        *   **How to Run:** Manually adjust inputs to the `build_map` function, save and source the file: `source("R/02-map-plots.R")`
+        *   **Expected Output:** Check the console for messages about data loading, data quality warnings (e.g., handling NAs or negative values), file overwrite warnings, or errors.  Successful completion will result in a series of map visualizations (e.g., PNG, SVG) saved to the output directory specified within the script or `settings.R`. 
 
     *   **Script:** `02b-plot-localities.R`.
-    *   **Purpose:** Generates a map visualizing the geographic locations of the specific municipalities/localities included in the analysis, providing context within British Columbia. It uses the processed shapefiles and the service BC locations processed previously.
-    *   **How to Run:** This script can be run from source: `source("R/02b-plot-localities.R")`
-    *   **Expected Output:** Check the console for messages about data loading, data quality warnings (e.g., handling NAs or negative values), file overwrite warnings, or errors.  Successful completion will result in a map image file (e.g., PNG, SVG) saved to disk, showing the study area boundaries overlaid on a map of BC.
+        *   **Purpose:** Generates a map visualizing the geographic locations of the specific municipalities/localities included in the analysis, providing context within British Columbia. It uses the processed shapefiles and the service BC locations processed previously.
+        *   **How to Run:** This script can be run from source: `source("R/02b-plot-localities.R")`
+        *   **Expected Output:** Check the console for messages about data loading, data quality warnings (e.g., handling NAs or negative values), file overwrite warnings, or errors.  Successful completion will result in a map image file (e.g., PNG, SVG) saved to disk, showing the study area boundaries overlaid on a map of BC.
 
+5.  **Creating and Analyzing Catchment Areas:**
+    *   **Script:** `03a-create-catchments.R`.
+        *   **Purpose:** This script assigns every Dissemination Block (DB) to a Service BC facility catchment area. It first uses drive time data to assign DBs to the nearest facility, then applies a spatial proximity method for any unassigned DBs. This process ensures complete geographic coverage with no gaps.
+        *   **How to Run:** This script can be run from source: `source("R/03a-create-catchments.R")`
+        *   **Expected Output:** Upon successful completion, the script generates a complete DB assignments CSV file (`complete_db_assignments.csv`) in the `SRC_DATA_FOLDER` and additional statistics tables in the `TABLES_OUT` directory. The console will display information about the number of DBs assigned using each method.
 
+    *   **Script:** `03b-plot-catchments.R`.
+        *   **Purpose:** This script creates several maps visualizing the Service BC facility catchment areas defined in the previous step. It generates both pilot-region focused maps and province-wide visualizations, showing both the original drive-time based assignments and the complete catchment assignments including spatial proximity assignments.
+        *   **How to Run:** This script can be run from source: `source("R/03b-plot-catchments.R")`
+        *   **Expected Output:** The script generates multiple map visualizations saved to the `MAP_OUT/complete_catchments` directory, including pilot region overviews, original drive-time catchments, and complete catchment maps. These include both focused maps of the pilot regions and provincial overviews.
+
+    *   **Script:** `03c-sbc-centric-stats.R`.
+        *   **Purpose:** This script creates detailed metrics for each individual Service BC location based on their catchment areas. It generates population projections, driving distance metrics, demographic analyses, and various visualizations for each facility. The script also produces population pyramids showing age and gender distribution for each catchment.
+        *   **How to Run:** This script can be run from source: `source("R/03c-sbc-centric-stats.R")`
+        *   **Expected Output:** The script generates multiple CSV files in the `TABLES_OUT` directory containing drive metrics, CSD counts, and population metrics for each Service BC location. It also creates visualization files in the `MAP_OUT` directory, including drive distance histograms, drive distance maps, and population pyramids for each facility.
 
 The final analysis output files will be available in the location specified by `SRC_DATA_FOLDER` within your configured data directory structure. You can then use these files for further analysis, reporting, or visualization.
 
@@ -97,17 +111,27 @@ While the source address list input to the geocoder is restricted under license,
 
 (Description pending - this dataset represents output from the Nearest Facility Analysis pipeline, details to be added.)
 
-**Geographic Concordance File**
+**Geographic Boundary Data Crosswalk**
 
-A geographic concordance file was acquired from Statistics Canada ([statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21](statcan.gc.ca/census-recensement/2021/geo/sip-pis/dguid-idugd/index2021-eng.cfm?year=21)) to facilitate data linkage across disparate census geographic hierarchies (e.g., linking Dissemination Areas to Census Subdivisions). This file enables the aggregation or translation of data between administrative or statistical units. Note: This dataset has been acquired but not yet implemented in the current analysis workflow.
+A geographic crosswalk between different census geographies (Dissemination Blocks, Dissemination Areas, and Census Subdivisions) was created based on the Dissemination Block shapefile available from the BC Data Catalogue. This crosswalk facilitates data linkage across disparate census geographic hierarchies, enabling the aggregation or translation of data between administrative or statistical units.
 
 **Digital Boundary Files**
 
-Digital boundary files in Shapefile format (.shp), defining the geographic extents of Population Centers (PC), Dissemination Areas (DAs) and Dissemination Blocks (DBs), were obtained from Statistics Canada ([https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21](https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?year=21)). These vector datasets served as the geometric base for cartographic visualization and underpinning geospatial operations within the analysis (used as input for `00b-make-map-data.R`).
+Digital boundary files in GeoPackage format (.gpkg) defining the geographic extents of Census Subdivisions (CSDs), Dissemination Areas (DAs) and Dissemination Blocks (DBs) were obtained from the BC Data Catalogue:
+- [Census Subdivisions (CSDs)](https://catalogue.data.gov.bc.ca/dataset/current-census-subdivision-boundaries)
+- [Dissemination Areas (DAs)](https://catalogue.data.gov.bc.ca/dataset/current-census-dissemination-areas)
+- [Dissemination Blocks (DBs)](https://catalogue.data.gov.bc.ca/dataset/current-census-dissemination-blocks)
+
+These vector datasets serve as the geometric base for cartographic visualization and underpin geospatial operations within the analysis (used as input for `00b-make-map-data.R`).
 
 **Census Population and Dwelling Counts**
 
-Aggregate population and dwelling count data at the Dissemination Area (DA) level were extracted from the Statistics Canada 2021 Census profile tables ([https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=9810001502&geocode=A000259) - Table 98-10-0015-02]. This dataset provided the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study regions (used in `01-descriptive-tables.R`).
+Aggregate population and dwelling count data at the Dissemination Block (DB) level were extracted from the Statistics Canada 2021 Census. This dataset provides the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study regions (used in `01-descriptive-tables.R`).
+
+**Population Projections**
+
+Population projections at the Census Subdivision (CSD) level were obtained from BC Stats through the BC Data Catalogue ([Sub-Provincial Population Projections](https://catalogue.data.gov.bc.ca/dataset/bc-sub-provincial-population-estimates-and-projections)). These projections provide future population estimates by age and gender, allowing for demographic analysis of service catchment areas over time. The projections are used in `03c-sbc-centric-stats.R` to estimate future service demands and demographic composition within Service BC facility catchment areas.
+
 
 ## Guiding Principles
 
