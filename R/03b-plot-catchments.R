@@ -129,7 +129,7 @@ pilot_map <- ggplot() +
   geom_sf_text(
     data = csd_centroids_nudged,
     aes(label = csd_name), 
-    size = 4, 
+    size = 5, 
     fontface = 'bold'
   ) +
   scale_fill_brewer(
@@ -138,11 +138,12 @@ pilot_map <- ggplot() +
   ) +
   coord_sf(expand = FALSE) + # remove whitespace
   labs(
-    title = 'Pilot Regions'
+    title = 'Pilot Regions\n'
   ) +
   MAP_THEME +
   theme(
     legend.position = "None",  
+    plot.title = element_text(size = 20, face = "bold"),
     axis.title = element_blank(),  # Remove axis titles
     axis.text = element_blank(),   # Remove axis text
     axis.ticks = element_blank(),  # Remove axis ticks

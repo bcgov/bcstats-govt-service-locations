@@ -181,7 +181,7 @@ for (id in servicebc %>% pull(csdid)) {
     MAP_THEME +
     labs(
       title = map_title,
-      subtitle = glue("{subtitle_pref} - {csd} (Smoothed Data)"),
+      subtitle = glue("{subtitle_pref} - {csd}"),
       fill = fill_label,
       x = element_blank(), # "\nLongitude",
       y = element_blank() # "Latitude\n"

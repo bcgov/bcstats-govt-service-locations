@@ -65,8 +65,8 @@ plot_data <- db_stats_raw %>%
 y_var <- "drv_dist_mean"  # colnames(plot_data) for other options
 x_var <- "municipality"
 
-y_title <- "Mean Driving Distance"
-y_unit <- "minutes"
+y_title <- "Mean Driving Distance (km)"
+y_unit <- "km"
 x_title <- "CSD"
 
 plot_title <- glue("Distribution of {y_title} to Nearest Service BC Office")

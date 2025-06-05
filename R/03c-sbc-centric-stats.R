@@ -458,7 +458,7 @@ ggsave(
 box_plot <- build_boxplot(
   data = drivetime_data_reduced %>% 
           group_by(dbid, assigned) %>% 
-          summarize(drv_dist = mean(drv_dist, na.rm=TRUE)),
+          summarize(drv_dist = mean(drv_dist, na.rm = TRUE)),
   x_var = 'assigned',
   y_var = 'drv_dist',
   plot_title = 'Distribution of Driving Distances',
