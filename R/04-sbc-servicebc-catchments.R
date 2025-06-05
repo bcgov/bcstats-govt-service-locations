@@ -38,6 +38,12 @@ csd_boundaries <- census_subdivision() %>%
   clean_names() %>%
   st_transform(crs = 3005)  # Ensure consistent CRS
 
+# CSD level shapefiles for each locality
+csd_shapefile <- 
+  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) %>%
+  mutate(across(c(csd_name), as.character),
+         across(c(landarea), as.numeric))
+
 # Get centroids for labels
 csd_centroids <- st_centroid(csd_shapefile) 
 csd_centroids_nudged <- csd_centroids |> 
@@ -49,6 +55,9 @@ csd_centroids_nudged <- csd_centroids |>
       )
   ) %>%
   st_set_crs(st_crs(csd_centroids))
+
+csd_centroids_nudged <- csd_centroids_nudged |>
+  filter(csd_name %in% CSD_NAMES)
 
 # Load Service BC locations
 message("Loading Service BC locations...")
