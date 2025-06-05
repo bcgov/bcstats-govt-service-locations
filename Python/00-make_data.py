@@ -26,14 +26,13 @@ import pandas as pd
 import re
 import modules.safepaths as sp
 # from Python.modules.safepaths import * # use this at command prompt
-from dotenv import load_dotenv
-load_dotenv()
+
 
 #------------------------------------------------------------------------------
 # define input and output paths.  assume network path is set
 #------------------------------------------------------------------------------
 # set_network_path("<UNC>") # Check out why I need to set the path each time.
-data_folder = use_network_path()
+data_folder = sp.use_network_path()
 data_path = os.path.join(data_folder, "data", "raw")
 out_folder = os.path.join(data_folder, "data", "source", "python-test")
 
@@ -73,8 +72,9 @@ print(f"Found data for {len(sorted_files)} localities: {list(unique_files.keys()
 #------------------------------------------------------------------------------
 
 # Consider adding validation for expected columns
-required_columns = ["tag", "site_albers_x", "site_albers_y", "dissemination_block_id", 
-                   "drv_time_sec", "drv_dist"]
+required_columns = ['FID', 'SITE_ALBERS_X', 'SITE_ALBERS_Y', 'DISSEMINATION_BLOCK_ID',
+       'nearest_facility', 'coord_x', 'coord_y', 'drv_time_sec',
+       'drv_time_hrs', 'drv_dist', 'tag']
 
 file_path = sorted_files[0][0]
 new_da_servicebc_df = pd.read_csv(file_path, dtype=str)
@@ -110,6 +110,8 @@ address_sf_with_da = (
         address_albers_y=lambda df: pd.to_numeric(df["address_albers_y"], errors="coerce"),
     )
 )
+
+
 
 # Check if we have data after filtering
 if address_sf_with_da.empty:

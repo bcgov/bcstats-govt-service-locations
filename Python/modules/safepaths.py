@@ -17,6 +17,8 @@
 # for use for data analytics. 
 
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 def use_network_path(*args):
   """
