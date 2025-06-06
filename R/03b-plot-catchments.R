@@ -52,18 +52,6 @@ csd_shapefile <-
   mutate(across(c(csd_name), as.character),
          across(c(landarea), as.numeric))
 
-# Get centroids for labels
-csd_centroids <- st_centroid(csd_shapefile) 
-csd_centroids_nudged <- csd_centroids |> 
-  mutate(
-      geom = case_when(
-        csd_name == 'Dawson Creek' ~ geom + c(-150000, 40000),
-        csd_name == 'Langford' ~ geom + c(130000, 10000), # move east for langford
-        TRUE ~ geom + c(0, 70000)  # move label north to not overlap 
-      )
-  ) %>%
-  st_set_crs(st_crs(csd_centroids))
-
 # Locations of all Service BC locations 
 sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")) |>
   st_as_sf(
@@ -85,6 +73,18 @@ complete_assignments <- read_csv(
       c(dbid, assigned, assignment_method), 
       as.character)
       )
+
+# Get centroids for labels
+csd_centroids <- st_centroid(csd_shapefile) 
+csd_centroids_nudged <- csd_centroids |> 
+  mutate(
+      geom = case_when(
+        csd_name == 'Dawson Creek' ~ geom + c(-150000, 45000),
+        csd_name == 'Langford' ~ geom + c(130000, 10000), # move east for langford
+        TRUE ~ geom + c(0, 70000)  # move label north to not overlap 
+      )
+  ) %>%
+  st_set_crs(st_crs(csd_centroids))
 
 # Filter to relevant datasets for the maps
 csds <- csd_shapefile |>
@@ -149,7 +149,6 @@ pilot_map <- ggplot() +
     axis.ticks = element_blank(),  # Remove axis ticks
     panel.grid = element_blank()   # Remove background grid lines
   )
-
 
 pilot_map
 
