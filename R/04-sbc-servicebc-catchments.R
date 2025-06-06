@@ -104,7 +104,7 @@ map_plot <- ggplot() +  # Add BC outline as base layer
   geom_sf_text(
     data = csd_centroids_nudged,
     aes(label = csd_name), 
-    size = 4, 
+    size = 5, 
     fontface = 'bold'
   ) +
   labs(
@@ -146,4 +146,3 @@ ggsave(
   height = 8,
   dpi = 300
 )
-

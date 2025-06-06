@@ -99,16 +99,17 @@ FACILITY_TAG <- "servicebc"
 MAP_THEME <- theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
-    plot.title = element_text(size = 20, face = "bold"),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
     plot.subtitle = element_text(size = 18),
-    legend.title = element_text(size = 14, face = "bold"),
-    legend.text = element_text(size = 13),
-    axis.text.y = element_text(size = 11),
+    legend.title = element_text(size = 13, face = "bold"),
+    legend.text = element_text(size = 12),
+    axis.text = element_text(size = 11),
     axis.title = element_text(size = 15),
-    axis.text.x = element_text(size = 11),
     legend.position = "bottom",
     legend.box = "horizontal",
     legend.title.position = "top")
+
+    
 
   
 BOX_PLOT_THEME <- theme_minimal() +
@@ -118,8 +119,8 @@ BOX_PLOT_THEME <- theme_minimal() +
     plot.subtitle = element_text(size = 18),
     legend.title = element_text(size = 14, face = "bold"),
     legend.text = element_text(size = 13),
-    axis.text = element_text(size = 15),
-    axis.title = element_text(size = 15),
+    axis.text = element_text(size = 18),
+    axis.title = element_text(size = 18),
     legend.position = "none",
     legend.box = "horizontal",
     legend.title.position = "top",

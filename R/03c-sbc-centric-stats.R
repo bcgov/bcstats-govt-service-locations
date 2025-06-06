@@ -464,7 +464,7 @@ box_plot <- build_boxplot(
   plot_title = 'Distribution of Driving Distances',
   plot_subtitle = 'Comparison across Service BC Catchments',
   x_title = 'Service BC Location',
-  y_title = 'Driving Distance (km)',
+  y_title = 'Driving Distance (km)\n\n',
   plot_theme = BOX_PLOT_THEME,
   fill_scale = FILL_THEME_D
 )
@@ -473,10 +473,10 @@ box_plot
 ggsave(
     filename = glue("{plot_folder}/drive_distance_box_plot.png"),
     plot = box_plot,
-    width = 12,
+    width = 15,
     height = 8,
     dpi = 300
-  )
+)
 
 # step 2: map of all closest DBs/average drive distances
 map_data <- drivetime_data_reduced |>

@@ -117,7 +117,7 @@ drivetime_data <- drivetime_data %>%
 # -----------------------------------------------------------------------------------------------------
 
 # --- User-defined settings for plots ---
-plotvar <- "drv_dist" 
+plotvar <- "drv_dist"
 map_title <- "Spatial Distribution of Drive Distances"
 fill_label <- "Drive Distance (km)"
 common_scale <- FALSE    # Whether to use a common scale for all maps
@@ -239,7 +239,7 @@ for (csd_name in unique(pilot_csds$csd_name)) {
     # set label of gradient 
     scale_fill_viridis_c(option = "mako", alpha = 0.6, name = fill_label) +
     # change the fill scale after applying the gradient 
-    new_scale_fill() +
+    ggnewscale::new_scale_fill() +
     # Areas with no drive data (red shading)
     geom_sf(data = no_drive_data_dbs, aes(fill = "No Drive Data Available"), color = NA, alpha = 0.5) +
     scale_fill_manual(
@@ -259,13 +259,17 @@ for (csd_name in unique(pilot_csds$csd_name)) {
     scale_shape_manual(
       name = NULL,
       values = c("Service BC Location" = 23) 
-    ) +    MAP_THEME +
+    ) +    
+    MAP_THEME +
     labs(
       title = map_title,
       subtitle = glue("Catchment for {facility_id}.\nAssociated pilot region {csd_name} outlined in black."),
       fill = fill_label,
       x = element_blank(), # "\nLongitude",
       y = element_blank() # "Latitude\n"
+    ) +
+    theme(
+      plot.title.position = "plot"
     ) +
     guides(
       shape = guide_legend(
@@ -274,15 +278,14 @@ for (csd_name in unique(pilot_csds$csd_name)) {
           size = 4)
       )    )
   
-  map_plot
-  
   # Save the plot
+  # For Kamloops and Dawson Creek set width = 18, height = 12
   fn <- to_snake_case(glue("catchment-{plotvar}-commonscale={common_scale}-{csd_name}-{facility_id}"))
   ggsave(
     filename = glue("{fn}.png"),
     path = output_path,
     plot = map_plot,
-    width = 8,
+    width = 12,
     height = 7,
     device = "png"
   )

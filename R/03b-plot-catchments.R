@@ -79,8 +79,8 @@ csd_centroids <- st_centroid(csd_shapefile)
 csd_centroids_nudged <- csd_centroids |> 
   mutate(
       geom = case_when(
-        csd_name == 'Dawson Creek' ~ geom + c(-150000, 45000),
-        csd_name == 'Langford' ~ geom + c(130000, 10000), # move east for langford
+        csd_name == 'Dawson Creek' ~ geom + c(-170000, 50000),
+        csd_name == 'Langford' ~ geom + c(140000, 15000), # move east for langford
         TRUE ~ geom + c(0, 70000)  # move label north to not overlap 
       )
   ) %>%
