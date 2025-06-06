@@ -84,15 +84,17 @@ box_plot <- build_boxplot(
   plot_title = plot_title,
   plot_subtitle = plot_subtitle,
   x_title = x_title,
-  y_title = y_title,
+  y_title = glue("{y_title} \n\n"),
   plot_theme = BOX_PLOT_THEME,
   fill_scale = FILL_THEME_D
 )
 
+box_plot
+
 # Save the plot
 ggsave(
   filename = glue("{output_dir}/{outfile}.png"),
-    plot = box_plot,
+  plot = box_plot,
   width = 12,
   height = 8,
   device = "png"
