@@ -72,6 +72,7 @@ x_title <- "CSD"
 plot_title <- glue("Distribution of {y_title} to Nearest Service BC Office")
 plot_subtitle <- glue("Comparison across CSDs")
 
+
 # --- Box Plot (Distribution by region) ---
 message("Generating Box Plot...")
 
@@ -90,7 +91,6 @@ box_plot <- build_boxplot(
 )
 
 box_plot
-
 # Save the plot
 ggsave(
   filename = glue("{output_dir}/{outfile}.png"),

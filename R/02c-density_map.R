@@ -194,12 +194,12 @@ for (id in servicebc %>% pull(csdid)) {
           size = 4)
       )
     )
-map_plot 
+
+  map_plot 
 
   # Save the plot
   fn <- to_snake_case(glue("drv-dist-smoothed-commonscale={common_scale}-{csd}"))
-
-  # run Smithers separately with parameters width=18, height=12
+  
   ggsave(
     filename = glue("{fn}.png"),
     path = output_path,
