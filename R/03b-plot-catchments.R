@@ -52,18 +52,6 @@ csd_shapefile <-
   mutate(across(c(csd_name), as.character),
          across(c(landarea), as.numeric))
 
-# Get centroids for labels
-csd_centroids <- st_centroid(csd_shapefile) 
-csd_centroids_nudged <- csd_centroids |> 
-  mutate(
-      geom = case_when(
-        csd_name == 'Dawson Creek' ~ geom + c(-150000, 40000),
-        csd_name == 'Langford' ~ geom + c(130000, 10000), # move east for langford
-        TRUE ~ geom + c(0, 70000)  # move label north to not overlap 
-      )
-  ) %>%
-  st_set_crs(st_crs(csd_centroids))
-
 # Locations of all Service BC locations 
 sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")) |>
   st_as_sf(
@@ -85,6 +73,18 @@ complete_assignments <- read_csv(
       c(dbid, assigned, assignment_method), 
       as.character)
       )
+
+# Get centroids for labels
+csd_centroids <- st_centroid(csd_shapefile) 
+csd_centroids_nudged <- csd_centroids |> 
+  mutate(
+      geom = case_when(
+        csd_name == 'Dawson Creek' ~ geom + c(-170000, 50000),
+        csd_name == 'Langford' ~ geom + c(140000, 15000), # move east for langford
+        TRUE ~ geom + c(0, 70000)  # move label north to not overlap 
+      )
+  ) %>%
+  st_set_crs(st_crs(csd_centroids))
 
 # Filter to relevant datasets for the maps
 csds <- csd_shapefile |>
@@ -129,7 +129,7 @@ pilot_map <- ggplot() +
   geom_sf_text(
     data = csd_centroids_nudged,
     aes(label = csd_name), 
-    size = 4, 
+    size = 5, 
     fontface = 'bold'
   ) +
   scale_fill_brewer(
@@ -138,12 +138,16 @@ pilot_map <- ggplot() +
   ) +
   coord_sf(expand = FALSE) + # remove whitespace
   labs(
-    title = 'Pilot Regions'
+    title = 'Pilot Regions\n'
   ) +
   MAP_THEME +
   theme(
-    legend.position = "none",
-    axis.title = element_blank()
+    legend.position = "None",  
+    plot.title = element_text(size = 20, face = "bold"),
+    axis.title = element_blank(),  # Remove axis titles
+    axis.text = element_blank(),   # Remove axis text
+    axis.ticks = element_blank(),  # Remove axis ticks
+    panel.grid = element_blank()   # Remove background grid lines
   )
 
 pilot_map
@@ -298,11 +302,11 @@ complete_map <- ggplot() +
   ) +
   # CSDs of interest as outlined areas
   geom_sf(
-    data = csds, 
+    data = csd_shapefile, 
     fill = NA, 
-    color = 'black',
-    linewidth = 1.2,
-    alpha = 0.9
+    color = "darkgrey", 
+    size = 0.2, 
+    alpha = 0.5
   ) +
   # Service BC locations
   geom_sf(
@@ -323,7 +327,7 @@ complete_map <- ggplot() +
   scale_fill_viridis_d(
     option = "turbo",
     name = 'Service BC Facility',
-    na.value = "darkgray"
+    na.value = NA#"whitesmoke"
   ) +
   # Alpha for assignment method
   scale_alpha_manual(
@@ -333,21 +337,25 @@ complete_map <- ggplot() +
   ) +
   coord_sf(expand = FALSE) + # remove whitespace
   labs(
-    title = 'Service BC Facility Complete Catchment Areas',
-    subtitle = 'All areas assigned to nearest facility\nLighter areas show new assignments based on proximity to facilities'
+    title = "Service BC Catchment Areas: Address Method",
+    subtitle = "With CSD Boundaries and Service BC Office Locations"
   ) +
   MAP_THEME +
-  theme(legend.position = "none")  # Remove legends
-
+  theme(
+    legend.position = "None",  
+    axis.title = element_blank(),  # Remove axis titles
+    axis.text = element_blank(),   # Remove axis text
+    axis.ticks = element_blank(),  # Remove axis ticks
+    panel.grid = element_blank()   # Remove background grid lines
+  )
 complete_map
-
 # Save the complete catchments map
 ggsave(
   filename = glue("pilot_complete_catchments.png"),
   path = maps_folder,
   plot = complete_map,
-  width = 12,
-  height = 10,
+  width = 10,
+  height = 8,
   dpi = 300
 )
 

@@ -65,12 +65,13 @@ plot_data <- db_stats_raw %>%
 y_var <- "drv_dist_mean"  # colnames(plot_data) for other options
 x_var <- "municipality"
 
-y_title <- "Mean Driving Distance"
+y_title <- "Mean Driving Distance (km)"
 y_unit <- "km"
-x_title <- "Municipality"
+x_title <- "CSD"
 
 plot_title <- glue("Distribution of {y_title} to Nearest Service BC Office")
-plot_subtitle <- glue("Comparison across municipalities")
+plot_subtitle <- glue("Comparison across CSDs")
+
 
 # --- Box Plot (Distribution by region) ---
 message("Generating Box Plot...")
@@ -84,17 +85,18 @@ box_plot <- build_boxplot(
   plot_title = plot_title,
   plot_subtitle = plot_subtitle,
   x_title = x_title,
-  y_title = y_title,
+  y_title = glue("{y_title} \n\n"),
   plot_theme = BOX_PLOT_THEME,
   fill_scale = FILL_THEME_D
 )
 
+box_plot
 # Save the plot
 ggsave(
   filename = glue("{output_dir}/{outfile}.png"),
-    plot = box_plot,
-  width = 8,
-  height = 7,
+  plot = box_plot,
+  width = 12,
+  height = 8,
   device = "png"
 )
 

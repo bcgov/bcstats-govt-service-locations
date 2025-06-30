@@ -46,9 +46,11 @@ library(tidyverse)
 # Constants declaration
 #------------------------------------------------------------------------------
 CSD_NAMES <- c("Langford", "Dawson Creek", "Smithers", "Kamloops")
+CSDIDS <- c(5917044, 5955014, 5951043, 5933042)
 CENSUS_BASIS <- 2021
-CANCENSUS_YEAR <- paste0('CA', str_sub(as.character(CENSUS_BASIS),3,4))
+CANCENSUS_YEAR <- paste0('CA', str_sub(as.character(CENSUS_BASIS), 3, 4))
 CURRENT_YEAR <- 2025
+
 
 # File paths
 LAN_FOLDER <- use_network_path()
@@ -97,32 +99,48 @@ FACILITY_TAG <- "servicebc"
 MAP_THEME <- theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
-    plot.title = element_text(size = 14, face = "bold"),
-    plot.subtitle = element_text(size = 12),
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 9),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 9),
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.subtitle = element_text(size = 18),
+    legend.title = element_text(size = 13, face = "bold"),
+    legend.text = element_text(size = 12),
+    axis.text = element_text(size = 11),
+    axis.title = element_text(size = 15),
     legend.position = "bottom",
     legend.box = "horizontal",
     legend.title.position = "top")
 
+    
+
+  
 BOX_PLOT_THEME <- theme_minimal() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    plot.title = element_text(size = 20, face = "bold"),
+    plot.subtitle = element_text(size = 18),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 13),
+    axis.text = element_text(size = 18),
+    axis.title = element_text(size = 18),
+    legend.position = "none",
+    legend.box = "horizontal",
+    legend.title.position = "top",
+    axis.text.x = element_text(hjust = 0.5)
+  )
+
+  VIOLIN_PLOT_THEME <- theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
     plot.title = element_text(size = 14, face = "bold"),
     plot.subtitle = element_text(size = 12),
-    legend.title = element_text(size = 10, face = "bold"),
-    legend.text = element_text(size = 9),
-    axis.text = element_text(size = 8),
-    axis.title = element_text(size = 9),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 12),
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
     legend.position = "bottom",
     legend.box = "horizontal",
-    legend.title.position = "top", 
+    legend.title.position = "top",
     axis.text.x = element_text(angle = 30, hjust = 1)
   )
-
-VIOLIN_PLOT_THEME <- BOX_PLOT_THEME
 
 SCATTER_PLOT_THEME <- BOX_PLOT_THEME +
   theme(axis.text.x = element_text(angle = 0, hjust = 1))

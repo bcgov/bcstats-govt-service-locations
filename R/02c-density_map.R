@@ -106,11 +106,11 @@ if (nrow(shp_csd_all) == 0) {
 # -----------------------------------------------------------------------------------------------------
 
 # --- User-defined settings for plots ---
-plotvar <- "drv_dist"
+plotvar <- "drv_dist" 
 map_title <- "Spatial Distribution of Driving Distance"
-subtitle_pref <- "Estimated Driving Distance to Nearest Service BC Office"
+subtitle_pref <- "Estimated Drive Distance to Service BC"
 fill_label <- "Drive distance (km)"
-common_scale <- TRUE    # Whether to use a common scale for all maps
+common_scale <- FALSE    # Whether to use a common scale for all maps
 
 # --- Set limits prior to subsetting points if using common scale
 fill_theme <- FILL_THEME$clone()
@@ -179,12 +179,13 @@ for (id in servicebc %>% pull(csdid)) {
       values = c("Nearest Service BC Location" = 23) 
     ) +
     MAP_THEME +
+    theme(plot.title.position = "plot") +
     labs(
       title = map_title,
-      subtitle = glue("{subtitle_pref} - {csd} (Smoothed Data)"),
+      subtitle = glue("{subtitle_pref} - {csd}"),
       fill = fill_label,
-      x = "\nLongitude",
-      y = "Latitude\n"
+      x = element_blank(), # "\nLongitude",
+      y = element_blank() # "Latitude\n"
     )  +
     guides(
       shape = guide_legend(
@@ -194,15 +195,18 @@ for (id in servicebc %>% pull(csdid)) {
       )
     )
 
+  map_plot 
+
   # Save the plot
   fn <- to_snake_case(glue("drv-dist-smoothed-commonscale={common_scale}-{csd}"))
-
+  
   ggsave(
     filename = glue("{fn}.png"),
     path = output_path,
     plot = map_plot,
-    width = 8,
+    width = 12,
     height = 7,
+    scale = 1,
     device = "png"
   )
 

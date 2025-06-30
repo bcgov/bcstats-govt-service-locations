@@ -240,6 +240,14 @@ db_projections_transformed
 drivetime_data_full <- complete_assignments |> 
   left_join(drivetime_data, by = "dbid")
 
+drivetime_data %>% 
+    # fix the daid column to have no NAs
+    mutate(daid = str_sub(dbid, 1, 8)) %>% 
+    left_join(crosswalk, by = c("dbid", "daid"))  %>% 
+    filter(csd_name == 'Kamloops') %>% 
+    summarize(max = max(drv_dist, na.rm = TRUE),
+    max2 = quantile(drv_dist, probs = 1.00, na.rm = TRUE))
+
 drivetime_data_reduced <- drivetime_data_full %>% 
     # fix the daid column to have no NAs
     mutate(daid = str_sub(dbid, 1, 8)) %>% 
@@ -265,10 +273,18 @@ drive_measures <- drivetime_data_reduced |>
     n_addresses = n(),
     mean_drv_time = mean(drv_time_sec, na.rm = TRUE),
     sd_drv_time = sd(drv_time_sec, na.rm = TRUE),
+    var_drv_time = var(drv_time_sec, na.rm = TRUE),# or min(drv_time_sec, na.rm = TRUE)
+    qnt25_drv_time = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),  
+    qnt50_drv_time = quantile(drv_time_sec, probs = 0.50, na.rm = TRUE), # or median(drv_time_sec, na.rm = TRUE)
+    qnt75_drv_time = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),  
     min_drv_time = min(drv_time_sec, na.rm = TRUE),
     max_drv_time = max(drv_time_sec, na.rm = TRUE),
     mean_drv_dist = mean(drv_dist, na.rm = TRUE),
     sd_drv_dist = sd(drv_dist, na.rm = TRUE),
+    var_drv_dist = var(drv_dist, na.rm = TRUE),# or min(drv_time_sec, na.rm = TRUE)
+    qnt25_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),  
+    qnt50_drv_dist = quantile(drv_dist, probs = 0.50, na.rm = TRUE), # or median(drv_time_sec, na.rm = TRUE)
+    qnt75_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),  
     min_drv_dist = min(drv_dist, na.rm = TRUE),
     max_drv_dist = max(drv_dist, na.rm = TRUE)
   ) |>
@@ -304,7 +320,7 @@ pop_measures <- drivetime_data_reduced |>
   left_join(
     db_projections_transformed %>% 
     filter(gender=='T') %>% 
-    select(dbid, year, age, population, total), 
+    select(dbid, year, age, population, total, area_sq_km), 
     by = c("dbid", 'year')
     ) |> 
   filter(!is.na(csdid)) %>% 
@@ -317,6 +333,8 @@ pop_measures <- drivetime_data_reduced |>
     pct_from_drive_time = n_dbs_from_drive_time / n_dbs,
     n_csds = n_distinct(csdid),
     est_pop = sum(population, na.rm=TRUE),
+    # don't double count areas as there are multiple ages for each DB
+    est_area = sum(if_else(age==0, area_sq_km, 0), na.rm=TRUE),
     avg_age = weighted.mean(age, population, na.rm=TRUE),
     # because of mismatch in number of dbids between pop and shapefile
     # need to make sure that the age/population columns are populated here
@@ -341,7 +359,7 @@ pop_measures <- drivetime_data_reduced |>
     assigned, year,
     n_dbs, n_dbs_from_drive_time, n_dbs_from_spatial, pct_from_drive_time,
     n_csds, n_majority_csds, 
-    est_pop, avg_age, median_age
+    est_pop, est_area, avg_age, median_age
   )
 
 pop_measures
@@ -382,12 +400,18 @@ write_csv(
   glue("{TABLES_OUT}/service_bc_centered_population_metrics.csv")
 )
 
+# also save csd populations for reference
+write_csv(
+  pop_projections  %>% filter(region_name %in% CSD_NAMES)  %>% filter(year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)),
+  glue("{TABLES_OUT}/csd_populations.csv")
+)
+
 # plots ----
 # Create individual histograms for each facility 
 # Create a folder specifically for the histograms
-histogram_folder <- file.path(MAP_OUT, "sbc_drive_distance_histograms")
-if (!dir.exists(histogram_folder)) {
-  dir.create(histogram_folder, recursive = TRUE)
+plot_folder <- file.path(MAP_OUT, "sbc_drive_distance_plots")
+if (!dir.exists(plot_folder)) {
+  dir.create(plot_folder, recursive = TRUE)
 }
 
 # Create and save histograms for each facility
@@ -401,7 +425,7 @@ for (facility in facilities) {
   
   # Save the individual plot
   ggsave(
-    filename = glue("{histogram_folder}/{facility}_drive_distance.png"),
+    filename = glue("{plot_folder}/{facility}_drive_distance.png"),
     plot = p,
     width = 10,
     height = 6,
@@ -423,13 +447,36 @@ print(faceted_plot)
 
 # Save the faceted plot
 ggsave(
-  filename = glue("{histogram_folder}/all_facilities_drive_distance.png"),
+  filename = glue("{plot_folder}/all_facilities_drive_distance.png"),
   plot = faceted_plot,
   width = 16,
   height = 12,
   dpi = 300
 )
 
+# create a box plot for all facilities
+box_plot <- build_boxplot(
+  data = drivetime_data_reduced %>% 
+          group_by(dbid, assigned) %>% 
+          summarize(drv_dist = mean(drv_dist, na.rm = TRUE)),
+  x_var = 'assigned',
+  y_var = 'drv_dist',
+  plot_title = 'Distribution of Driving Distances',
+  plot_subtitle = 'Comparison across Service BC Catchments',
+  x_title = 'Service BC Location',
+  y_title = 'Driving Distance (km)\n\n',
+  plot_theme = BOX_PLOT_THEME,
+  fill_scale = FILL_THEME_D
+)
+
+box_plot
+ggsave(
+    filename = glue("{plot_folder}/drive_distance_box_plot.png"),
+    plot = box_plot,
+    width = 15,
+    height = 8,
+    dpi = 300
+)
 
 # step 2: map of all closest DBs/average drive distances
 map_data <- drivetime_data_reduced |>
