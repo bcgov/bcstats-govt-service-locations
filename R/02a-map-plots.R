@@ -25,30 +25,13 @@ source("R/settings.R")
 source("R/fxns/plots.R")
 
 #------------------------------------------------------------------------------
-# Read shape file data from source folder
+# Read required data files from source folder
 #------------------------------------------------------------------------------
 
-csd_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/reduced-csd-with-location.gpkg")) %>%
-  mutate(across(c(landarea), as.numeric))
-
-da_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/reduced-da-with-location.gpkg")) %>%
-  mutate(across(c(landarea), as.numeric))
-
+# db drivetime and shapefile data
 db_shapefile <-
   st_read(glue("{SHAPEFILE_OUT}/reduced-db-with-location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
-
-#------------------------------------------------------------------------------
-# Read drive time data from source folder
-#------------------------------------------------------------------------------
-
-da_drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced_da_average_times_dist_all_locs.csv")
-          , col_types = cols(.default = "c")) %>%
-  clean_names()  %>%
-  mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
 
 db_drivetime_data <-
   read_csv(glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv")
@@ -56,36 +39,16 @@ db_drivetime_data <-
   clean_names() %>%
   mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
 
-csd_drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced_csd_average_times_dist_all_locs.csv")
-          , col_types = cols(.default = "c"))  %>%
-  clean_names() %>%
-  mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
+db_drivetime_map_data <- db_shapefile %>%
+  inner_join(db_drivetime_data, by = join_by(dbid, csdid, csd_name))
 
-#------------------------------------------------------------------------------
-# Read service bc location data from source folder
-#------------------------------------------------------------------------------
-
+# service bc location data
 servicebc <-
   read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
            , col_types = cols(.default = "c")) %>%
   clean_names() %>%
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
 
-#------------------------------------------------------------------------------
-# Join shapefiles to data for mapping
-# Use left_join to color differently those da/db's missing data
-# remove DA's for for which we have only an extremely small number of addresses
-#------------------------------------------------------------------------------
-
-da_drivetime_map_data <- da_shapefile %>%
-  inner_join(da_drivetime_data, by = join_by(daid, csd_name))
-
-db_drivetime_map_data <- db_shapefile %>%
-  inner_join(db_drivetime_data, by = join_by(dbid, csdid, csd_name))
-
-csd_drivetime_map_data <- csd_shapefile %>%
-  inner_join(csd_drivetime_data, by = join_by(csdid, csd_name))
 
 #------------------------------------------------------------------------------
 # build map - this is where we provide options for build map function
@@ -94,17 +57,13 @@ csd_drivetime_map_data <- csd_shapefile %>%
 region <- "Dissemination Block"
 map_data  <- db_drivetime_map_data
 
-if(region == "Dissemination Area"){
-  map_data  <- da_drivetime_map_data
-}
-
 # user-defined map parameters
 var <- "drv_dist_mean"  # colnames(map_data) for other options
 var_title <- "Mean Driving Distance"
 unit <- "km"
 
 # filter on desired csd here
-for (csd in csd_drivetime_map_data %>% pull(csd_name)){
+for (csd in CSD_NAMES){
 
   plot_title <- glue("{var_title} to Nearest Service BC Office - {csd}")
 
