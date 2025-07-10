@@ -22,14 +22,6 @@ source("R/fxns/plots.R")
 # =========================================================================== #
 # Read required data
 # =============================================== #
-## drive time data from BCDS
-drivetime_data <-
-  read_csv(
-    glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"),
-    col_types = cols(.default = "c")
-  ) %>%
-  clean_names() %>%
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 ## SBC locations to include from source folder
 sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
@@ -57,14 +49,6 @@ pop_projections
 ## census populations
 pop_db <- read_csv(
   glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"),
-  col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
-  mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
-
-## census populations
-pop_csd <- read_csv(
-  glue("{SRC_DATA_FOLDER}/reduced-population-csd.csv"),
   col_types = cols(.default = "c")
 ) %>%
   clean_names() %>%
