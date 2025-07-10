@@ -75,7 +75,7 @@ CURRENT_YEAR <- 2025
 
 
 # File paths
-#LAN_FOLDER <- use_network_path()
+LAN_FOLDER <- use_network_path()
 SRC_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/source/")
 RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/")
 RAW_POP_FILEPATH <- glue("{RAW_DATA_FOLDER}/statscan/98100015-eng/98100015.csv")
