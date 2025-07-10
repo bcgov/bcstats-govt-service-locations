@@ -35,17 +35,9 @@
 #     for that facility's catchment area
 # ------------------------------------------------------------------------
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(sf)
-library(tigris)
-library(spatstat)
-library(stars)
-library(terra)
-library(fs)
-library(snakecase)
-library(ggnewscale)
+# =========================================================================== #
+# Load libraries and settings ----
+# =========================================================================== #
 
 source("R/settings.R")
 

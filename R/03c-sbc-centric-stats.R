@@ -34,11 +34,6 @@
 # =========================================================================== #
 # Load libraries and settings ----
 # =========================================================================== #
-library(tidyverse)
-library(glue)
-library(janitor)
-library(sf)
-library(bcdata)
 
 source("R/settings.R")
 source("R/fxns/plots.R")

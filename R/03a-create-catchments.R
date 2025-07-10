@@ -31,11 +31,6 @@
 #   - Saves assignment statistics to a CSV file in the TABLES_OUT folder
 # ------------------------------------------------------------------------
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(sf)
-
 source("R/settings.R")
 source("R/fxns/calculations.r")  
 

@@ -37,17 +37,9 @@
 #     Service BC office for a specific census subdivision
 # ------------------------------------------------------------------------
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(sf)
-library(tigris)
-library(spatstat)
-library(stars)
-library(bcmaps)
-library(terra)
-library(fs)
-library(snakecase)
+#------------------------------------------------------------------------------
+# Load Libraries and Settings
+#------------------------------------------------------------------------------
 
 source("R/settings.R")
 

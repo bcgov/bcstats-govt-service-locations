@@ -16,13 +16,9 @@
 # as well as our pilot CSDs with the Service BC CSD methodology based catchments. 
 
 
-# Load required libraries
-library(tidyverse)
-library(sf)
-library(bcmaps)
-library(glue)
-library(janitor)
-library(readxl)  # For read_excel function
+# =========================================================================== #
+# Load libraries and settings ----
+# =========================================================================== #
 
 # Source settings file to get necessary paths
 source("R/settings.R")

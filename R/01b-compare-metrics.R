@@ -16,12 +16,6 @@
 # Load req'd libraries and source constants and other settings
 #------------------------------------------------------------------------------
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(snakecase)
-library(ggplot2)
-
 source("R/settings.R")
 
 # Ensure output directory exists

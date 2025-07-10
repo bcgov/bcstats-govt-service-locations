@@ -17,14 +17,6 @@
 #------------------------------------------------------------------------------
 source("R/settings.R")
 
-library(tidyverse)
-library(glue)
-library(janitor)
-#library(e1071)
-library(sf)
-library(bcmaps)
-library(bcdata)
-
 #------------------------------------------------------------------------------
 # Pre-process drive time files for each locality and merge as a single file
 #------------------------------------------------------------------------------

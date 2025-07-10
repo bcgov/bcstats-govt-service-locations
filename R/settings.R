@@ -38,9 +38,31 @@
 getOption("timeout")
 options(timeout = 600)
 
+# common project libraries
 library(safepaths)
 library(glue)
 library(tidyverse)
+library(janitor)
+library(snakecase)
+library(ggplot2)
+library(scales)
+library(readxl)
+
+# for working with spatial vector data
+library(sf)
+library(bcdata)
+library(tigris)
+library(spatstat)
+library(stars)
+library(terra)
+library(fs)
+library(ggnewscale)
+library(bcmaps)
+
+# for statistical calculations
+library(e1071)
+
+
 
 #------------------------------------------------------------------------------
 # Constants declaration
@@ -53,7 +75,7 @@ CURRENT_YEAR <- 2025
 
 
 # File paths
-LAN_FOLDER <- use_network_path()
+#LAN_FOLDER <- use_network_path()
 SRC_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/source/")
 RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/")
 RAW_POP_FILEPATH <- glue("{RAW_DATA_FOLDER}/statscan/98100015-eng/98100015.csv")

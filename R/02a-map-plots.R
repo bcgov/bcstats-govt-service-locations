@@ -17,13 +17,9 @@
 # displaying quantitative information on basic descriptive statisics
 
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(sf)
-#library(svglite)
-#library(scales)
-library(snakecase)
+#------------------------------------------------------------------------------
+# Load Libraries and Settings
+#------------------------------------------------------------------------------
 
 source("R/settings.R")
 source("R/fxns/plots.R")
