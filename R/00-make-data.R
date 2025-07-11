@@ -64,7 +64,6 @@ corresp <- db_shapefiles |>
   # get csd names from csd shapefile
   left_join(csd_shapefiles |> st_drop_geometry() |> select(-landarea), by = "csdid")
 
-
 # Data checks - some db's are outside our csd's of interest.
 # Let's leave them in for now and come back to this later after looking at them on a map.
 # contains all DB's in our data
@@ -78,7 +77,6 @@ crosswalk <-
 extras <- processed_files %>%
   inner_join(crosswalk) %>% 
   filter(!csd_name %in% CSD_NAMES)
-
 
 #------------------------------------------------------------------------------
 # Make population data
