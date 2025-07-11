@@ -62,8 +62,6 @@ library(bcmaps)
 # for statistical calculations
 library(e1071)
 
-
-
 #------------------------------------------------------------------------------
 # Constants declaration
 #------------------------------------------------------------------------------
@@ -91,7 +89,6 @@ SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
 #OUTPUT_DB_STATS_FILENAME  <- "db_average_times_dist_all_locs.csv"
 #OUTPUT_DA_STATS_FILENAME  <- "da_average_times_dist_all_locs.csv"
 #OUTPUT_LOC_STATS_FILENAME <- "loc_average_times_dist_all_locs.csv"
-
 
 SHAPEFILE_OUT <- glue("{SRC_DATA_FOLDER}/shapefiles/")
 MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
@@ -131,9 +128,7 @@ MAP_THEME <- theme_minimal() +
     legend.box = "horizontal",
     legend.title.position = "top")
 
-    
 
-  
 BOX_PLOT_THEME <- theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
@@ -170,4 +165,3 @@ SCATTER_PLOT_THEME <- BOX_PLOT_THEME +
 FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.6, na.value = "red") # add limits = c(0, NA) to start scaling at 0.
 FILL_THEME_D <- scale_fill_viridis_d(option = "mako", alpha = 0.6)
 COLOR_THEME_D <- scale_color_viridis_d(option = "mako", alpha = 0.6)
-
