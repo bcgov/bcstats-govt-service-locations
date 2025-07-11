@@ -218,7 +218,7 @@ if (length(regions) > 0) {
 }
 
 # Create a folder for drive distance maps
-pyramid_folder <- file.path(MAP_OUT, "reduced-csd_population_pyramids")
+pyramid_folder <- file.path(MAP_OUT, "csd_population_pyramids")
 if (!dir.exists(pyramid_folder)) {
   dir.create(pyramid_folder, recursive = TRUE)
 }
