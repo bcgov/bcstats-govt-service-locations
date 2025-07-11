@@ -21,7 +21,7 @@ source("R/settings.R")
 #------------------------------------------------------------------------------
 # read drive time files for the full data
 #------------------------------------------------------------------------------
-
+fn <- glue::glue("{DT_DATA_FOLDER}/final_result_no_errors.csv")
 full_processed_files <- read_csv(fn, col_types = cols(.default = "c")) %>%
     clean_names() %>%
     filter(tag == tag) %>%
@@ -68,13 +68,13 @@ corresp <- db_shapefiles |>
 # Let's leave them in for now and come back to this later after looking at them on a map.
 # contains all DB's in our data
 crosswalk <-
-  processed_files %>%
+  full_processed_files %>%
   distinct(daid, dbid) %>%
   left_join(corresp, by = join_by(daid, dbid))
 
 # check these addresses out later, esp. bulkley-nechako as this region contains a small
 # cluster of homes near Smithers, I believe.
-extras <- processed_files %>%
+extras <- full_processed_files %>%
   inner_join(crosswalk) %>% 
   filter(!csd_name %in% CSD_NAMES)
 
@@ -112,7 +112,7 @@ pop_csd <- cancensus::get_census(
 # Service BC location data
 #------------------------------------------------------------------------------
 
-service_bc_locations <- processed_files %>% 
+service_bc_locations <- full_processed_files %>% 
   left_join(crosswalk, by = join_by(dbid, daid)) %>%
   distinct(csd_name, csdid, nearest_facility, coord_x, coord_y)
 
