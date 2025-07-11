@@ -507,3 +507,6 @@ ggsave(
   height = 10,
   dpi = 300
 )
+
+rm(list=ls())
+gc()

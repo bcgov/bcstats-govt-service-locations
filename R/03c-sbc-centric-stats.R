@@ -91,7 +91,7 @@ pop_projections
 ## census populations ----
 ## from statscan
 pop_db <- read_csv(
-  glue("{SRC_DATA_FOLDER}/population-db.csv"),
+  glue("{SRC_DATA_FOLDER}/full-population-db.csv"),
   col_types = cols(.default = "c")
 ) %>%
   clean_names() %>%
@@ -609,3 +609,6 @@ if (length(facilities) > 1) {
 }
 
 combined_pyramids
+
+rm(list=ls())
+gc()

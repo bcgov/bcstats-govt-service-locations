@@ -83,7 +83,7 @@ DT_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/
 #CORRESP_FILEPATH <- glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv")
 #DA_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/lda_000b21a_e/lda_000b21a_e.shp")
 #DB_SHAPE_FILEPATH <-  glue("{RAW_DATA_FOLDER}/statscan/ldb_000b21a_e/ldb_000b21a_e.shp")
-SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
+SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")
 
 # Output filenames
 #OUTPUT_DB_STATS_FILENAME  <- "db_average_times_dist_all_locs.csv"
