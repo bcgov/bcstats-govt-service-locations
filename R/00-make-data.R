@@ -19,32 +19,16 @@
 source("R/settings.R")
 
 #------------------------------------------------------------------------------
-# Pre-process drive time files for each locality and merge as a single file
+# read drive time files for the full data
 #------------------------------------------------------------------------------
 
-preprocess_locs <- function(fn, loc, tag = 'servicebc') {
-
-  read_csv(fn, col_types = cols(.default = "c")) %>%
+full_processed_files <- read_csv(fn, col_types = cols(.default = "c")) %>%
     clean_names() %>%
     filter(tag == tag) %>%
     rename(address_albers_x = site_albers_x,
            address_albers_y = site_albers_y,
            dbid = dissemination_block_id) %>%
     mutate(daid = str_sub(dbid, 1, 8))
-}
-
-file_paths <- file.info(list.files(DT_DATA_FOLDER,
-                                   full.names = TRUE,
-                                   pattern = NO_ERRS_FILE_PATTERN,
-                                   recursive = TRUE)) %>%
-  rownames_to_column("fn") %>%
-  select(fn)
-
-
-processed_files <- purrr::map_dfr(
-  .x = file_paths$fn,
-  .f = preprocess_locs
-)
 
 #------------------------------------------------------------------------------
 # Make shapefiles for da-db-loc-csd
@@ -57,10 +41,6 @@ csd_shapefiles <- census_subdivision() %>%
     csd_name = census_subdivision_name,
     csd_desc = census_subdivision_type_desc,
     landarea = feature_area_sqm, geometry)
-
-da_shapefiles <- census_dissemination_area() %>%
-  clean_names() %>%
-  select(daid = dissemination_area_id, landarea = feature_area_sqm, geometry)
 
 # the metadata says 2016, but the data itself says its from census 2021, so use as crosswalk basis
 db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
@@ -143,13 +123,10 @@ service_bc_locations <- processed_files %>%
 # Write output files
 #------------------------------------------------------------------------------
 write_csv(service_bc_locations, glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv"))
-write_csv(processed_files, glue("{SRC_DATA_FOLDER}/full-drivetime-data.csv"))
+write_csv(full_processed_files, glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"))
 
 write_csv(corresp, glue("{SRC_DATA_FOLDER}/full-csd-da-db-loc-correspondance.csv"))
 write_csv(crosswalk, glue("{SRC_DATA_FOLDER}/full-csd-da-db-loc-crosswalk.csv"))
-
-write_csv(pop_da, glue("{SRC_DATA_FOLDER}/full-population-da.csv"))
-write_csv(pop_da %>% filter(csd_name %in% CSD_NAMES), glue("{SRC_DATA_FOLDER}/reduced-population-da.csv"))
 
 write_csv(pop_db, glue("{SRC_DATA_FOLDER}/full-population-db.csv"))
 write_csv(pop_db %>% filter(csd_name %in% CSD_NAMES), glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"))
@@ -157,7 +134,6 @@ write_csv(pop_db %>% filter(csd_name %in% CSD_NAMES), glue("{SRC_DATA_FOLDER}/re
 write_csv(pop_csd, glue("{SRC_DATA_FOLDER}/full-population-csd.csv"))
 write_csv(pop_csd %>% filter(csd_name %in% CSD_NAMES), glue("{SRC_DATA_FOLDER}/reduced-population-csd.csv"))
 
-st_write(da_shapefiles, glue("{SHAPEFILE_OUT}/full-da_with_location.gpkg"), append = FALSE) 
 st_write(db_shapefiles, glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg"), append = FALSE)
 st_write(csd_shapefiles, glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg"), append = FALSE)
 
@@ -168,14 +144,10 @@ service_bc_locations %>%
   filter(csd_name %in% CSD_NAMES) %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"))
 
-processed_files %>% 
+full_processed_files %>% 
   left_join(crosswalk, by = join_by(dbid, daid)) %>%
   filter(csd_name %in% CSD_NAMES) %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"))
-
-da_shapefiles %>%
-  inner_join(corresp %>% filter(csdid %in% CSDIDS)) %>%
-  st_write(glue("{SHAPEFILE_OUT}/reduced-da-with-location.gpkg"), append = FALSE)
 
 db_shapefiles %>%
   inner_join(corresp  %>% filter(csdid %in% CSDIDS)) %>%
@@ -191,10 +163,6 @@ pop_csd %>%
   select(-csd_name.x) %>%
   rename(csd_name = csd_name.y) %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-population-csd.csv"))
-
-pop_da %>%
-  filter(csdid %in% CSDIDS) %>%
-  write_csv(glue("{SRC_DATA_FOLDER}/reduced-population-da.csv"))
 
 pop_db %>%
   inner_join(crosswalk, by = join_by(dbid)) %>%
