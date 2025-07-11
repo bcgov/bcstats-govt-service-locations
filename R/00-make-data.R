@@ -127,10 +127,7 @@ write_csv(full_processed_files, glue("{SRC_DATA_FOLDER}/full-processed-drivetime
 write_csv(corresp, glue("{SRC_DATA_FOLDER}/full-csd-da-db-loc-correspondance.csv"))
 
 write_csv(pop_db, glue("{SRC_DATA_FOLDER}/full-population-db.csv"))
-write_csv(pop_db %>% filter(csd_name %in% CSD_NAMES), glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"))
-
 write_csv(pop_csd, glue("{SRC_DATA_FOLDER}/full-population-csd.csv"))
-write_csv(pop_csd %>% filter(csd_name %in% CSD_NAMES), glue("{SRC_DATA_FOLDER}/reduced-population-csd.csv"))
 
 st_write(db_shapefiles, glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg"), append = FALSE)
 st_write(csd_shapefiles, glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg"), append = FALSE)
@@ -155,11 +152,12 @@ csd_shapefiles %>%
   filter(csdid %in% CSDIDS) %>%
   st_write(glue("{SHAPEFILE_OUT}/reduced-csd-with-location.gpkg"), append = FALSE)
 
-pop_csd %>%
-  inner_join(crosswalk %>% distinct(csdid, csd_name), by = join_by(csdid)) %>%
-  filter(csdid %in% CSDIDS) %>%
-  select(-csd_name.x) %>%
-  rename(csd_name = csd_name.y) %>%
+pop_csd %>% 
+  inner_join(
+    crosswalk %>% 
+    distinct(csdid) %>% 
+    filter(csdid %in% CSDIDS)
+  , by = join_by(csdid)) %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-population-csd.csv"))
 
 pop_db %>%
