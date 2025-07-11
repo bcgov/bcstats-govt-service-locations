@@ -23,10 +23,6 @@ source("R/fxns/calculations.R")
 # Read data from source folder
 #------------------------------------------------------------------------------
 
-crosswalk <-
-  read_csv(glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"), col_types = cols(.default = "c")) %>%
-  clean_names()
-
 drivetime_data <-
   read_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%

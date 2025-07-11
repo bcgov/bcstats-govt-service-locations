@@ -54,30 +54,29 @@ db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
   )
 
 #------------------------------------------------------------------------------
-# Make a crosswalk for da-db-loc-csd
+# Make a correspondance file for da-db-loc-csd
 #------------------------------------------------------------------------------
 # corresp data frame contains all DB's in BC
-# remove geometry column for crosswalk
+# don't need the geometry column
 corresp <- db_shapefiles |>
   st_drop_geometry() |>
   select(-landarea) |>
   # get csd names from csd shapefile
   left_join(csd_shapefiles |> st_drop_geometry() |> select(-landarea), by = "csdid")
 
+
+# Data checks - some db's are outside our csd's of interest.
+# Let's leave them in for now and come back to this later after looking at them on a map.
 # contains all DB's in our data
 crosswalk <-
   processed_files %>%
   distinct(daid, dbid) %>%
   left_join(corresp, by = join_by(daid, dbid))
 
-# Data checks - some db's outside our csd's of interest.
-# Let's leave them in for now and come back to this later after looking at them on a map.
-crosswalk %>% count(csd_name, csdid)
-
 # check these addresses out later, esp. bulkley-nechako as this region contains a small
 # cluster of homes near Smithers, I believe.
 extras <- processed_files %>%
-  inner_join(crosswalk) %>%
+  inner_join(crosswalk) %>% 
   filter(!csd_name %in% CSD_NAMES)
 
 
@@ -126,7 +125,6 @@ write_csv(service_bc_locations, glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv
 write_csv(full_processed_files, glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"))
 
 write_csv(corresp, glue("{SRC_DATA_FOLDER}/full-csd-da-db-loc-correspondance.csv"))
-write_csv(crosswalk, glue("{SRC_DATA_FOLDER}/full-csd-da-db-loc-crosswalk.csv"))
 
 write_csv(pop_db, glue("{SRC_DATA_FOLDER}/full-population-db.csv"))
 write_csv(pop_db %>% filter(csd_name %in% CSD_NAMES), glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"))
