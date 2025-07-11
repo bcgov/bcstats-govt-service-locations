@@ -81,15 +81,6 @@ extras <- full_processed_files %>%
 #------------------------------------------------------------------------------
 # Make population data
 #------------------------------------------------------------------------------
-pop_da <- cancensus::get_census(
-    dataset = CANCENSUS_YEAR,
-    regions = list(PR = "59"), # grab only BC
-    level = 'DA'
-  ) %>%
-  clean_names() %>%
-  select(c(all_of(POP_COLS), geo_uid)) %>%
-  rename(daid = geo_uid)
-
 pop_db <- cancensus::get_census(
     dataset = CANCENSUS_YEAR,
     regions = list(PR = "59"), # grab only BC
