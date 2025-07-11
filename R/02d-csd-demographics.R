@@ -179,7 +179,7 @@ summary_stats <- db_projections_transformed |>
       est_population = sum(population, na.rm = TRUE),
       median_age = median(rep(age, population)))
 
-write_csv(summary_stats, glue("{TABLES_OUT}/csd_population_metrics.csv"))
+write_csv(summary_stats, glue("{TABLES_OUT}/reduced-csd_population_metrics.csv"))
 
 # =========================================================================== #
 # Population Pyramid Creation ----
@@ -218,7 +218,7 @@ if (length(regions) > 0) {
 }
 
 # Create a folder for drive distance maps
-pyramid_folder <- file.path(MAP_OUT, "csd_population_pyramids")
+pyramid_folder <- file.path(MAP_OUT, "reduced-csd_population_pyramids")
 if (!dir.exists(pyramid_folder)) {
   dir.create(pyramid_folder, recursive = TRUE)
 }
@@ -234,10 +234,10 @@ for (csd in regions) {
 }
 
 # Create a combined view with multiple pyramids
-# Take up to 4 facilities for a nice grid layout
+# Take up to 4 regions for a nice grid layout
 if (length(regions) > 1) {
   combined_pyramids <- cowplot::plot_grid(
-    plotlist = population_pyramids[seq_len(min(4, length(facilities)))],
+    plotlist = population_pyramids[seq_len(min(4, length(regions)))],
     ncol = 2
   )
   
@@ -253,3 +253,6 @@ if (length(regions) > 1) {
 
 
 combined_pyramids
+
+rm(list = ls())
+gc()
