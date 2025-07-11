@@ -28,11 +28,11 @@ drivetime_data <-
   clean_names() %>%
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
-pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
+pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
-pop_csd <- read_csv(glue("{SRC_DATA_FOLDER}/population-csd.csv"), col_types = cols(.default = "c")) %>%
+pop_csd <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-population-csd.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric)) |> 
   select(-csd_name) # this CSD name doesn't match, so join on ids
@@ -43,8 +43,10 @@ pop_csd <- read_csv(glue("{SRC_DATA_FOLDER}/population-csd.csv"), col_types = co
 drivetime_stats_db <- calculate_drivetime_stats(drivetime_data, group_cols = c("csd_name", "csdid", "dbid"))
 drivetime_stats_csd <- calculate_drivetime_stats(drivetime_data, group_cols = c("csd_name", "csdid"))
 
+# FLAG TODO: in the case of reduced data, we can use the same csd name.  Double check this
+# as csd name from cansensus may not match the csd name in the drivetime data
 drivetime_stats_db <- drivetime_stats_db %>%
-  left_join(pop_db, by = c("dbid"))
+  left_join(pop_db, by = c("dbid", "csdid", "csd_name"))
 
 drivetime_stats_csd <- drivetime_stats_csd %>%
   left_join(pop_csd, by = c("csdid"))
@@ -69,21 +71,24 @@ low_counts <- drivetime_stats_db %>%
 
 # calculate the number of service BC locations in each CSD
 servicebc_counts <- drivetime_data %>%
-  distinct(csd_name, csdid, nearest_facility, coord_x, coord_y) %>% # keep the coords to gaurd against multiple locations per label
-  group_by(csd_name, csdid, nearest_facility, coord_x, coord_y) %>% 
+  distinct(csd_name, csdid, nearest_facility, coord_x, coord_y) %>% # keep the coords to guard against multiple locations per label
+  group_by(csd_name, csdid, nearest_facility, coord_x, coord_y) %>%
   summarise(n_service_bc = n()) %>%
   ungroup() %>%
   select(-c(coord_x, coord_y))
 
 drivetime_stats_csd  <- drivetime_stats_csd %>%
   left_join(low_counts, by = c("csd_name", "csdid")) %>%
-  left_join(servicebc_counts, by = c("csd_name", "csdid")) 
+  left_join(servicebc_counts, by = c("csd_name", "csdid"))
 
 #------------------------------------------------------------------------------
 # Write descriptive tables to source folder
+# Notes: drivetime_stats_db contains descriptive results AND is input in future scripts
 #------------------------------------------------------------------------------
+
 write_csv(drivetime_stats_db, glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv"))
-write_csv(drivetime_stats_csd, glue("{SRC_DATA_FOLDER}/reduced_csd_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_db, glue("{TABLES_OUT}/reduced_db_average_times_dist_all_locs.csv"))
+write_csv(drivetime_stats_csd, glue("{TABLES_OUT}/reduced_csd_average_times_dist_all_locs.csv"))
 write_csv(low_counts, glue("{TABLES_OUT}/reduced_csd_low_counts.csv"))
 write_csv(servicebc_counts, glue("{TABLES_OUT}/reduced_csd_service_bc_counts.csv"))
 
