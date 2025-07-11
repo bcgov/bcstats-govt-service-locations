@@ -440,7 +440,7 @@ create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEA
     ) +
     labs(
       title = paste0("Population Pyramid for ", location_name),
-      subtitle = paste0("Population projections: ", min(years_ordered), " (filled), ", 
+      subtitle = paste0("Population projections: ", min(years_ordered), " (filled), ",
                         paste(projection_years, collapse = ", "), " (lines)"),
       x = "Age Group",
       y = "Population"
@@ -459,8 +459,8 @@ create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEA
     # Add total population annotation as a single block in top right
     annotate(
       "text", 
-      x = max(age_numeric_positions), 
-      y = y_max * 0.9, 
+      x = max(age_numeric_positions),
+      y = y_max * 0.9,
       label = pop_summary_label,
       hjust = 1,
       vjust = 1,
