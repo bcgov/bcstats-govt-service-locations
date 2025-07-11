@@ -22,7 +22,7 @@
 #------------------------------------------------------------------------------
 
 source("R/settings.R")
-source("R/fxns/plots.R")
+source("R/fxns/csd-plots.R")
 
 #------------------------------------------------------------------------------
 # Read required data files from source folder

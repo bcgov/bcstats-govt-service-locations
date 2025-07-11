@@ -26,7 +26,7 @@
 #------------------------------------------------------------------------------
 
 source("R/settings.R")
-source("R/fxns/plots.r")
+source("R/fxns/csd-plots.R")
 
 
 # Ensure output directory exists

@@ -283,3 +283,5 @@ for (csd_name in unique(pilot_csds$csd_name)) {
   )
 }
 
+rm(list = ls())
+gc()

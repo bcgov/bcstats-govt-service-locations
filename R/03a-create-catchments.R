@@ -162,3 +162,5 @@ db_check %>%
 db_qa_summary %>% 
   write_csv(glue("{TABLES_OUT}/unassigned_dbs_summary.csv"))
 
+rm(list = ls())
+gc()
