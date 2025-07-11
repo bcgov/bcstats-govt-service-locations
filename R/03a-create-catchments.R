@@ -55,7 +55,7 @@ drivetime_data <-
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 # Census dissemination block population data
-pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
+pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/full-population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
