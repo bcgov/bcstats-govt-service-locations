@@ -57,7 +57,7 @@ if (!dir_exists(output_path)) {
 # -----------------------------------------------------------------------------------------------------
 
 # --- Population data for DB's containing columns for area, population, dwellings, and households
-pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
+pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric)) %>%
   mutate(people_per_household = population / dwellings) %>%
