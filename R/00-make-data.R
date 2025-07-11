@@ -122,7 +122,7 @@ service_bc_locations <- processed_files %>%
 write_csv(service_bc_locations, glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv"))
 write_csv(full_processed_files, glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"))
 
-write_csv(corresp, glue("{SRC_DATA_FOLDER}/full-csd-da-db-loc-correspondance.csv"))
+write_csv(corresp, glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"))
 
 write_csv(pop_db, glue("{SRC_DATA_FOLDER}/full-population-db.csv"))
 write_csv(pop_csd, glue("{SRC_DATA_FOLDER}/full-population-csd.csv"))
