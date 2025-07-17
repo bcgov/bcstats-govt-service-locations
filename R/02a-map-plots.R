@@ -44,7 +44,7 @@ db_drivetime_map_data <- db_shapefile %>%
 
 # service bc location data
 servicebc <-
-  read_csv(glue("{SRC_DATA_FOLDER}/service_bc_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv")
            , col_types = cols(.default = "c")) %>%
   clean_names() %>%
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
@@ -75,6 +75,7 @@ for (csd in CSD_NAMES){
     varname = var,
     csd_col = "csd_name",
     csd_name = csd,
+    sbc_col = "nearest_facility",
     map_theme = MAP_THEME,
     fill_scale = FILL_THEME,
     plot_title = plot_title,
