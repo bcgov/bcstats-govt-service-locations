@@ -58,6 +58,7 @@ library(terra)
 library(fs)
 library(ggnewscale)
 library(bcmaps)
+library(rmapshaper)    # simplify geometries
 
 # for statistical calculations
 library(e1071)
