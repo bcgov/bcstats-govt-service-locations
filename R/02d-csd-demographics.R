@@ -32,19 +32,9 @@ sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
 
 
 ## population projections from catalogue
-pop_projections <- bcdc_get_data(
-  "86839277-986a-4a29-9f70-fa9b1166f6cb",
-  resource = "0e15d04d-127c-457a-b999-20800c929927"
-) |>
-  janitor::clean_names() |>
-  mutate(
-    region = paste0(
-      "59",
-      str_pad(as.character(region), width = 5, side = "left", pad = "0")
-    )
-  )
+pop_projections <- read_csv(glue("{SRC_DATA_FOLDER}/full-population-projections.csv")) %>%
+  mutate(region = as.character(region))
 
-pop_projections 
 
 ## census populations
 pop_db <- read_csv(

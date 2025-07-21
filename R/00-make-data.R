@@ -52,6 +52,29 @@ db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
     csdid = census_subdivision_id,
     landarea = feature_area_sqm
   )
+#------------------------------------------------------------------------------
+## population projections ----
+## from catalogue
+#------------------------------------------------------------------------------
+
+# figure out ID of file we want
+# bcdc_search("sub-provincial projections")
+# population projections: 86839277-986a-4a29-9f70-fa9b1166f6cb
+#       - csd resource: 0e15d04d-127c-457a-b999-20800c929927
+# household estimates: 2a8ddf6c-dfb9-4187-a66d-9bb15b15ea83
+# note that these don't have gender/age breakdowns, which we will want
+
+pop_projections <- bcdc_get_data(
+  "86839277-986a-4a29-9f70-fa9b1166f6cb",
+  resource = "0e15d04d-127c-457a-b999-20800c929927"
+) |>
+  janitor::clean_names() |>
+  mutate(
+    region = paste0(
+      "59",
+      str_pad(as.character(region), width = 5, side = "left", pad = "0")
+    )
+  )
 
 #------------------------------------------------------------------------------
 # Make a correspondance file for da-db-loc-csd
@@ -117,6 +140,8 @@ write_csv(corresp, glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"))
 
 write_csv(pop_db, glue("{SRC_DATA_FOLDER}/full-population-db.csv"))
 write_csv(pop_csd, glue("{SRC_DATA_FOLDER}/full-population-csd.csv"))
+
+write_csv(pop_projections, glue("{SRC_DATA_FOLDER}/full-population-projections.csv"))
 
 st_write(db_shapefiles, glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg"), append = FALSE)
 st_write(csd_shapefiles, glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg"), append = FALSE)
