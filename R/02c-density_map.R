@@ -84,9 +84,9 @@ servicebc <-
   st_as_sf(coords = c("coord_x", "coord_y"), remove = TRUE, crs = 3005)
 
 # --- CSD shapefiles
-shp_csd_all <- census_subdivision() %>%
-  select(CENSUS_SUBDIVISION_NAME, CENSUS_SUBDIVISION_ID) %>%
-  clean_names()
+shp_csd_all <-
+  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) %>%
+  select(census_subdivision_name = csd_name, census_subdivision_id = csdid)
 
 # Check if we have any matching CSDs
 if (nrow(shp_csd_all) == 0) {
@@ -102,7 +102,7 @@ plotvar <- "drv_dist"
 map_title <- "Spatial Distribution of Driving Distance"
 subtitle_pref <- "Estimated Drive Distance to Service BC"
 fill_label <- "Drive distance (km)"
-common_scale <- TRUE    # Whether to use a common scale for all maps
+common_scale <- FALSE    # Whether to use a common scale for all maps
 
 # --- Set limits prior to subsetting points if using common scale
 fill_theme <- FILL_THEME$clone()
