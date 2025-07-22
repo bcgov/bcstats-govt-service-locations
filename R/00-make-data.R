@@ -109,7 +109,7 @@ pop_db <- cancensus::get_census(
     regions = list(PR = "59"), # grab only BC
     level = 'DB' 
   ) %>%
-  clean_names() %>%
+  clean_names()  %>%
   select(c(all_of(POP_COLS), geo_uid)) %>%
   rename(dbid = geo_uid)
 
@@ -130,6 +130,106 @@ service_bc_locations <- full_processed_files %>%
   left_join(crosswalk, by = join_by(dbid, daid)) %>%
   distinct(csd_name, csdid, nearest_facility, coord_x, coord_y)
 
+# =========================================================================== #
+# DB population projections ----
+# we want to convert the CSD population projections into DB projections
+# we do this by approximation,
+# and assume that the proportion of the DB that makes
+# up the CSD each year doesn't change
+# while not perfect, it will give reasonable estimates
+# has a pct of csd column that we can use
+# to multiply by any other population projections to get estimates
+# =========================================================================== #
+
+# first, we create a new 'csd_clean' label to match the population projections
+# as some CSDs are rolled up in the projections
+get_clean_csd <- pop_db |>
+  left_join(corresp, by = c("dbid", "csdid", "daid")) |>
+  left_join(
+    pop_projections |>
+      distinct(region) |>
+      mutate(in_projections = 1),
+    by = c("csdid" = "region")
+  ) |>
+  # if rolled up, last 3 digits replaced with '999'
+  mutate(
+    csd_clean = if_else(
+      is.na(in_projections),
+      paste0(str_sub(csdid, 1, 4), "999"),
+      csdid
+    )
+  )
+
+# now get pct of each 'clean' csd that is taken up by each DB
+prop_of_csd <- get_clean_csd |>
+  group_by(csd_clean) |>
+  mutate(csd_population = sum(population, na.rm=TRUE)) |>
+  ungroup() |>
+  mutate(pct_of_csd = if_else(population==0, 0, population / csd_population))
+
+# join back to projections to get yearly estimates
+# for each age, gender, year of interest
+db_projections <- prop_of_csd |>
+  select(
+    dbid,
+    daid,
+    csdid,
+    csd_clean,
+    csd_name,
+    csd_desc,
+    area_sq_km,
+    population,
+    csd_population,
+    dwellings,
+    households,
+    pct_of_csd
+  ) |>
+  left_join(
+    pop_projections |>
+      filter(year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)),
+    by = c("csd_clean" = "region"),
+    relationship = "many-to-many"
+  )
+
+# Preprocess db_projections data to transform age columns into rows
+# The columns x0, x1, etc. represent different age groups
+db_projections_transformed <- db_projections |>
+  # Get all column names that start with 'x' followed by digits (age columns)
+  pivot_longer(
+    cols = starts_with("x") & matches("^x\\d+$"),
+    names_to = "age_column",
+    values_to = "population_by_age"
+  ) |>
+  # Extract age values from column names (remove 'x' prefix)
+  mutate(
+    age = as.numeric(str_replace(age_column, "^x", "")),
+    # Create age groups (0-4, 5-9, etc.)
+    age_group = case_when(
+      age < 5 ~ "0-4",
+      age < 10 ~ "5-9",
+      age < 15 ~ "10-14",
+      age < 20 ~ "15-19",
+      age < 25 ~ "20-24",
+      age < 30 ~ "25-29",
+      age < 35 ~ "30-34",
+      age < 40 ~ "35-39",
+      age < 45 ~ "40-44",
+      age < 50 ~ "45-49",
+      age < 55 ~ "50-54",
+      age < 60 ~ "55-59",
+      age < 65 ~ "60-64",
+      age < 70 ~ "65-69",
+      age < 75 ~ "70-74",
+      age < 80 ~ "75-79",
+      age < 85 ~ "80-84",
+      age < 90 ~ "85-89",
+      TRUE ~ "90+"
+    ),
+    # Calculate population estimate for each DB
+    population = population_by_age * pct_of_csd,
+    total = total * pct_of_csd
+  )
+
 #------------------------------------------------------------------------------
 # Write output files
 #------------------------------------------------------------------------------
@@ -137,6 +237,7 @@ write_csv(service_bc_locations, glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv
 write_csv(full_processed_files, glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"))
 
 write_csv(corresp, glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"))
+saveRDS(db_projections_transformed, glue("{SRC_DATA_FOLDER}/full_db_projections_transformed.rds"))
 
 write_csv(pop_db, glue("{SRC_DATA_FOLDER}/full-population-db.csv"))
 write_csv(pop_csd, glue("{SRC_DATA_FOLDER}/full-population-csd.csv"))
