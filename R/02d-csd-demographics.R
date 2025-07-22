@@ -66,7 +66,7 @@ crosswalk <-
 # as some CSDs are rolled up in the projections
 get_clean_csd <- pop_db |>
   left_join(crosswalk, by = c("dbid", "daid", "csdid", "csd_name", "csd_desc")) |>
-  inner_join(
+  left_join(
     pop_projections |>
       distinct(region) |>
       mutate(in_projections = 1),
