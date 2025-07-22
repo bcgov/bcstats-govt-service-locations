@@ -144,7 +144,7 @@ service_bc_locations <- full_processed_files %>%
 # first, we create a new 'csd_clean' label to match the population projections
 # as some CSDs are rolled up in the projections
 get_clean_csd <- pop_db |>
-  left_join(corresp, by = c("dbid", "csdid", "daid")) |>
+  left_join(corresp, by = c("dbid")) |>
   left_join(
     pop_projections |>
       distinct(region) |>
