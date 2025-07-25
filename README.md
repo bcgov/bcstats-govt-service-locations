@@ -8,7 +8,13 @@ This repository houses R code for analyzing the current geographic location of e
 
 The primary goal is to identify potential geographic disparities in service access, highlighting potentially underserved populations or underutilized facilities. The derived data tables and visualizations provide quantitative insights to support service planning, resource allocation, and equitable service delivery strategies.  They allow for for analysis focused on specific targeted municipalities or regions of interest.
 
+### Phase 1
+
 The first phase of the project focuses on the drive times to Service BC locations for four municipalities (Smithers, Langford, Kamloops and Dawson Creek), with plans to expand to other public services in future phases. The analysis will be conducted at the Dissemination Block (DB) level, with the option to aggregate results to larger geographic units as needed.
+
+### Phase 2
+
+Phase 2 builds on these advances by expanding the analysis, refining methodologies, and applying the approach to all 65 Service BC offices, and all CSD regions in BC.  This work is done in collaboration with Service BC; the aggregated data tables are developed for their purposes. 
 
 *Note: The code and analytical methodology are currently under development.*
  
