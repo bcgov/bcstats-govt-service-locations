@@ -116,7 +116,7 @@ Population and dwelling count data at both the Dissemination Block (DB) and Cens
 
 **Population Projections**
 
-Population projections at the Census Subdivision (CSD) level were obtained from BC Stats through the BC Data Catalogue ([Sub-Provincial Population Projections](https://catalogue.data.gov.bc.ca/dataset/bc-sub-provincial-population-estimates-and-projections)). These projections provide future population estimates by age and gender, allowing for demographic analysis of service catchment areas over time. The projections are used in `03c-sbc-centric-stats.R` to estimate future service demands and demographic composition within Service BC facility catchment areas.
+Population projections at the Census Subdivision (CSD) level were obtained from BC Stats through programatic access to the the BC Data Catalogue via the `bcdata` package. The projections provide detailed age and gender breakdowns for BC region code "59" and are processed to create corresponding Dissemination Block (DB) level estimates. The CSD projections are transformed into DB-level projections using proportional allocation based on 2021 Census population distributions. These processed projections are utilized in `02d-csd-demographics.R` and `03c-sbc-centric-stats.R` for Service BC catchment area and CSD demographic analysis.
 
 
 ## Guiding Principles
