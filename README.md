@@ -32,7 +32,8 @@ Accessing project files and data requires the [`safepaths`](https://github.com/b
 # Manually install packages:
 install.packages(c(
   "sf", "tidyverse", "glue", "janitor", "e1071", "remotes",
-  "svglite", "scales", "rmapshaper", "bcmaps" # Added packages for new scripts
+  "scales", "rmapshaper", "bcmaps", "snakecase", "readxl", 
+  "bcdata", "tigris", "spatstat", "stars", "terra", "fs", "ggnewscale"
 ))
 
 remotes::install_github("bcgov/safepaths")
