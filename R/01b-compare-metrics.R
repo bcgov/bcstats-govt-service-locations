@@ -16,12 +16,6 @@
 # Load req'd libraries and source constants and other settings
 #------------------------------------------------------------------------------
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(snakecase)
-library(ggplot2)
-
 source("R/settings.R")
 
 # Ensure output directory exists
@@ -31,16 +25,8 @@ output_dir <- file.path(VISUALS_OUT, "csd-drive-distance-plots")
 # Read data from source folder
 #------------------------------------------------------------------------------
 
-crosswalk <-
-  read_csv(glue("{SRC_DATA_FOLDER}/csd-da-db-loc-crosswalk.csv"), col_types = cols(.default = "c")) %>%
-  clean_names()
-
 db_stats <-
   read_csv(glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv", col_types = cols(.default = "c"))) %>%
-  clean_names()
-
-csd_stats <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced_csd_average_times_dist_all_locs.csv", col_types = cols(.default = "c"))) %>%
   clean_names()
 
 # ------------------------------------------------------------------------------

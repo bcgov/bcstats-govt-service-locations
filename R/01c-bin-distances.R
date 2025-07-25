@@ -16,11 +16,6 @@
 # Load req'd libraries and source constants and other settings
 #------------------------------------------------------------------------------
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(e1071)
-
 source("R/settings.R")
 
 #------------------------------------------------------------------------------

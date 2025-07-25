@@ -31,11 +31,6 @@
 #   - Saves assignment statistics to a CSV file in the TABLES_OUT folder
 # ------------------------------------------------------------------------
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(sf)
-
 source("R/settings.R")
 source("R/fxns/calculations.r")  
 
@@ -60,7 +55,7 @@ drivetime_data <-
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 # Census dissemination block population data
-pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
+pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/full-population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
@@ -129,6 +124,14 @@ write_csv(
   glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
 )
 
+# and the summary stats
+db_qa_summary %>% 
+  write_csv(glue("{TABLES_OUT}/unassigned_dbs_summary.csv"))
+
+# ----------------------------------------------------------------------------
+# Extra checks for QA here down. This is not part of the main assignment process.
+# ----------------------------------------------------------------------------
+
 # QA the unassigned DBs 
 # save the list of unassigned dbs, together with their 2021 census pops
 db_check <- complete_assignments %>% 
@@ -163,7 +166,5 @@ db_check %>%
   arrange(assignment_method, desc(population)) %>% 
   write_csv(glue("{TABLES_OUT}/unassigned_dbs.csv"))
 
-# and the summary stats
-db_qa_summary %>% 
-  write_csv(glue("{TABLES_OUT}/unassigned_dbs_summary.csv"))
-
+rm(list = ls())
+gc()

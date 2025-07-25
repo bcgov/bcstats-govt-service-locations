@@ -37,17 +37,9 @@
 #     Service BC office for a specific census subdivision
 # ------------------------------------------------------------------------
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(sf)
-library(tigris)
-library(spatstat)
-library(stars)
-library(bcmaps)
-library(terra)
-library(fs)
-library(snakecase)
+#------------------------------------------------------------------------------
+# Load Libraries and Settings
+#------------------------------------------------------------------------------
 
 source("R/settings.R")
 
@@ -65,7 +57,7 @@ if (!dir_exists(output_path)) {
 # -----------------------------------------------------------------------------------------------------
 
 # --- Population data for DB's containing columns for area, population, dwellings, and households
-pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
+pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric)) %>%
   mutate(people_per_household = population / dwellings) %>%
@@ -92,9 +84,9 @@ servicebc <-
   st_as_sf(coords = c("coord_x", "coord_y"), remove = TRUE, crs = 3005)
 
 # --- CSD shapefiles
-shp_csd_all <- census_subdivision() %>%
-  select(CENSUS_SUBDIVISION_NAME, CENSUS_SUBDIVISION_ID) %>%
-  clean_names()
+shp_csd_all <-
+  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) %>%
+  select(census_subdivision_name = csd_name, census_subdivision_id = csdid)
 
 # Check if we have any matching CSDs
 if (nrow(shp_csd_all) == 0) {
@@ -211,3 +203,6 @@ for (id in servicebc %>% pull(csdid)) {
   )
 
 }
+
+rm(list = ls())
+gc()

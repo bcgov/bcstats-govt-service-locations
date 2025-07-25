@@ -29,12 +29,7 @@
 #   - Creates maps of catchment areas, saved to the MAP_OUT directory
 # ------------------------------------------------------------------------
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(sf)
 library(rmapshaper)    # simplify geometries
-library(bcmaps)        # get BC outline
 
 source("R/settings.R")
 
@@ -512,3 +507,6 @@ ggsave(
   height = 10,
   dpi = 300
 )
+
+rm(list=ls())
+gc()

@@ -24,14 +24,9 @@
 #------------------------------------------------------------------------------
 # Load Libraries and Settings
 #------------------------------------------------------------------------------
-library(tidyverse)
-library(glue)
-library(ggplot2)
-library(scales)
-library(snakecase)
 
 source("R/settings.R")
-source("R/fxns/plots.r")
+source("R/fxns/csd-plots.R")
 
 
 # Ensure output directory exists

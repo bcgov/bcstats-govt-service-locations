@@ -35,17 +35,9 @@
 #     for that facility's catchment area
 # ------------------------------------------------------------------------
 
-library(tidyverse)
-library(glue)
-library(janitor)
-library(sf)
-library(tigris)
-library(spatstat)
-library(stars)
-library(terra)
-library(fs)
-library(snakecase)
-library(ggnewscale)
+# =========================================================================== #
+# Load libraries and settings ----
+# =========================================================================== #
 
 source("R/settings.R")
 
@@ -63,7 +55,7 @@ if (!dir_exists(output_path)) {
 # -----------------------------------------------------------------------------------------------------
 
 # --- Population data for DB's containing columns for area, population, dwellings, and households
-pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/population-db.csv"), col_types = cols(.default = "c")) %>%
+pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/full-population-db.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric)) %>%
   mutate(people_per_household = population / dwellings) %>%
@@ -291,3 +283,5 @@ for (csd_name in unique(pilot_csds$csd_name)) {
   )
 }
 
+rm(list = ls())
+gc()
