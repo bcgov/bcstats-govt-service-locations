@@ -104,16 +104,15 @@ A geographic crosswalk between different census geographies (Dissemination Block
 
 **Digital Boundary Files**
 
-Digital boundary files in GeoPackage format (.gpkg) defining the geographic extents of Census Subdivisions (CSDs), Dissemination Areas (DAs) and Dissemination Blocks (DBs) were obtained from the BC Data Catalogue:
-- [Census Subdivisions (CSDs)](https://catalogue.data.gov.bc.ca/dataset/current-census-subdivision-boundaries)
-- [Dissemination Areas (DAs)](https://catalogue.data.gov.bc.ca/dataset/current-census-dissemination-areas)
-- [Dissemination Blocks (DBs)](https://catalogue.data.gov.bc.ca/dataset/current-census-dissemination-blocks)
+Digital boundary files defining the geographic extents of Census Subdivisions (CSDs) and Dissemination Blocks (DBs) are accessed programmatically using the [`bcdata`](https://bcgov.github.io/bcdata/) and [`bcmaps`](https://github.com/bcgov/bcmaps) R package. These vector datasets are then processed and saved as GeoPackage (.gpkg) files, serving as the geometric base for cartographic visualization and underpinning geospatial operations throughout the analysis.
 
-These vector datasets serve as the geometric base for cartographic visualization and underpin geospatial operations within the analysis (used as input for `00b-make-map-data.R`).
+For reference, the datasets correspond to:
+- [Census Subdivisions (CSDs)](https://catalogue.data.gov.bc.ca/dataset/current-census-subdivision-boundaries)
+- [Dissemination Blocks (DBs)](https://catalogue.data.gov.bc.ca/dataset/current-census-dissemination-blocks)
 
 **Census Population and Dwelling Counts**
 
-Aggregate population and dwelling count data at the Dissemination Block (DB) level were extracted from the Statistics Canada 2021 Census. This dataset provides the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study regions (used in `01-descriptive-tables.R`).
+Population and dwelling count data at both the Dissemination Block (DB) and Census Subdivision (CSD) levels are extracted from the Statistics Canada 2021 Census using the `cancensus` R package. The data includes population, dwellings, households, and area measurements for all of British Columbia (region code "59"). This census data is processed and saved to the SRC_DATA_FOLDER, then merged with drive time statistics and calculate population density metrics. The census data provides the foundational demographic inputs for calculating accessibility metrics and deriving socio-spatial indicators for the analysis regions.
 
 **Population Projections**
 
