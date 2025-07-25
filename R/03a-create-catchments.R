@@ -124,6 +124,14 @@ write_csv(
   glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
 )
 
+# and the summary stats
+db_qa_summary %>% 
+  write_csv(glue("{TABLES_OUT}/unassigned_dbs_summary.csv"))
+
+# ----------------------------------------------------------------------------
+# Extra checks for QA here down. This is not part of the main assignment process.
+# ----------------------------------------------------------------------------
+
 # QA the unassigned DBs 
 # save the list of unassigned dbs, together with their 2021 census pops
 db_check <- complete_assignments %>% 
@@ -157,10 +165,6 @@ db_qa_summary
 db_check %>% 
   arrange(assignment_method, desc(population)) %>% 
   write_csv(glue("{TABLES_OUT}/unassigned_dbs.csv"))
-
-# and the summary stats
-db_qa_summary %>% 
-  write_csv(glue("{TABLES_OUT}/unassigned_dbs_summary.csv"))
 
 rm(list = ls())
 gc()
