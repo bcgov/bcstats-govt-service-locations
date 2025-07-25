@@ -47,11 +47,11 @@ This section describes how to run the R scripts to perform the drive time analys
 
 **Prerequisites:**
 
-1.  **Raw Data:** Ensure the necessary raw input data files are placed in the directory structure expected by the `settings.R` script. By default, data is assumed to be kept in the location specified by `RAW_DATA_FOLDER`. The raw files should match the naming conventions expected by the scripts (containing locality IDs, etc.).
+1.  **Raw Data:** Ensure the necessary raw input data files are placed in the `RAW_DATA_FOLDER` directory as specified in `settings.R`.
 2.  **Review Configuration Settings:** Open and review the `R/settings.R` script. Verify that:
     *   The path returned from `safepaths::use_network_path()` correctly points to your network or local data storage location.
-    *   The values in `EXPECTED_LOCALITIES` list matches the localities you intend to process, and for which data exists.
-    *   Paths like `SRC_DATA_FOLDER`, `SHAPEFILE_DIR` and other patterns/constants defined in `settings.R` align with your input data structure and project needs.
+    *   The values in `CSD_NAMES` and `CSDIDS` match the Census Subdivisions you intend to process, and for which data exists.
+    *   Paths like `SRC_DATA_FOLDER`, `SHAPEFILE_OUT` and other constants defined in `settings.R` align with your input data structure and project needs.
 
 **Execution:**
 Run the following scripts in the order specified:
