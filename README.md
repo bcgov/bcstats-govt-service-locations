@@ -20,7 +20,7 @@ Phase 2 builds on these advances by expanding the analysis, refining methodologi
  
 ## Secure Data Access
 
-Accessing project files and data requires the [`safepaths`](https://github.com/bcgov/safepaths) R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure `safepaths` as well as the LAN location of all data files. 
+Accessing project files and data requires the [`safepaths`](https://github.com/bcgov/safepaths) R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure [`safepaths`](https://github.com/bcgov/safepaths) as well as the LAN location of all data files. 
 
 ## Installation and Usage
 
@@ -100,7 +100,7 @@ While the source address list input to the geocoder is restricted under license,
 
 **Geographic Boundary Data Crosswalk**
 
-A geographic crosswalk between different census geographies (Dissemination Blocks, Dissemination Areas, and Census Subdivisions) was created based on the Dissemination Block shapefile available from the BC Data Catalogue. This crosswalk facilitates data linkage across disparate census geographic hierarchies, enabling the aggregation or translation of data between administrative or statistical units.
+A geographic crosswalk between different census geographies (Dissemination Blocks, Dissemination Areas, and Census Subdivisions) is created in `00-make-data.R` using the BC Data Catalogue's Dissemination Block shapefile. Two related files are generated: a "crosswalk" containing DB-DA linkages from the drive time data, and a comprehensive "correspondence file" (`csd-da-db-loc-correspondance.csv`) that contains all DBs in BC with their hierarchical relationships to DAs and CSDs. This correspondence file facilitates data linkage across census geographic hierarchies, enabling aggregation and translation of data between different administrative and statistical units throughout the analysis.
 
 **Digital Boundary Files**
 
