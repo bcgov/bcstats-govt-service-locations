@@ -13,3 +13,22 @@
 # limitations under the License.
 
 
+
+
+
+
+
+db_projections_transformed |> filter(gender == 'T') |>
+group_by(year, region_name) %>%
+  summarise(population = sum(population, na.rm = TRUE)) %>%
+  pivot_wider(names_from = year, values_from = population, values_fill = 0) 
+
+db_projections_transformed |> filter(gender == 'T', year == 2025) |>
+mutate(age_grp = case_when(
+    age < 19 ~ "0-19",
+    age >= 19 & age < 65 ~ "19-64",
+    age >= 65 ~ "65+"
+  )) %>%
+  group_by(region_name, age_grp) %>%
+  summarise(population = sum(population, na.rm = TRUE)) %>%
+  pivot_wider(names_from = age_grp, values_from = population, values_fill = 0)
