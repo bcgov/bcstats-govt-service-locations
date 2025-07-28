@@ -79,13 +79,13 @@ drivetime_data <- drivetime_data %>%
 
 # --- Service BC location data containing columns for address coordinates (coord_x, coord_x)
 servicebc <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"), col_types = cols(.default = "c")) %>%
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced-service-bc-locs.csv"), col_types = cols(.default = "c")) %>%
   clean_names() %>%
   st_as_sf(coords = c("coord_x", "coord_y"), remove = TRUE, crs = 3005)
 
 # --- CSD shapefiles
 shp_csd_all <-
-  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-csd-with-location.gpkg")) %>%
   select(census_subdivision_name = csd_name, census_subdivision_id = csdid)
 
 # Check if we have any matching CSDs

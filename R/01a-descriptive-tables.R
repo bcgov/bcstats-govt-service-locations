@@ -86,11 +86,11 @@ drivetime_stats_csd  <- drivetime_stats_csd %>%
 # Notes: drivetime_stats_db contains descriptive results AND is input in future scripts
 #------------------------------------------------------------------------------
 
-write_csv(drivetime_stats_db, glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv"))
-write_csv(drivetime_stats_db, glue("{TABLES_OUT}/reduced_db_average_times_dist_all_locs.csv"))
-write_csv(drivetime_stats_csd, glue("{TABLES_OUT}/reduced_csd_average_times_dist_all_locs.csv"))
-write_csv(low_counts, glue("{TABLES_OUT}/reduced_csd_low_counts.csv"))
-write_csv(servicebc_counts, glue("{TABLES_OUT}/reduced_csd_service_bc_counts.csv"))
+write_csv(drivetime_stats_db, glue("{SRC_DATA_FOLDER}/reduced-db-average-times-dist-all-locs.csv"))
+write_csv(drivetime_stats_db, glue("{TABLES_OUT}/reduced-db-average-times-dist-all-locs.csv"))
+write_csv(drivetime_stats_csd, glue("{TABLES_OUT}/reduced-csd-average-times-dist-all-locs.csv"))
+write_csv(low_counts, glue("{TABLES_OUT}/reduced-csd-low-counts.csv"))
+write_csv(servicebc_counts, glue("{TABLES_OUT}/reduced-csd-service-bc-counts.csv"))
 
 # clean up the environment
 rm(list = ls())

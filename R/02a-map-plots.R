@@ -34,7 +34,7 @@ db_shapefile <-
   mutate(across(c(landarea), as.numeric))
 
 db_drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced-db-average-times-dist-all-locs.csv")
           , col_types = cols(.default = "c"))  %>%
   clean_names() %>%
   mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
@@ -44,7 +44,7 @@ db_drivetime_map_data <- db_shapefile %>%
 
 # service bc location data
 servicebc <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv")
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced-service-bc-locs.csv")
            , col_types = cols(.default = "c")) %>%
   clean_names() %>%
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)

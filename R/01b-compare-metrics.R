@@ -26,7 +26,7 @@ output_dir <- file.path(VISUALS_OUT, "csd-drive-distance-plots")
 #------------------------------------------------------------------------------
 
 db_stats <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv", col_types = cols(.default = "c"))) %>%
+  read_csv(glue("{SRC_DATA_FOLDER}/reduced-db-average-times-dist-all-locs.csv", col_types = cols(.default = "c"))) %>%
   clean_names()
 
 # ------------------------------------------------------------------------------

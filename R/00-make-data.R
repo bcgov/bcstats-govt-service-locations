@@ -237,22 +237,22 @@ write_csv(service_bc_locations, glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv
 write_csv(full_processed_files, glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"))
 
 write_csv(corresp, glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"))
-saveRDS(db_projections_transformed, glue("{SRC_DATA_FOLDER}/full_db_projections_transformed.rds"))
+saveRDS(db_projections_transformed, glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
 
 write_csv(pop_db, glue("{SRC_DATA_FOLDER}/full-population-db.csv"))
 write_csv(pop_csd, glue("{SRC_DATA_FOLDER}/full-population-csd.csv"))
 
 write_csv(pop_projections, glue("{SRC_DATA_FOLDER}/full-population-projections.csv"))
 
-st_write(db_shapefiles, glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg"), append = FALSE)
-st_write(csd_shapefiles, glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg"), append = FALSE)
+st_write(db_shapefiles, glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg"), append = FALSE)
+st_write(csd_shapefiles, glue("{SHAPEFILE_OUT}/full-csd-with-location.gpkg"), append = FALSE)
 
 #------------------------------------------------------------------------------
 # Write output files, filtering on CSD's of interest
 #------------------------------------------------------------------------------
 service_bc_locations %>% 
   filter(csd_name %in% CSD_NAMES) %>%
-  write_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"))
+  write_csv(glue("{SRC_DATA_FOLDER}/reduced-service-bc-locs.csv"))
 
 full_processed_files %>% 
   left_join(crosswalk, by = join_by(dbid, daid)) %>%

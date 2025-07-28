@@ -61,12 +61,12 @@ pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/full-population-db.csv"), col_types =
 
 # DB shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
 # list of addresses with no valid routes
 db_no_route <- read_csv(
-    glue("{DT_DATA_FOLDER}/final_result_only_errors.csv")
+    glue("{DT_DATA_FOLDER}/final-result-only-errors.csv")
     ) %>% 
     select(dbid = DISSEMINATION_BLOCK_ID) %>% 
     mutate(
@@ -121,12 +121,12 @@ message("Number of DBs assigned directly to nearest facility: ", spatial_assignm
 # Save the complete assignments for use in other scripts
 write_csv(
   complete_assignments,
-  glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
+  glue("{SRC_DATA_FOLDER}/complete-db-assignments.csv")
 )
 
 # and the summary stats
 db_qa_summary %>% 
-  write_csv(glue("{TABLES_OUT}/unassigned_dbs_summary.csv"))
+  write_csv(glue("{TABLES_OUT}/unassigned-dbs-summary.csv"))
 
 # ----------------------------------------------------------------------------
 # Extra checks for QA here down. This is not part of the main assignment process.
@@ -164,7 +164,7 @@ db_qa_summary
 # save the list of dbs that do/don't have assignees for further investigation
 db_check %>% 
   arrange(assignment_method, desc(population)) %>% 
-  write_csv(glue("{TABLES_OUT}/unassigned_dbs.csv"))
+  write_csv(glue("{TABLES_OUT}/unassigned-dbs.csv"))
 
 rm(list = ls())
 gc()

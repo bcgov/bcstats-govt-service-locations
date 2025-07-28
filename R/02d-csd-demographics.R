@@ -24,7 +24,7 @@ source("R/fxns/csd-plots.R")
 # =============================================== #
 
 ## SBC locations to include from source folder
-sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
+sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service-bc-locs.csv"),
      col_types = cols(.default = "c")
   ) |>
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005) |>
@@ -56,7 +56,7 @@ crosswalk <-
 # filtering on CSDIDS pulls in db's that are not in our data
 # =========================================================================== #
 
-db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full_db_projections_transformed.rds"))
+db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
 db_projections_transformed <- db_projections_transformed %>% 
   filter(dbid %in% (pop_db %>% pull(dbid)))
 
@@ -72,7 +72,7 @@ summary_stats <- db_projections_transformed |>
       est_population = sum(population, na.rm = TRUE),
       median_age = median(rep(age, population)))
 
-write_csv(summary_stats, glue("{TABLES_OUT}/reduced-csd_population_metrics.csv"))
+write_csv(summary_stats, glue("{TABLES_OUT}/reduced-csd-population-metrics.csv"))
 
 # =========================================================================== #
 # Population Pyramid Creation ----
