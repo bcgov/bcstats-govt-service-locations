@@ -94,7 +94,7 @@ crosswalk <-
 # DB population projections ----
 # this table has a pct of csd column that we can use
 # to multiply by any other population projections to get estimates
-db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full_db_projections_transformed.rds"))
+db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
 
 # =========================================================================== #
 # Metrics for SBC locations of interest ----
