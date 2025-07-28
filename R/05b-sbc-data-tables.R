@@ -136,6 +136,10 @@ df |>
   summarize(pop = sum(population, na.rm=TRUE)) |>
   pivot_wider(names_from = year, values_from = pop, values_fill = 0) 
 
+#------------------------------------------------------------------------------
+# count of age groups by assigned
+#------------------------------------------------------------------------------
+
 df |> mutate(age_grp = case_when(
     age < 19 ~ "0-19",
     age >= 19 & age < 65 ~ "19-64",
