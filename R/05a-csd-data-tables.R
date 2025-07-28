@@ -13,15 +13,39 @@
 # limitations under the License.
 
 
+# =========================================================================== #
+# Load libraries and settings ----
+# =========================================================================== #
 
+source("R/settings.R")
+source("R/fxns/csd-plots.R")
 
+# =========================================================================== #
+# Read required data
+# =============================================== #
 
+## census populations
+pop_db <- read_csv(
+  glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"),
+  col_types = cols(.default = "c")
+) %>%
+  clean_names() %>%
+  mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
+# =========================================================================== #
+# DB population projections ----
+# filtering on CSDIDS pulls in db's that are not in our data
+# =========================================================================== #
 
+db_projections_transformed_raw <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
+db_projections_transformed <- db_projections_transformed_raw %>% 
+  filter(csdid %in% CSDIDS) # this way brings in estimates from db's that we have no drive time data on.  
+  # filter(dbid %in% (pop_db %>% pull(dbid))) # this is more accurate
+  
 db_projections_transformed |> filter(gender == 'T') |>
 group_by(year, region_name) %>%
   summarise(population = sum(population, na.rm = TRUE)) %>%
-  pivot_wider(names_from = year, values_from = population, values_fill = 0) 
+  pivot_wider(names_from = year, values_from = population, values_fill = 0)
 
 db_projections_transformed |> filter(gender == 'T', year == 2025) |>
 mutate(age_grp = case_when(
