@@ -12,5 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Simple test map showing BC Census Subdivision boundaries and Service BC locations
-# as well as our pilot CSDs with the Service BC CSD methodology based catchments. 
+
