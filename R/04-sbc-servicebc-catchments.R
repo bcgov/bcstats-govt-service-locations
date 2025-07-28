@@ -36,7 +36,7 @@ csd_boundaries <- census_subdivision() %>%
 
 # CSD level shapefiles for each locality
 csd_shapefile <- 
-  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-csd-with-location.gpkg")) %>%
   mutate(across(c(csd_name), as.character),
          across(c(landarea), as.numeric))
 
@@ -58,7 +58,7 @@ csd_centroids_nudged <- csd_centroids_nudged |>
 # Load Service BC locations
 message("Loading Service BC locations...")
 servicebc <- read_csv(
-  glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"), 
+  glue("{SRC_DATA_FOLDER}/reduced-service-bc-locs.csv"), 
   col_types = cols(.default = "c")
 ) %>%
   clean_names() %>%

@@ -60,7 +60,7 @@ sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
 ## Read the pre-computed assignment data ----
 ## from source folder
 complete_assignments <- read_csv(
-    glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
+    glue("{SRC_DATA_FOLDER}/complete-db-assignments.csv")
     ) %>% 
     mutate(dbid = as.character(dbid))
 
@@ -80,7 +80,7 @@ pop_db <- read_csv(
 
 ## db shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
 ## crosswalk (entire province, not filtered)
@@ -94,7 +94,7 @@ crosswalk <-
 # DB population projections ----
 # this table has a pct of csd column that we can use
 # to multiply by any other population projections to get estimates
-db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full_db_projections_transformed.rds"))
+db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
 
 # =========================================================================== #
 # Metrics for SBC locations of interest ----
@@ -255,23 +255,23 @@ pop_db  %>% distinct(dbid)  %>% nrow() # 52387
 # SAVE ALL TABLES ----
 write_csv(
   drive_measures, 
-  glue("{TABLES_OUT}/service_bc_centered_drive_metrics.csv")
+  glue("{TABLES_OUT}/service-bc-centered-drive-metrics.csv")
 )
 
 write_csv(
   csds_serviced, 
-  glue("{TABLES_OUT}/service_bc_centered_csd_counts.csv")
+  glue("{TABLES_OUT}/service-bc-centered-csd-counts.csv")
 )
 
 write_csv(
   pop_measures, 
-  glue("{TABLES_OUT}/service_bc_centered_population_metrics.csv")
+  glue("{TABLES_OUT}/service-bc-centered-population-metrics.csv")
 )
 
 # also save csd populations for reference
 write_csv(
   pop_projections  %>% filter(region_name %in% CSD_NAMES)  %>% filter(year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)),
-  glue("{TABLES_OUT}/csd_populations.csv")
+  glue("{TABLES_OUT}/csd-populations.csv")
 )
 
 # plots ----
