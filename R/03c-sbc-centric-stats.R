@@ -60,7 +60,7 @@ sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
 ## Read the pre-computed assignment data ----
 ## from source folder
 complete_assignments <- read_csv(
-    glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
+    glue("{SRC_DATA_FOLDER}/complete-db-assignments.csv")
     ) %>% 
     mutate(dbid = as.character(dbid))
 
