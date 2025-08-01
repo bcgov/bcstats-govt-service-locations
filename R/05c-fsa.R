@@ -85,7 +85,7 @@ fsa_residents <- results |>
 # ----------------------------------------------------------------------------
 
 # read population center boundary files
-pop_centers <- st_read("C:/Users/BASHCROF/work/bcstats-govt-service-locations/lpc_000b21a_e/lpc_000b21a_e.shp") %>%
+pop_centers <- st_read("lpc_000b21a_e/lpc_000b21a_e.shp") %>%
   filter(PRUID == "59") |>
   clean_names() |>
   st_drop_geometry() |>
@@ -94,7 +94,7 @@ pop_centers <- st_read("C:/Users/BASHCROF/work/bcstats-govt-service-locations/lp
 # read relationship file to get mapping between population center, csd and dissmination block.  Keep rows
 # corresponding to province British Columbia (PRDGUID_PRIDUGD == "2021A000259").  read in cols as a character
 # to avoid issues with leading zeros in the GUIDs. 
-concordance <- read_csv("C:/Users/BASHCROF/work/bcstats-govt-service-locations/2021_98260004/2021_98260004.csv",
+concordance <- read_csv("/2021_98260004/2021_98260004.csv",
                         col_types = cols(.default = "c")) |>
   filter(PRDGUID_PRIDUGD == "2021A000259") |>
   clean_names() |>
