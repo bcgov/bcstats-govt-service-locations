@@ -18,104 +18,149 @@
 # =========================================================================== #
 
 source("R/settings.R")
+data_dir <- "C:/Users/BASHCROF/work/bcstats-govt-service-locations/data/"
 
-fsa <- bcmaps::fsa() |>
-  st_transform(crs = 3005) |>
-  clean_names()
+# =========================================================================== #
+# Load data ----
+# =========================================================================== #
 
+# address data
 drivetime_data <-
   read_csv(
-    glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"),
+    glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
     col_types = cols(.default = "c")
   ) |>
   clean_names() |>
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric)) |>
+  st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005)
 
-# --- CSD shapefiles
-shp_csd_all <-
-  st_read(glue("{SHAPEFILE_OUT}/reduced-csd-with-location.gpkg")) %>%
-  select(census_subdivision_name = csd_name, census_subdivision_id = csdid)
+# --- FSA boundary shapefiles - Method 1
+fsa_bcmaps <- bcmaps::fsa() |>
+  clean_names() |>
+  st_transform(crs = 3005)
+
+# --- FSA boundary shapefiles - Method 1b
+fsa_statscan <- st_read(
+    glue::glue("{data_dir}lfsa000b21a_e/lfsa000b21a_e.shp")
+  ) |>
+  clean_names() |>
+  select(-c(dguid, landarea)) |>
+  filter(pruid == "59") |>
+  st_transform(crs = 3005)
+
+# --- Population center shapefiles - Method 2
+pop_centers <- st_read(
+    glue::glue("{data_dir}lpc_000b21a_e/lpc_000b21a_e.shp")
+  ) |>
+  clean_names() |>
+  filter(pruid == "59") |>
+  select(popid = dguid, pcname, pcclass, pctype) |>
+  st_transform(crs = 3005)
 
 # ---------------------------------------------------------------------------
 # Method 1. Create rural flag based on Canada Post FSA
 # https://www.canadapost-postescanada.ca/cpc/en/support/articles/addressing-guidelines/postal-codes.page
 # Notes: fsa boundaries are a mix of polygon and multipolygon due to holes (likely waterbodies) and/or spaces
 # where the fsa is actually two polygons (may or may not be adjacent).
-# ---------------------------------------------------------------------------
 
-residents <- drivetime_data %>% 
-    select(fid, nearest_facility, address_albers_x, address_albers_y, dguid = dbid) %>%
-    st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005)
-
-results <- st_within(residents, fsa, sparse = FALSE) # BA: check the other predicates like st_contains
-colnames(results) <- fsa$cfsauid
-rownames(results) <- residents$fid
-
-# If the residence is not located in any fsa, NA will naturally be added to residents df later.
-no_fsa <- which(rowSums(results) == 0)
-if (length(no_fsa) > 0) {
-    message(glue("Found {length(no_fsa)} residences that are not located in any fsa, check data. 
-            fid: {paste0(rownames(results)[no_fsa], collapse = ', ')}"))
-    results <- results[-no_fsa, ]
-}
-
-# If the residence is located on a boundary between 2 fsa's, then we want to deal with that.
-multis <- which(rowSums(results) > 1)
-if (length(multis) > 0) {
-    message(glue("Found {length(multis)} residences that are located in multiple fsa's, check fsa boundaries for these residences.
-            fid: {paste0(rownames(results)[multis], collapse = ', ')}"))
-    results <- results[-multis, ]
-}
-
-# collapse the results matrix and join to drive data - each address will be associated with an fsa
-fsa_residents <- results |>
-    as.data.frame() |>
-    rownames_to_column("fid") |>
-    pivot_longer(-fid, names_to = "cfsauid", values_to = "in_fsa") |>
-    left_join(residents, by = "fid") |>
-    # add rural flag - if the second character of the fsa is 0, then it is rural
-    mutate(rural = ifelse(substr(cfsauid, 2, 2) == "0", TRUE, FALSE)) |>
-    select(-c(in_fsa, cfsauid)) 
-
-
-# ----------------------------------------------------------------------------
 # Method 2. Create rural flag based on Statistics Canada's population centers.
 # Statistics Canada defines rural areas as including all territory lying outside population centres.
 # https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/az/definition-eng.cfm?ID=geo049a
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
-# read population center boundary files
-pop_centers <- st_read("lpc_000b21a_e/lpc_000b21a_e.shp") %>%
-  filter(PRUID == "59") |>
-  clean_names() |>
-  st_drop_geometry() |>
-  select(popid = dguid, pcname,pcclass, pctype)
+# ---------------------------------------------------------------------------
+# Function to determine which region each residence belongs to, 
+# abstracted and works for each method (FSA or population center) and 
+# data source (bcmaps, statscan, or pop centers).
+# ---------------------------------------------------------------------------
 
-# read relationship file to get mapping between population center, csd and dissmination block.  Keep rows
-# corresponding to province British Columbia (PRDGUID_PRIDUGD == "2021A000259").  read in cols as a character
-# to avoid issues with leading zeros in the GUIDs. 
-concordance <- read_csv("/2021_98260004/2021_98260004.csv",
-                        col_types = cols(.default = "c")) |>
-  filter(PRDGUID_PRIDUGD == "2021A000259") |>
-  clean_names() |>
-  select(csdid = csddguid_sdridugd, dbid = dbdguid_ididugd, popid = popctrdguid_ctrpopidugd) |>
-  mutate(dbid = gsub("2021S[0-9][0-9][0-9][0-9]", "", dbid))
+resides_in_region <- function(residences, regions, region_name_col) {
 
-pop_residents <- residents |>
-  left_join(concordance, by = c("dguid" = "dbid")) |>
-  left_join(pop_centers, by = "popid") |>
-  mutate(rural = ifelse(is.na(popid), TRUE, FALSE)) |>
-  select(-popid)
+  results <- st_within(residences, regions, sparse = FALSE)
 
-# choose one nearest facility
-# and map the pop_residents in a ggplot geom_sf.  Color the points by rural flag
-pop_residents_plot <- pop_residents |>
-   filter(nearest_facility == "Service BC - Smithers")
+  colnames(results) <- regions[[region_name_col]]
+  rownames(results) <- residences$fid
+  
+  # collapse the results matrix and join to drive data
+  results |>
+    as.data.frame() |>
+    rownames_to_column("fid") |>
+    pivot_longer(-fid, names_to = region_name_col, values_to = "in_region") |>
+    filter(in_region) |>
+    select(-in_region)
 
+}
+
+# =========================================================================== #
+# Compare the different methods and data sources ----
+# =========================================================================== #
+
+# Combine results into a single data frame
+residences <- drivetime_data |> select(fid, geometry)
+
+fsa_bcmaps_results <- resides_in_region(residences, fsa_bcmaps, "cfsauid")
+fsa_statscan_results  <- resides_in_region(residences, fsa_statscan, "cfsauid")
+popcenter_results <- resides_in_region(residences, pop_centers, "pcname")
+
+combined_results <- fsa_bcmaps_results |>
+  left_join(fsa_statscan_results, by = "fid", suffix = c("_bcmaps", "_statscan")) |>
+  left_join(popcenter_results, by = "fid") |>
+  mutate(
+    rural_bcmaps = grepl("^V0", cfsauid_bcmaps),
+    rural_statscan = grepl("^V0", cfsauid_statscan),
+    rural_popcenter = is.na(pcname)
+  )
+
+# Filter for discrepancies between methods and summarize
+fsa_discrepancies_summary <- combined_results |> 
+  filter(cfsauid_bcmaps != cfsauid_statscan) |>
+  count(cfsauid_bcmaps, cfsauid_statscan) |> 
+  arrange(desc(n))
+
+rural_discrepancies_summary <- combined_results |>
+  count(rural_bcmaps, rural_statscan, rural_popcenter) |>
+  rowwise() |>
+  filter(
+    (rural_bcmaps != rural_statscan) |
+    (rural_bcmaps != rural_popcenter) |
+    (rural_statscan != rural_popcenter)
+  ) 
+
+fsa_discrepancies_summary
+rural_discrepancies_summary
+
+
+# Plotting the discrepancies for custom regions
+all_the_regions <- drivetime_data |>
+  left_join(combined_results, by = "fid") |>
+   select(fid, geometry, starts_with("rural_")) |>
+    pivot_longer(
+      cols = starts_with("rural_"),
+      names_to = "method",
+      values_to = "rural"
+    )
+
+
+microbenchmark(
+      method1 = {drivetime_data |> distinct(nearest_facility) |> pull(nearest_facility)},
+      method2 = {drivetime_data |> pull(nearest_facility) |> unique()},
+      times = 10
+    )
+
+regions_to_plot1 <- drivetime_data |> distinct(nearest_facility) |> pull(nearest_facility)
+regions_to_plot2 <- drivetime_data |> pull(nearest_facility) |> unique()
+
+
+plot_data |> 
+  filter(nearest_facility %in% regions_to_plot[1])
+
+#plot the data using ggplot and geom_sf.  Facet on the method used
 ggplot() +
-  geom_sf(data = pop_residents_plot, aes(color = rural), size = 0.5) +
+  geom_sf(data = plot_data, aes(color = rural), size = 0.5) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "blue"), name = "Rural") +
+  facet_wrap(~ method) +
   labs(title = "Population Centers in British Columbia",
-       subtitle = "Colored by Rural Flag",
+       subtitle = "Colored by Rural Flag and Method",
        x = "Longitude", y = "Latitude") +
   theme_minimal()
+
