@@ -165,6 +165,24 @@ rural_discrepancies_summary <- combined_results |>
 
 rural_discrepancies_summary
 
+# areas with the largest discrepency between methods
+office_discrepency_summary <- combined_results |>
+  st_drop_geometry() |>
+  mutate(
+    discrepancy = case_when(
+      (urban_rural_bcmaps == urban_rural_statscan) & (urban_rural_bcmaps == urban_rural_popcenter) ~ 0, # all methods agree
+      (urban_rural_bcmaps == urban_rural_statscan) & (urban_rural_bcmaps != urban_rural_popcenter) ~ 1, # only the FSA methods agree
+      TRUE ~ 0 # FSA methods disagree but one of them agrees with the popcenter method
+    )
+  ) |>
+  group_by(nearest_facility) |>
+  summarise(total_discrepancy = sum(discrepancy, na.rm = TRUE), 
+            total_addresses = n(),
+            discrepancy = total_discrepancy / total_addresses) |>
+  arrange(desc(total_discrepancy))
+
+View(office_discrepency_summary)
+
 # =========================================================================== #
 # Plot urban vs rural for each method
 # =========================================================================== #
@@ -178,21 +196,24 @@ all_the_regions <- combined_results |>
     )
 
 ggplot(data = all_the_regions |> filter(method =="urban_rural_popcenter")) +
-  geom_sf(aes(color = rural), size = 0.5) +
-  scale_color_manual(values = c("URBAN" = "#084d08", "RURAL" = "#6060e4"), name = "Rural") +
+  geom_sf(aes(color = rural), size = 0.5, alpha = 0.25) +
+  scale_color_manual(values = c("URBAN" = "#074607", "RURAL" = "#8888f5"), name = "Rural") +
   labs(title = glue::glue("Rural and Urban Areas - BC"),
        subtitle = "Colored by Rural Flag and Method",
        x = "Longitude", y = "Latitude") +
   theme_minimal()
 
 # ---- Map the data for custom regions
-regions_to_plot <- drivetime_data |> pull(nearest_facility) |> unique()
-facility <- sample(regions_to_plot, 1)
-one_region_data <- all_the_regions |> filter(nearest_facility %in% facility) 
+View(office_discrepency_summary)
+facility <- office_discrepency_summary |> 
+  slice(9) |> 
+  pull(nearest_facility)
 
-ggplot(data = one_region_data) +
+all_the_regions |> 
+filter(nearest_facility %in% facility) |>
+ggplot() +
   geom_sf(aes(color = rural), size = 0.5) +
-  scale_color_manual(values = c("URBAN" = "#084d08", "RURAL" = "#6060e4"), name = "Rural") +
+  scale_color_manual(values = c("URBAN" = "#074607", "RURAL" = "#8888f5"), name = "Rural") +
   facet_wrap(~ method, nrow = 2) +
   labs(title = glue::glue("{facility}"),
        subtitle = "Colored by Rural Flag and Method",
