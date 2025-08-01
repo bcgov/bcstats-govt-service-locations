@@ -192,7 +192,7 @@ one_region_data <- all_the_regions |> filter(nearest_facility %in% facility)
 
 ggplot(data = one_region_data) +
   geom_sf(aes(color = rural), size = 0.5) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "blue"), name = "Rural") +
+  scale_color_manual(values = c("URBAN" = "#084d08", "RURAL" = "#6060e4"), name = "Rural") +
   facet_wrap(~ method, nrow = 2) +
   labs(title = glue::glue("{facility}"),
        subtitle = "Colored by Rural Flag and Method",
