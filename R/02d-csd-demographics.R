@@ -58,7 +58,7 @@ crosswalk <-
 
 db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
 db_projections_transformed <- db_projections_transformed %>% 
-  filter(dbid %in% (pop_db %>% pull(dbid)))
+    filter(csdid %in% CSDIDS)
 
 # =========================================================================== #
 # Population estimates
