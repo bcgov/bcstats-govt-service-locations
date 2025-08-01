@@ -172,15 +172,14 @@ rural_discrepancies_summary
 # --- Map the data for all the regions
 all_the_regions <- combined_results |>
     pivot_longer(
-      cols = starts_with("is_rural_"),
+      cols = starts_with("urban_rural_"),
       names_to = "method",
       values_to = "rural"
     )
 
-ggplot(data = all_the_regions |> filter(method =="is_rural_popcenter")) +
+ggplot(data = all_the_regions |> filter(method =="urban_rural_popcenter")) +
   geom_sf(aes(color = rural), size = 0.5) +
-  scale_color_manual(values = c("TRUE" = "red", "FALSE" = "blue"), name = "Rural") +
-  facet_wrap(~ method, nrow = 2) +
+  scale_color_manual(values = c("URBAN" = "#084d08", "RURAL" = "#6060e4"), name = "Rural") +
   labs(title = glue::glue("Rural and Urban Areas - BC"),
        subtitle = "Colored by Rural Flag and Method",
        x = "Longitude", y = "Latitude") +
