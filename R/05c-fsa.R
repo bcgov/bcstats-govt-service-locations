@@ -66,7 +66,7 @@ source("R/settings.R")
 # Load data ----
 # =========================================================================== #
 
-# address data
+# --- Address data
 drivetime_data <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
@@ -104,7 +104,7 @@ pop_centers <- st_read(
 # Compare the different methods and data sources ----
 # =========================================================================== #
 
-# Combine results into a single data frame
+# --- Combine results into a single data frame
 residences <- drivetime_data |> select(fid, geometry, nearest_facility)
 
 fsa_bcmaps_results <- resides_in_region(residences, fsa_bcmaps, "cfsauid")
@@ -116,35 +116,35 @@ combined_results <- residences |>
   left_join(fsa_statscan_results, by = "fid", suffix = c("_bcmaps", "_statscan")) |>
   left_join(popcenter_results, by = "fid") |>
   mutate(
-    is_rural_bcmaps = case_when(
+    urban_rural_bcmaps = case_when(
       is.na(cfsauid_bcmaps) ~ NA,                # missing FSA
-      grepl("^V0", cfsauid_bcmaps) ~ TRUE,       # rural
-      TRUE ~ FALSE                              # urban
+      grepl("^V0", cfsauid_bcmaps) ~ "RURAL",       # rural
+      TRUE ~ "URBAN"                              # urban
     ),
-    is_rural_statscan = case_when(
+    urban_rural_statscan = case_when(
       is.na(cfsauid_statscan) ~ NA,
-      grepl("^V0", cfsauid_statscan) ~ TRUE,
-      TRUE ~ FALSE
+      grepl("^V0", cfsauid_statscan) ~ "RURAL",
+      TRUE ~ "URBAN"
     ),
-    is_rural_popcenter = case_when(
-      is.na(pcname) ~ TRUE,                     # not in a pop center = rural
-      TRUE ~ FALSE
+    urban_rural_popcenter = case_when(
+      is.na(pcname) ~ "RURAL",                     # not in a pop center = rural
+      TRUE ~ "URBAN"
     )
   )
 
-# Aggregate the results so we can look at them
+# --- Aggregate the results so we can look at them
 summary_results <- combined_results |>
   st_drop_geometry() |>
   summarise(
     n_residences = n(),
-    n_rural_bcmaps = sum(is_rural_bcmaps, na.rm = TRUE),
-    n_missing_bcmaps = sum(is.na(is_rural_bcmaps), na.rm = TRUE),
-    n_rural_statscan = sum(is_rural_statscan, na.rm = TRUE),
-    n_missing_statscan = sum(is.na(is_rural_statscan), na.rm = TRUE),
-    n_rural_popcenter = sum(is_rural_popcenter, na.rm = TRUE),
-    p_rural_bcmaps = sum(is_rural_bcmaps, na.rm = TRUE)/n(),
-    p_rural_statscan = sum(is_rural_statscan, na.rm = TRUE)/n(),
-    p_rural_popcenter = sum(is_rural_popcenter, na.rm = TRUE)/n()
+    n_rural_bcmaps = sum(urban_rural_bcmaps == "RURAL", na.rm = TRUE),
+    n_rural_statscan = sum(urban_rural_statscan == "RURAL", na.rm = TRUE),
+    n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
+    n_missing_bcmaps = sum(is.na(urban_rural_bcmaps), na.rm = TRUE),
+    n_missing_statscan = sum(is.na(urban_rural_statscan), na.rm = TRUE),
+    p_rural_bcmaps = 100*sum(urban_rural_bcmaps == "RURAL", na.rm = TRUE)/n(),
+    p_rural_statscan = 100*sum(urban_rural_statscan == "RURAL", na.rm = TRUE)/n(),
+    p_rural_popcenter = 100*sum(urban_rural_popcenter == "RURAL", na.rm = TRUE)/n()
   ) |>
   pivot_longer(
     cols = starts_with(c("n_", "p_")),
@@ -155,12 +155,12 @@ summary_results <- combined_results |>
 summary_results
 
 rural_discrepancies_summary <- combined_results |>
-  count(is_rural_bcmaps, is_rural_statscan, is_rural_popcenter) |>
+  count(urban_rural_bcmaps, urban_rural_statscan, urban_rural_popcenter) |>
   rowwise() |>
   filter(
-    (is_rural_bcmaps != is_rural_statscan) |
-    (is_rural_bcmaps != is_rural_popcenter) |
-    (is_rural_statscan != is_rural_popcenter)
+    (urban_rural_bcmaps != urban_rural_statscan) |
+    (urban_rural_bcmaps != urban_rural_popcenter) |
+    (urban_rural_statscan != urban_rural_popcenter)
   )
 
 rural_discrepancies_summary
@@ -169,7 +169,7 @@ rural_discrepancies_summary
 # Plot urban vs rural for each method
 # =========================================================================== #
 
-# map the data for all the regions
+# --- Map the data for all the regions
 all_the_regions <- combined_results |>
     pivot_longer(
       cols = starts_with("is_rural_"),
@@ -177,16 +177,16 @@ all_the_regions <- combined_results |>
       values_to = "rural"
     )
 
-ggplot(data = all_the_regions) +
+ggplot(data = all_the_regions |> filter(method =="is_rural_popcenter")) +
   geom_sf(aes(color = rural), size = 0.5) +
   scale_color_manual(values = c("TRUE" = "red", "FALSE" = "blue"), name = "Rural") +
   facet_wrap(~ method, nrow = 2) +
-  labs(title = glue::glue("{facility}"),
+  labs(title = glue::glue("Rural and Urban Areas - BC"),
        subtitle = "Colored by Rural Flag and Method",
        x = "Longitude", y = "Latitude") +
   theme_minimal()
 
-# map the data for custom regions
+# ---- Map the data for custom regions
 regions_to_plot <- drivetime_data |> pull(nearest_facility) |> unique()
 facility <- sample(regions_to_plot, 1)
 one_region_data <- all_the_regions |> filter(nearest_facility %in% facility) 
