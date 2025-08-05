@@ -39,7 +39,7 @@ complete_assignments <- read_csv(
 sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
   filter(csd_name %in% CSD_NAMES)
 
-## crosswalk (entire province, not filtered)
+## crosswalk (entire province - excludes dguid's found in our data)
 crosswalk <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"),
