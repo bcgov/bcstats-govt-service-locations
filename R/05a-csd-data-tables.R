@@ -63,11 +63,16 @@ age_estimates_current_year <- db_projections_transformed_raw |>
     age >= 19 & age < 65 ~ "19-64",
     age >= 65 ~ "65+"
   )) |>
-  summarise(population = sum(population, na.rm = TRUE), .by = c(region_name, age_grp)) |>
-  pivot_wider(names_from = age_grp, values_from = population, values_fill = 0)
+  summarise(
+    population = sum(population, na.rm = TRUE), 
+    .by = c(region_name, age_grp)) |>
+  pivot_wider(
+    names_from = age_grp,
+    values_from = population, 
+    values_fill = 0)
 
 addresses_serviced <- drivetime_data |>
-  summarise(n_address = n(), .by = c(csd_name, nearest_facility))
+  summarise(n_address = n(), .by = c(csd_name))
 
 offices_serviced <- drivetime_data |>
   summarise(n_offices = n_distinct(nearest_facility), .by = c(csd_name))
@@ -76,19 +81,29 @@ offices_serviced <- drivetime_data |>
 # bin the data by driving distance
 #------------------------------------------------------------------------------
 
-drivetime_data |>
+drive_distance_bins <- drivetime_data |>
   mutate(
-    bin = case_when(
+    age_bin = case_when(
       drv_dist < 5 ~ "Under 5 km",
       between(drv_dist, 5, 20) ~ "5 to 20 km",
       TRUE ~ "20+ km"
     )
   ) |>
-  summarise(total_count = n(), .by = c(csd_name, bin)) |>
+  summarise(total_count = n(),
+    .by = c(csd_name, age_bin)) |>
   pivot_wider(
-    names_from = bin,
+    names_from = age_bin,
     values_from = total_count,
     values_fill = 0
-  ) 
+  )
 
+# =========================================================================== #
+# All together ----
+# =========================================================================== #
 
+# doesn't work - db populations are based on 191 regions, not the full set of ~750 CSD's
+popultion_estimates_three_year |>
+  left_join(addresses_serviced, by = "csd_name") |>
+  left_join(offices_serviced, by = "csd_name") |>
+  left_join(age_estimates_current_year, by = "csd_name") |>
+  left_join(drive_distance_bins, by = "csd_name") 
