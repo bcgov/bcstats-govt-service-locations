@@ -141,7 +141,7 @@ VISUALS_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visu
 MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
 ```
 - **Purpose**: Standardize where all inputs and outputs are stored, using safe LAN pathing.
--  **Usage**: Automated file loading/saving. 
+- **Usage**: Automated file loading/saving
 :::
 
 
