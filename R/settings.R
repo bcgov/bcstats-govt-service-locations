@@ -76,7 +76,7 @@ CURRENT_YEAR <- 2025
 LAN_FOLDER <- use_network_path()
 SRC_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/source/")
 RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/")
-DT_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/nearest_facility_BC")
+DT_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/nearest-facility-BC")
 SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")
 
 # Output filenames
