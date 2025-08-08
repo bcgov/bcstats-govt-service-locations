@@ -21,12 +21,20 @@ source("R/settings.R")
 
 # =========================================================================== #
 # Read required data
-# =============================================== #
+# =========================================================================== #
 
-crosswalk <- read_csv(glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"), 
+# Crosswalk contains 52,423 DB's over 751 CSD's.  The CSD's align in the
+# csd_shapefiles from bcmaps, and cancensus data.  The DB's do not align perfectly
+# in that there are 36 fewer DB's in the census data than in the data from BC Geographic Warehouse .
+# However, this crosswalk only contains the census DB's and CSD's.  The two geographies are
+# in alignment for this table, as best as I can tell (i.e. this is a complete crosswalk).
+crosswalk <- read_csv(glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"),
    col_types = cols(.default = "c"))
 
-## census populations - 745 census subdivisions found in our data
+# census populations - 745 census subdivisions found in our data
+# This data comes from the census (52,387 DB's).
+# This is 36 fewer than listed in the BC Geographic Warehouse (52,423).
+# There is a note that the data in the is from 2016, but each record is labeled 2021, so possible we need to check on this.
 pop_db <- read_csv(
   glue("{SRC_DATA_FOLDER}/full-population-db.csv"),
   col_types = cols(.default = "c")
@@ -34,6 +42,12 @@ pop_db <- read_csv(
   clean_names() |>
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric)) |>
   inner_join(crosswalk, by = join_by(dbid))
+
+# our full set of drive data from DSS:  2,052,803 records over 41,991 DB's and 525 CSD's.
+# This is 10,432 fewer DB's than in the BC Data Catalog/BC Geographic Warehouse data (52,423).
+# 4 db's from our drive data are not in the census data, but they are all in the data from BC Data Catalog.  They
+# represent very small areas (islands, looks like) around vancouver island.
+# They are in the set of 36 DB's that are missing, which are also mostly areas around vancouver island and the lower mainland.
 
 drivetime_data <- read_csv(
     glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
@@ -45,7 +59,7 @@ drivetime_data <- read_csv(
 
 db_projections_transformed_raw <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds")) |> 
   filter(dbid %in% (crosswalk |> pull(dbid))) |> 
-  filter(gender == 'T', year %in% c(2025, 2030, 2035)) 
+  filter(gender == 'T', year %in% c(2025, 2030, 2035))
 
 # =========================================================================== #
 # DB population projections, current, 5yr, 10yr
@@ -54,28 +68,28 @@ db_projections_transformed_raw <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projec
 # =========================================================================== #
 
 popultion_estimates_three_year <- db_projections_transformed_raw  |>
-  summarise(population = sum(population, na.rm = TRUE), .by = c(year, region_name)) |>
+  summarise(population = sum(population, na.rm = TRUE), .by = c(year, region_name, csdid)) |>
   pivot_wider(names_from = year, values_from = population, values_fill = 0)
 
-age_estimates_current_year <- db_projections_transformed_raw |> 
+age_estimates_current_year <- db_projections_transformed_raw |>
   mutate(age_grp = case_when(
     age < 19 ~ "0-19",
     age >= 19 & age < 65 ~ "19-64",
     age >= 65 ~ "65+"
   )) |>
   summarise(
-    population = sum(population, na.rm = TRUE), 
-    .by = c(region_name, age_grp)) |>
+    population = sum(population, na.rm = TRUE),
+    .by = c(region_name, csdid, age_grp)) |>
   pivot_wider(
     names_from = age_grp,
-    values_from = population, 
+    values_from = population,
     values_fill = 0)
 
 addresses_serviced <- drivetime_data |>
-  summarise(n_address = n(), .by = c(csd_name))
+  summarise(n_address = n(), .by = c(csd_name, csdid))
 
 offices_serviced <- drivetime_data |>
-  summarise(n_offices = n_distinct(nearest_facility), .by = c(csd_name))
+  summarise(n_offices = n_distinct(nearest_facility), .by = c(csdid, csd_name))
 
 #------------------------------------------------------------------------------
 # bin the data by driving distance
@@ -90,7 +104,7 @@ drive_distance_bins <- drivetime_data |>
     )
   ) |>
   summarise(total_count = n(),
-    .by = c(csd_name, age_bin)) |>
+    .by = c(csd_name, csdid, age_bin)) |>
   pivot_wider(
     names_from = age_bin,
     values_from = total_count,
@@ -101,9 +115,15 @@ drive_distance_bins <- drivetime_data |>
 # All together ----
 # =========================================================================== #
 
-# doesn't work - db populations are based on 191 regions, not the full set of ~750 CSD's
-popultion_estimates_three_year |>
-  left_join(addresses_serviced, by = "csd_name") |>
-  left_join(offices_serviced, by = "csd_name") |>
-  left_join(age_estimates_current_year, by = "csd_name") |>
-  left_join(drive_distance_bins, by = "csd_name") 
+# we can't combine until we determine whether they want the full set of CSD's, or the
+# CSD's + rolled up unicorporated.  current popultion_estimates_three_year rollus up 29 unincorporated areas.
+# this gives 191 regions, not the full set of CSD's.
+# We have data on 525 of the 751 CSDS
+# (missing data on 220 of 423 IRI's, 3 of 160 RDA's, and 3 of 3 S-E's)
+combined_stats <- popultion_estimates_three_year |>
+  left_join(age_estimates_current_year, by = c("csdid", "region_name")) |>
+  left_join(addresses_serviced, by = "csdid") |>
+  left_join(offices_serviced, by = c("csdid", "csd_name")) |>
+  left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
+  relocate(csd_name, .before = region_name) |>
+  relocate(n_address, n_offices, .after = `2035`)
