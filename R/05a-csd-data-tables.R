@@ -57,6 +57,10 @@ drivetime_data <- read_csv(
   mutate(across(c(drv_time_sec, drv_dist), as.numeric)) |>
   inner_join (crosswalk, join_by(dbid, daid))
 
+# these are from the census data, so contain 52,387 DB's and 751 CSD's.
+# For those csdid's/db's that are not in the population projections, they 
+# were proportionally allocated to the corresponding Unincorporated CSD (regional district).
+
 db_projections_transformed_raw <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds")) |> 
   filter(dbid %in% (crosswalk |> pull(dbid))) |> 
   filter(gender == 'T', year %in% c(2025, 2030, 2035))
@@ -67,7 +71,7 @@ db_projections_transformed_raw <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projec
 # number of offices in each CSD (from our data)
 # =========================================================================== #
 
-popultion_estimates_three_year <- db_projections_transformed_raw  |>
+population_estimates_three_year <- db_projections_transformed_raw  |>
   summarise(population = sum(population, na.rm = TRUE), .by = c(year, region_name, csdid)) |>
   pivot_wider(names_from = year, values_from = population, values_fill = 0)
 
@@ -97,29 +101,28 @@ offices_serviced <- drivetime_data |>
 
 drive_distance_bins <- drivetime_data |>
   mutate(
-    age_bin = case_when(
+    dist_bin = case_when(
       drv_dist < 5 ~ "Under 5 km",
       between(drv_dist, 5, 20) ~ "5 to 20 km",
       TRUE ~ "20+ km"
     )
   ) |>
   summarise(total_count = n(),
-    .by = c(csd_name, csdid, age_bin)) |>
+    .by = c(csd_name, csdid, dist_bin)) |>
   pivot_wider(
-    names_from = age_bin,
+    names_from = dist_bin,
     values_from = total_count,
     values_fill = 0
   )
+
 
 # =========================================================================== #
 # All together ----
 # =========================================================================== #
 
-# we can't combine until we determine whether they want the full set of CSD's, or the
-# CSD's + rolled up unicorporated.  current popultion_estimates_three_year rollus up 29 unincorporated areas.
-# this gives 191 regions, not the full set of CSD's.
-# We have data on 525 of the 751 CSDS
-# (missing data on 220 of 423 IRI's, 3 of 160 RDA's, and 3 of 3 S-E's)
+# Combined, assuming we want the full set of CSD's
+# If we want to rollup to Unincorporated areas then we can group by region_name/clean_csd in aggregations above
+# Since we only have data on 525 of the 751 CSDS  => missing data on 220/423 IRI's, 3/160 RDA's, and 3/3 S-E's
 combined_stats <- popultion_estimates_three_year |>
   left_join(age_estimates_current_year, by = c("csdid", "region_name")) |>
   left_join(addresses_serviced, by = "csdid") |>
