@@ -76,6 +76,7 @@ population_estimates_three_year <- db_projections_transformed_raw  |>
   pivot_wider(names_from = year, values_from = population, values_fill = 0)
 
 age_estimates_current_year <- db_projections_transformed_raw |>
+  filter(year == 2025) |>
   mutate(age_grp = case_when(
     age < 19 ~ "0-19",
     age >= 19 & age < 65 ~ "19-64",
