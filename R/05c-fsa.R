@@ -170,8 +170,7 @@ method_classification_patterns <- residence_region_crosswalk |>
       (urban_rural_bcmaps_fsa != urban_rural_statscan_fsa) & (urban_rural_bcmaps_fsa == urban_rural_popcenter) ~ "BCMaps & PopCenter agree",
       (urban_rural_statscan_fsa != urban_rural_bcmaps_fsa) & (urban_rural_statscan_fsa == urban_rural_popcenter) ~ "StatsCan & PopCenter agree",
       TRUE ~ "All methods disagree"
-    ),
-    has_divergence = !((urban_rural_bcmaps_fsa == urban_rural_statscan_fsa) & (urban_rural_bcmaps_fsa == urban_rural_popcenter))
+    )
   ) |>
   arrange(desc(n_residences))
 
@@ -179,6 +178,7 @@ method_classification_patterns
 
 
 # --- Calculate a divergence score for each office, so we can compare how each office is affected by the different methods
+# --- Not super meaningful, but useful for plotting areas with  high disagreement between offices
 divergence_by_office <- residence_region_crosswalk |>
   st_drop_geometry() |>
   mutate(
@@ -187,23 +187,21 @@ divergence_by_office <- residence_region_crosswalk |>
       (urban_rural_bcmaps_fsa == urban_rural_statscan_fsa) & (urban_rural_bcmaps_fsa != urban_rural_popcenter) ~ 1, # only the FSA methods agree
       (urban_rural_bcmaps_fsa != urban_rural_statscan_fsa) & (urban_rural_bcmaps_fsa == urban_rural_popcenter) ~ 1, # bcmaps_fsa agrees with popcenter, not statscan_fsa
       (urban_rural_bcmaps_fsa != urban_rural_statscan_fsa) & (urban_rural_statscan_fsa == urban_rural_popcenter) ~ 1, # statscan_fsa agrees with popcenter, not bcmaps_fsa
-      TRUE ~ 2 # all methods disagree - this is impossible given only TRUE/FALSE values
+      TRUE ~ 2 # all methods disagree - this should only be possible when NA values
     )
   ) |>
   group_by(nearest_facility) |>
   summarise(
     total_divergence = sum(divergence_score, na.rm = TRUE),
-    average_divergence = total_divergence / n(),
     n_addresses = n(),
     n_no_divergence = sum(divergence_score == 0, na.rm = TRUE),
-    n_partial_divergence = sum(divergence_score == 1, na.rm = TRUE), 
-    n_full_divergence = sum(divergence_score == 2, na.rm = TRUE),
+    n_partial_divergence = sum(divergence_score == 1, na.rm = TRUE),
     pct_divergent = 100 * (n() - n_no_divergence) / n(),
     .groups = 'drop'
   ) |>
-  arrange(desc(total_divergence))
+  arrange(desc(pct_divergent))
 
-divergence_by_office |> arrange(divergence_score_office) 
+divergence_by_office
 
 # =========================================================================== #
 # Plot urban vs rural for each method
