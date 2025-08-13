@@ -29,8 +29,8 @@
 
 
 # =========================================================================== #
-# Function to determine which region each residence belongs to, 
-# abstracted and works for each method (FSA or population center) and 
+# Function to determine which region each residence belongs to,
+# abstracted and works for each method (FSA or population center) and
 # data source (bcmaps, statscan, or pop centers).
 # =========================================================================== #
 
@@ -82,44 +82,36 @@ fsa_bcmaps <- bcmaps::fsa() |>
   st_transform(crs = 3005)
 
 # --- FSA boundary shapefiles - Method 1b
-fsa_statscan <- st_read(
-    glue::glue("{data_dir}lfsa000b21a_e/lfsa000b21a_e.shp")
-  ) |>
-  clean_names() |>
+fsa_statscan <- st_read(glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg")) |>
   select(-c(dguid, landarea)) |>
-  filter(pruid == "59") |>
   st_transform(crs = 3005)
 
 # --- Population center shapefiles - Method 2
-pop_centers <- st_read(
-    glue::glue("{data_dir}lpc_000b21a_e/lpc_000b21a_e.shp")
-  ) |>
-  clean_names() |>
-  filter(pruid == "59") |>
+pop_centers <- st_read(glue("{SRC_DATA_FOLDER}/shapefiles/pop-centers-statscan.gpkg")) |>
   select(popid = dguid, pcname, pcclass, pctype) |>
   st_transform(crs = 3005)
 
-
 # =========================================================================== #
-# Compare the different methods and data sources ----
+# Create urban/rural flag for different methods and data sources ----
 # =========================================================================== #
 
-# --- Combine results into a single data frame
 residences <- drivetime_data |> select(fid, geometry, nearest_facility)
 
-fsa_bcmaps_results <- resides_in_region(residences, fsa_bcmaps, "cfsauid")
-fsa_statscan_results  <- resides_in_region(residences, fsa_statscan, "cfsauid")
-popcenter_results <- resides_in_region(residences, pop_centers, "pcname")
+# generate a crosswalk that maps each residence to a region, for each boundary (method).
+fsa_residence_crosswalk_bcmaps <- resides_in_region(residences, fsa_bcmaps, "cfsauid")
+fsa_residence_crosswalk_statscan <- resides_in_region(residences, fsa_statscan, "cfsauid")
+popcenter_residence_crosswalk_statscan <- resides_in_region(residences, pop_centers, "pcname")
 
-combined_results <- residences |>
-  left_join(fsa_bcmaps_results, by = "fid") |>
-  left_join(fsa_statscan_results, by = "fid", suffix = c("_bcmaps", "_statscan")) |>
-  left_join(popcenter_results, by = "fid") |>
+# combine and add an urban/rural flag for each method
+residence_region_crosswalk <- residences |>
+  left_join(fsa_residence_crosswalk_bcmaps, by = "fid") |>
+  left_join(fsa_residence_crosswalk_statscan, by = "fid", suffix = c("_bcmaps", "_statscan")) |>
+  left_join(popcenter_residence_crosswalk_statscan, by = "fid") |>
   mutate(
     urban_rural_bcmaps = case_when(
-      is.na(cfsauid_bcmaps) ~ NA,                # missing FSA
-      grepl("^V0", cfsauid_bcmaps) ~ "RURAL",       # rural
-      TRUE ~ "URBAN"                              # urban
+      is.na(cfsauid_bcmaps) ~ NA,                
+      grepl("^V0", cfsauid_bcmaps) ~ "RURAL",    # an area is rural if the second character is a 0
+      TRUE ~ "URBAN"                              
     ),
     urban_rural_statscan = case_when(
       is.na(cfsauid_statscan) ~ NA,
@@ -127,13 +119,17 @@ combined_results <- residences |>
       TRUE ~ "URBAN"
     ),
     urban_rural_popcenter = case_when(
-      is.na(pcname) ~ "RURAL",                     # not in a pop center = rural
+      is.na(pcname) ~ "RURAL",  # an area is rural if outside a population center
       TRUE ~ "URBAN"
     )
   )
 
-# --- Aggregate the results so we can look at them
-summary_results <- combined_results |>
+# =========================================================================== #
+# Analyze results for different methods and data sources ----
+# =========================================================================== #
+
+# --- generate a summary table so we can compares how different classification methods label residences as "rural" or "urban." 
+rural_summary_by_method <- residence_region_crosswalk |>
   st_drop_geometry() |>
   summarise(
     n_residences = n(),
@@ -142,9 +138,9 @@ summary_results <- combined_results |>
     n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
     n_missing_bcmaps = sum(is.na(urban_rural_bcmaps), na.rm = TRUE),
     n_missing_statscan = sum(is.na(urban_rural_statscan), na.rm = TRUE),
-    p_rural_bcmaps = 100*sum(urban_rural_bcmaps == "RURAL", na.rm = TRUE)/n(),
-    p_rural_statscan = 100*sum(urban_rural_statscan == "RURAL", na.rm = TRUE)/n(),
-    p_rural_popcenter = 100*sum(urban_rural_popcenter == "RURAL", na.rm = TRUE)/n()
+    p_rural_bcmaps = 100*sum(urban_rural_bcmaps == "RURAL", na.rm = TRUE) / n(),
+    p_rural_statscan = 100*sum(urban_rural_statscan == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100*sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n()
   ) |>
   pivot_longer(
     cols = starts_with(c("n_", "p_")),
@@ -152,71 +148,81 @@ summary_results <- combined_results |>
     values_to = "count"
   )
 
-summary_results
+rural_summary_by_method
 
-rural_discrepancies_summary <- combined_results |>
-  count(urban_rural_bcmaps, urban_rural_statscan, urban_rural_popcenter) |>
-  rowwise() |>
-  filter(
-    (urban_rural_bcmaps != urban_rural_statscan) |
-    (urban_rural_bcmaps != urban_rural_popcenter) |
-    (urban_rural_statscan != urban_rural_popcenter)
-  )
 
-rural_discrepancies_summary
+# --- Create a table of classification patterns
+method_classification_patterns <- residence_region_crosswalk |>
+  st_drop_geometry() |>
+  count(urban_rural_bcmaps, urban_rural_statscan, urban_rural_popcenter, name = "n_residences") |>
+  mutate(
+    agreement_type = case_when(
+      (urban_rural_bcmaps == urban_rural_statscan) & (urban_rural_bcmaps == urban_rural_popcenter) ~ "All methods agree",
+      (urban_rural_bcmaps == urban_rural_statscan) & (urban_rural_bcmaps != urban_rural_popcenter) ~ "FSA methods agree",
+      (urban_rural_bcmaps != urban_rural_statscan) & (urban_rural_bcmaps == urban_rural_popcenter) ~ "BCMaps & PopCenter agree", 
+      (urban_rural_bcmaps != urban_rural_statscan) & (urban_rural_statscan == urban_rural_popcenter) ~ "StatsCan & PopCenter agree",
+      TRUE ~ "All methods disagree"
+    ),
+    has_divergence = !((urban_rural_bcmaps == urban_rural_statscan) & (urban_rural_bcmaps == urban_rural_popcenter))
+  ) |>
+  arrange(desc(n_residences))
 
-# areas with the largest discrepency between methods
-office_discrepency_summary <- combined_results |>
+method_classification_patterns
+
+
+# --- Calculate a divergence score for each office, so we can compare how each office is affected by the different methods
+#  I think the scoring can be simplified but leaving it for now in case one combo takes a higher score based on other factors.
+divergence_by_office <- residence_region_crosswalk |>
   st_drop_geometry() |>
   mutate(
-    discrepancy = case_when(
-      (urban_rural_bcmaps == urban_rural_statscan) & (urban_rural_bcmaps == urban_rural_popcenter) ~ 0, # all methods agree
-      (urban_rural_bcmaps == urban_rural_statscan) & (urban_rural_bcmaps != urban_rural_popcenter) ~ 1, # only the FSA methods agree
-      TRUE ~ 0 # FSA methods disagree but one of them agrees with the popcenter method
+    divergence_score = case_when(
+      (urban_rural_bcmaps == urban_rural_statscan) & (urban_rural_bcmaps == urban_rural_popcenter) ~ 1, # all methods agree
+      (urban_rural_bcmaps == urban_rural_statscan) & (urban_rural_bcmaps != urban_rural_popcenter) ~ 0.25, # only the FSA methods agree
+      (urban_rural_bcmaps != urban_rural_statscan) & (urban_rural_bcmaps == urban_rural_popcenter) ~ 0.5, # bcmaps agrees with popcenter, not statscan
+      (urban_rural_bcmaps != urban_rural_statscan) & (urban_rural_statscan == urban_rural_popcenter) ~ 0.75, # statscan agrees with popcenter, not bcmaps
+      TRUE ~ 1 # all methods disagree - but this is impossible
     )
   ) |>
   group_by(nearest_facility) |>
-  summarise(total_discrepancy = sum(discrepancy, na.rm = TRUE), 
-            total_addresses = n(),
-            discrepancy = total_discrepancy / total_addresses) |>
-  arrange(desc(total_discrepancy))
+  summarise(total_divergence = sum(divergence_score, na.rm = TRUE),
+            divergence_score_office = total_divergence / n(),
+            .groups = 'drop') |>
+  arrange(desc(total_divergence))
 
-View(office_discrepency_summary)
+divergence_by_office |> arrange(divergence_score_office)
 
 # =========================================================================== #
 # Plot urban vs rural for each method
 # =========================================================================== #
 
-# --- Map the data for all the regions
-all_the_regions <- combined_results |>
-    pivot_longer(
-      cols = starts_with("urban_rural_"),
-      names_to = "method",
-      values_to = "rural"
-    )
+# --- Create a reusable plotting function for urban/rural maps
+plot_urban_rural <- function(data, method_filter = NULL, title = "Rural and Urban Areas - BC") {
+  plot_data <- if (!is.null(method_filter)) {
+    data |> filter(method == method_filter)
+  } else {
+    data
+  }
+  ggplot(plot_data) +
+    geom_sf(aes(color = rural), size = 0.5, alpha = 0.25) +
+    scale_color_manual(values = c("URBAN" = "#074607", "RURAL" = "#8888f5"), name = "Rural") +
+    labs(title = title,
+         subtitle = "Colored by Rural Flag and Method",
+         x = "Longitude", y = "Latitude") +
+    theme_minimal()
+}
 
-ggplot(data = all_the_regions |> filter(method =="urban_rural_popcenter")) +
-  geom_sf(aes(color = rural), size = 0.5, alpha = 0.25) +
-  scale_color_manual(values = c("URBAN" = "#074607", "RURAL" = "#8888f5"), name = "Rural") +
-  labs(title = glue::glue("Rural and Urban Areas - BC"),
-       subtitle = "Colored by Rural Flag and Method",
-       x = "Longitude", y = "Latitude") +
-  theme_minimal()
+# --- Create data for mapping all the regions
+residence_region_long <- residence_region_crosswalk |>
+  pivot_longer(
+    cols = starts_with("urban_rural_"),
+    names_to = "method",
+    values_to = "rural"
+  )
 
-# ---- Map the data for custom regions
-View(office_discrepency_summary)
-facility <- office_discrepency_summary |> 
-  slice(9) |> 
-  pull(nearest_facility)
+plot_urban_rural(residence_region_long, method_filter = "urban_rural_popcenter")
 
-all_the_regions |> 
-filter(nearest_facility %in% facility) |>
-ggplot() +
-  geom_sf(aes(color = rural), size = 0.5) +
-  scale_color_manual(values = c("URBAN" = "#074607", "RURAL" = "#8888f5"), name = "Rural") +
-  facet_wrap(~ method, nrow = 2) +
-  labs(title = glue::glue("{facility}"),
-       subtitle = "Colored by Rural Flag and Method",
-       x = "Longitude", y = "Latitude") +
-  theme_minimal()
+facility <- divergence_by_office |> slice(9) |> pull(nearest_facility)
 
+residence_region_long |>
+  filter(nearest_facility %in% facility) |>
+  plot_urban_rural(title = glue::glue("{facility}")) + facet_wrap(~ method, nrow = 2)
