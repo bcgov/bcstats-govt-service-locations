@@ -32,7 +32,6 @@
 # https://www150.statcan.gc.ca/n1/pub/71-607-x/71-607-x2024012-eng.htm
 # =========================================================================== #
 
-
 # =========================================================================== #
 # Function to determine which region each residence belongs to,
 # abstracted and works for each method (FSA or population center) and
