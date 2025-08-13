@@ -91,31 +91,23 @@ drivetime_data_focused <- drivetime_data_full |>
 
 drive_distance_bins <- drivetime_data_focused |>
   summarize(
-    n_under_5 = sum(drv_dist < 5.0, na.rm = TRUE),
-    n_5_to_20 = sum(drv_dist >= 5.0 & drv_dist < 20.0, na.rm = TRUE),
-    n_20_plus = sum(drv_dist >= 20.0, na.rm = TRUE),
-    .by = c(assigned)) |>
-  filter(assigned %in% sbc_names)
+    addresses_under_5_km = sum(drv_dist < 5.0, na.rm = TRUE),
+    addresses_5_to_20_km = sum(drv_dist >= 5.0 & drv_dist < 20.0, na.rm = TRUE),
+    addresses_20_plus_km = sum(drv_dist >= 20.0, na.rm = TRUE),
+    .by = c(assigned)
+  )
 
 #------------------------------------------------------------------------------
-# count of addresses by assigned
+# miscellaneous metrics by assigned
 #------------------------------------------------------------------------------
 
-addresses_serviced <- drivetime_data_focused |>
+other_metrics <- drivetime_data_focused |>
   summarize(
-    n_addresses = n(),
-    mean_drv_dist = mean(drv_dist, na.rm = TRUE),
+    n_addresses_served = n(),
+    avg_driving_distance = mean(drv_dist, na.rm = TRUE),
+    n_csds_served = n_distinct(csdid),
     .by = c(assigned)
-  ) |>
-  filter(assigned %in% sbc_names)
-
-# counts of CSD's covered by each service BC location
-csds_serviced <- drivetime_data_focused |>
-  summarize(
-    n_csds = n_distinct(csdid),
-    .by = c(assigned)
-  ) |>
-  filter(assigned %in% sbc_names)
+  )
 
 #------------------------------------------------------------------------------
 # DB population projections ----
@@ -142,8 +134,7 @@ population_estimates_three_year <- population_estimates_three_year_all |>
     names_from = year,
     values_from = pop,
     values_fill = 0
-  ) |>
-  filter(assigned %in% sbc_names)
+  ) 
 
 #------------------------------------------------------------------------------
 # count of age groups by assigned
@@ -152,11 +143,10 @@ age_estimates_current_year <- population_estimates_three_year_all |>
   filter(year == 2025) |>
   group_by(assigned) |>
   summarize(
-    age_0_19 = sum(population[age < 19], na.rm = TRUE),
-    age_19_64 = sum(population[age >= 19 & age < 65], na.rm = TRUE),
-    age_65_plus = sum(population[age >= 65], na.rm = TRUE)
-  ) |>
-  filter(assigned %in% sbc_names)
+    est_population_under_19_yrs = sum(population[age < 19], na.rm = TRUE),
+    est_population_19_to_64_yrs = sum(population[age >= 19 & age < 65], na.rm = TRUE),
+    est_population_over_64_yrs = sum(population[age >= 65], na.rm = TRUE)
+  ) 
 
 
 # =========================================================================== #
@@ -167,11 +157,29 @@ age_estimates_current_year <- population_estimates_three_year_all |>
 # If we want to rollup to Unincorporated areas then we can group by region_name/clean_csd in aggregations above
 combined_stats <- population_estimates_three_year |>
   left_join(age_estimates_current_year, by = c("assigned")) |>
-  left_join(addresses_serviced, by = "assigned") |>
-  left_join(csds_serviced, by = c("assigned")) |>
+  left_join(other_metrics, by = "assigned") |>
   left_join(drive_distance_bins, by = c("assigned")) |>
-  relocate(n_addresses, n_csds, .after = `2035`)
+  relocate(n_addresses_served, n_csds_served, avg_driving_distance, .after = `2035`) |>
+  rename(
+    sbc_location = assigned,
+    estimated_population_2025 = `2025`,
+    `5_yr_projection_2030` = `2030`,
+    `10_year_projection_2035` = `2035`
+  )
 
-combined_stats |>
-  filter(assigned %in% sbc_names) 
+# =========================================================================== #
+# Write output table to CSV ----
+# =========================================================================== #
+
+# Create output directory if it doesn't exist
+if (!dir.exists(TABLES_OUT)) {
+  dir.create(TABLES_OUT, recursive = TRUE)
+}
+
+# Write combined statistics table
+write_csv(combined_stats, file.path(TABLES_OUT, "sbc_location_statistics.csv"))
+
+# Print summary of what was written
+cat("SBC location statistics written to:", file.path(TABLES_OUT, "sbc_location_statistics.csv"), "\n")
+cat("Total SBC locations in statistics:", nrow(combined_stats), "\n") 
 

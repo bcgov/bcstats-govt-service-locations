@@ -78,9 +78,9 @@ population_estimates_three_year <- db_projections_transformed_raw  |>
 age_estimates_current_year <- db_projections_transformed_raw |>
   filter(year == 2025) |>
   mutate(age_grp = case_when(
-    age < 19 ~ "0-19",
-    age >= 19 & age < 65 ~ "19-64",
-    age >= 65 ~ "65+"
+    age < 19 ~ "est_population_under_19_yrs",
+    age >= 19 & age < 65 ~ "est_population_19_to_64_yrs",
+    age >= 65 ~ "est_population_over_64_yrs"
   )) |>
   summarise(
     population = sum(population, na.rm = TRUE),
@@ -89,12 +89,18 @@ age_estimates_current_year <- db_projections_transformed_raw |>
     names_from = age_grp,
     values_from = population,
     values_fill = 0)
+    
 
-addresses_serviced <- drivetime_data |>
-  summarise(n_address = n(), .by = c(csd_name, csdid))
+#------------------------------------------------------------------------------
+# miscellaneous metrics by csd
+#------------------------------------------------------------------------------
 
-offices_serviced <- drivetime_data |>
-  summarise(n_offices = n_distinct(nearest_facility), .by = c(csdid, csd_name))
+other_metrics <- drivetime_data |>
+  summarise(
+    n_addresses = n(),
+    n_sbc_offices = n_distinct(nearest_facility),
+    avg_driving_distance = mean(drv_dist, na.rm = TRUE),
+    .by = c(csd_name, csdid))
 
 #------------------------------------------------------------------------------
 # bin the data by driving distance
@@ -103,9 +109,9 @@ offices_serviced <- drivetime_data |>
 drive_distance_bins <- drivetime_data |>
   mutate(
     dist_bin = case_when(
-      drv_dist < 5 ~ "Under 5 km",
-      between(drv_dist, 5, 20) ~ "5 to 20 km",
-      TRUE ~ "20+ km"
+      drv_dist < 5 ~ "addresses_under_5_km",
+      between(drv_dist, 5, 20) ~ "addresses_5_to_20_km",
+      TRUE ~ "addresses_over_20_km"
     )
   ) |>
   summarise(total_count = n(),
@@ -126,11 +132,15 @@ drive_distance_bins <- drivetime_data |>
 # Since we only have data on 525 of the 751 CSDS  => missing data on 220/423 IRI's, 3/160 RDA's, and 3/3 S-E's
 combined_stats <- population_estimates_three_year |>
   left_join(age_estimates_current_year, by = c("csdid", "region_name")) |>
-  left_join(addresses_serviced, by = "csdid") |>
-  left_join(offices_serviced, by = c("csdid", "csd_name")) |>
+  left_join(other_metrics, by = "csdid") |>
   left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
   relocate(csd_name, .before = region_name) |>
-  relocate(n_address, n_offices, .after = `2035`)
+  relocate(n_addresses, n_sbc_offices, avg_driving_distance, .after = `2035`) |>
+  rename(
+    estimated_population_2025 = `2025`,
+    `5_yr_projection_2030` = `2030`,
+    `10_year_projection_2035` = `2035`)
+
 
 # =========================================================================== #
 # Write output table to CSV ----
@@ -142,8 +152,8 @@ if (!dir.exists(TABLES_OUT)) {
 }
 
 # Write combined statistics table
-write_csv(combined_stats, file.path(TABLES_OUT, "csd_combined_statistics.csv"))
+write_csv(combined_stats, file.path(TABLES_OUT, "csd_statistics_for_SBC.csv"))
 
 # Print summary of what was written
-cat("Combined statistics written to:", file.path(TABLES_OUT, "csd_combined_statistics.csv"), "\n")
+cat("Combined statistics written to:", file.path(TABLES_OUT, "csd_statistics_for_SBC.csv"), "\n")
 cat("Total CSDs in combined statistics:", nrow(combined_stats), "\n")
