@@ -19,8 +19,12 @@
 # Notes: fsa boundaries are a mix of polygon and multipolygon due to holes (likely waterbodies) and/or spaces
 # where the fsa is actually two polygons (may or may not be adjacent).
 
+# Method 2. Create rural flag based on bcmaps FSA
+# https://bcgov.github.io/bcmaps/
+# Notes: fsa boundaries are a mix of polygon and multipolygon due to holes (likely waterbodies) and/or spaces
+# where the fsa is actually two polygons (may or may not be adjacent).
 
-# Method 2. Create rural flag based on Statistics Canada's population centers.
+# Method 3. Create rural flag based on Statistics Canada's population centers.
 # Statistics Canada defines rural areas as including all territory lying outside population centres.
 # https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/az/definition-eng.cfm?ID=geo049a
 
