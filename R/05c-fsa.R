@@ -209,14 +209,17 @@ divergence_by_office
 
 # --- Create a reusable plotting function for urban/rural maps
 plot_urban_rural <- function(data, title = "Rural and Urban Areas - BC") {
+
   data |>
     ggplot() +
     geom_sf(aes(color = rural), size = 0.5, alpha = 0.25) +
     scale_color_manual(values = c("URBAN" = "#074607", "RURAL" = "#8888f5"), name = "Rural") +
     labs(title = title,
          subtitle = "Colored by Rural Flag and Method",
-         x = "Longitude", y = "Latitude") +
+         x = "Longitude", y = "Latitude") + 
+    guides(color = guide_legend(override.aes = list(shape = 15, size = 5, alpha = 1))) +
     theme_minimal()
+    
 }
 
 # --- Create data for mapping all the regions
@@ -229,13 +232,12 @@ residence_region_long <- residence_region_crosswalk |>
 
 # --- Plot urban/rural for each method
 p <- residence_region_long |>
-  filter(method == "urban_rural_popcenter") |>
-  plot_urban_rural(title = "Urban and Rural Areas - Population Centers")
+  plot_urban_rural(title = "Urban and Rural Areas - Population Centers") + facet_wrap(~ method, nrow = 2)
 
-p
+p 
 
 # --- Plot urban/rural for select offices
-facility <- divergence_by_office |> slice(9) |> pull(nearest_facility)
+facility <- divergence_by_office |> slice(2) |> pull(nearest_facility)
 
 p <- residence_region_long |>
   filter(nearest_facility %in% facility) |>
