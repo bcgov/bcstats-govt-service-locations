@@ -219,7 +219,6 @@ plot_urban_rural <- function(data, title = "Rural and Urban Areas - BC") {
          x = "Longitude", y = "Latitude") + 
     guides(color = guide_legend(override.aes = list(shape = 15, size = 5, alpha = 1))) +
     theme_minimal()
-    
 }
 
 # --- Create data for mapping all the regions
@@ -234,7 +233,7 @@ residence_region_long <- residence_region_crosswalk |>
 p <- residence_region_long |>
   plot_urban_rural(title = "Urban and Rural Areas - Population Centers") + facet_wrap(~ method, nrow = 2)
 
-p 
+p
 
 # --- Plot urban/rural for select offices
 facility <- divergence_by_office |> slice(2) |> pull(nearest_facility)

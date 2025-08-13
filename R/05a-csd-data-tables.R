@@ -124,10 +124,26 @@ drive_distance_bins <- drivetime_data |>
 # Combined, assuming we want the full set of CSD's
 # If we want to rollup to Unincorporated areas then we can group by region_name/clean_csd in aggregations above
 # Since we only have data on 525 of the 751 CSDS  => missing data on 220/423 IRI's, 3/160 RDA's, and 3/3 S-E's
-combined_stats <- popultion_estimates_three_year |>
+combined_stats <- population_estimates_three_year |>
   left_join(age_estimates_current_year, by = c("csdid", "region_name")) |>
   left_join(addresses_serviced, by = "csdid") |>
   left_join(offices_serviced, by = c("csdid", "csd_name")) |>
   left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
   relocate(csd_name, .before = region_name) |>
   relocate(n_address, n_offices, .after = `2035`)
+
+# =========================================================================== #
+# Write output table to CSV ----
+# =========================================================================== #
+
+# Create output directory if it doesn't exist
+if (!dir.exists(TABLES_OUT)) {
+  dir.create(TABLES_OUT, recursive = TRUE)
+}
+
+# Write combined statistics table
+write_csv(combined_stats, file.path(TABLES_OUT, "csd_combined_statistics.csv"))
+
+# Print summary of what was written
+cat("Combined statistics written to:", file.path(TABLES_OUT, "csd_combined_statistics.csv"), "\n")
+cat("Total CSDs in combined statistics:", nrow(combined_stats), "\n")
