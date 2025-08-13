@@ -89,7 +89,18 @@ age_estimates_current_year <- db_projections_transformed_raw |>
     names_from = age_grp,
     values_from = population,
     values_fill = 0)
-    
+
+median_population <- db_projections_transformed_raw |>
+  filter(year == 2025) |>
+  group_by(csdid, csd_name, age) |> 
+  summarize(
+     population = sum(population, na.rm = TRUE),
+     .groups = "drop_last") |>
+summarize(
+    median_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.median(age, population, na.rm = TRUE)),
+    .groups = "drop"
+  )
+
 
 #------------------------------------------------------------------------------
 # miscellaneous metrics by csd
@@ -134,6 +145,7 @@ combined_stats <- population_estimates_three_year |>
   left_join(age_estimates_current_year, by = c("csdid", "region_name")) |>
   left_join(other_metrics, by = "csdid") |>
   left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
+  mutate(rural_office = 'Y/N', rural_residents = 0) |>
   relocate(csd_name, .before = region_name) |>
   relocate(n_addresses, n_sbc_offices, avg_driving_distance, .after = `2035`) |>
   rename(
