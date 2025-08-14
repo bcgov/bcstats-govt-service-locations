@@ -164,8 +164,8 @@ if (!dir.exists(TABLES_OUT)) {
 }
 
 # Write combined statistics table
-write_csv(combined_stats, file.path(TABLES_OUT, "csd_statistics_for_SBC.csv"))
+write_csv(combined_stats, file.path(TABLES_OUT, "csd-statistics-for-SBC.csv"))
 
 # Print summary of what was written
-cat("Combined statistics written to:", file.path(TABLES_OUT, "csd_statistics_for_SBC.csv"), "\n")
+cat("Combined statistics written to:", file.path(TABLES_OUT, "csd-statistics-for-SBC.csv"), "\n")
 cat("Total CSDs in combined statistics:", nrow(combined_stats), "\n")
