@@ -381,7 +381,7 @@ Calculated metrics are aggregated by assigned Service BC facility (`sbc_location
 
 **Coverage**: Complete dataset covering all 65 Service BC facilities with their respective catchment populations, service metrics, and accessibility measures
 
-### Urban/Rural Classification Analysis
+### Urban/Rural Classification
 
 *Source: `05c-fsa.R`*
 
