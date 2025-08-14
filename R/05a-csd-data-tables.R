@@ -78,8 +78,11 @@ population_estimates_three_year <- db_projections_transformed_raw  |>
 age_estimates_current_year <- db_projections_transformed_raw |>
   filter(year == 2025) |>
   mutate(age_grp = case_when(
-    age < 19 ~ "est_population_under_19_yrs",
-    age >= 19 & age < 65 ~ "est_population_19_to_64_yrs",
+    age < 15 ~ "est_population_under_15_yrs",
+    age >= 15 & age < 25 ~ "est_population_15_to_24_yrs",
+    age >= 25 & age < 65 ~ "est_population_25_to_64_yrs",
+    age >= 65 ~ "est_population_over_64_yrs"
+    age >= 14 & age < 65 ~ "est_population_15_to_64_yrs",
     age >= 65 ~ "est_population_over_64_yrs"
   )) |>
   summarise(
@@ -98,6 +101,7 @@ median_population <- db_projections_transformed_raw |>
      .groups = "drop_last") |>
 summarize(
     median_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.median(age, population, na.rm = TRUE)),
+    median_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.median(age, population, na.rm = TRUE))
     .groups = "drop"
   )
 
