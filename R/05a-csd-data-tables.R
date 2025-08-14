@@ -81,7 +81,7 @@ age_estimates_current_year <- db_projections_transformed_raw |>
     age < 15 ~ "est_population_under_15_yrs",
     age >= 15 & age < 25 ~ "est_population_15_to_24_yrs",
     age >= 25 & age < 65 ~ "est_population_25_to_64_yrs",
-    age >= 65 ~ "est_population_over_64_yrs"
+    age >= 65 ~ "est_population_over_64_yrs",
     age >= 14 & age < 65 ~ "est_population_15_to_64_yrs",
     age >= 65 ~ "est_population_over_64_yrs"
   )) |>
@@ -100,8 +100,8 @@ median_population <- db_projections_transformed_raw |>
      population = sum(population, na.rm = TRUE),
      .groups = "drop_last") |>
 summarize(
-    median_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.median(age, population, na.rm = TRUE)),
-    median_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.median(age, population, na.rm = TRUE))
+     median_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.median(age, population, na.rm = TRUE)),
+     mean_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.mean(age, population, na.rm = TRUE)),
     .groups = "drop"
   )
 
@@ -110,7 +110,7 @@ summarize(
 # drivetime metrics by csd
 #------------------------------------------------------------------------------
 
-other_metrics <- drivetime_data |>
+drivetime_metrics <- drivetime_data |>
   summarise(
     n_addresses = n(),
     n_sbc_offices = n_distinct(nearest_facility),
@@ -130,9 +130,9 @@ drive_distance_bins <- drivetime_data |>
       drv_dist < 5 ~ "addresses_under_5_km",
       between(drv_dist, 5, 20) ~ "addresses_5_to_20_km",
       TRUE ~ "addresses_over_20_km", 
-      drv_time_sec < 600 ~ "addresses_under_10_min",
-      between(drv_time_sec, 600, 1800) ~ "addresses_10_to_30_min",
-      drv_time_sec > 1800 ~ "addresses_over_30_min"
+      drv_time_sec < 300 ~ "addresses_under_5_min",
+      between(drv_time_sec, 300, 1200) ~ "addresses_5_to_20_min",
+      drv_time_sec > 1200 ~ "addresses_over_20_min"
     )
   ) |>
   summarise(total_count = n(),
@@ -153,11 +153,11 @@ drive_distance_bins <- drivetime_data |>
 # Since we only have data on 525 of the 751 CSDS  => missing data on 220/423 IRI's, 3/160 RDA's, and 3/3 S-E's
 combined_stats <- population_estimates_three_year |>
   left_join(age_estimates_current_year, by = c("csdid", "region_name")) |>
-  left_join(other_metrics, by = "csdid") |>
+  left_join(drivetime_metrics, by = "csdid") |>
   left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
   mutate(rural_office = 'Y/N', rural_residents = 0) |>
   relocate(csd_name, .before = region_name) |>
-  relocate(n_addresses, n_sbc_offices, avg_driving_distance, .after = `2035`) |>
+  relocate(n_addresses, n_sbc_offices, mean_driving_distance, median_driving_distance, .after = `2035`) |>
   rename(
     estimated_population_2025 = `2025`,
     `5_yr_projection_2030` = `2030`,
