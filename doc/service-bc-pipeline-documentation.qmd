@@ -158,7 +158,9 @@ NO_ERRS_FILE_PATTERN <- "no_errors.csv"
 
 ## Core Pipeline Scripts Methodology
 
-### Script 1: Data Preparation (`00-make-data.R`)
+### Data Preparation
+
+*Source: `00-make-data.R`*
 
 #### Purpose
 Transforms raw external data sources into standardized intermediate files for analysis. This script serves as the foundation layer, creating all necessary data artifacts for downstream processing.
@@ -223,7 +225,9 @@ Transforms raw external data sources into standardized intermediate files for an
 - **Network Access**: BC Data Catalogue and external data sources
 - **Disk Space**: Large shapefiles require significant storage
 
-### Script 2: Catchment Assignment (`03a-create-catchments.R`)
+### Catchment Assignment
+
+*Source: `03a-create-catchments.R`*
 
 #### Purpose
 Assigns every dissemination block in British Columbia to a Service BC facility catchment area using a hybrid methodology combining drive time optimization with spatial proximity fallback. These dissemination block based catchments then provide the basis for further aggregations, such as population projections and drive time estimates within each region. 
@@ -254,30 +258,132 @@ Assigns every dissemination block in British Columbia to a Service BC facility c
 - **Diagnostics**: `unassigned-dbs.csv` - Detailed list of problematic areas
 
 
-### Script 3: CSD-Level Output Tables (`05a-csd-data-tables.R`)
+### CSD-Level Output Tables
+
+*Source: `05a-csd-data-tables.R`*
 
 #### Purpose
-Generates final output tables aggregated at the Census Subdivision (municipal) level, incorporating drive time statistics, population data, and demographic projections.
+Generates final output tables aggregated at the Census Subdivision (municipal) level, incorporating drive time statistics, population data, and demographic projections for strategic planning and Service BC operational analysis. Produces standardized CSV output for Service BC stakeholders.
 
 #### Methodology Overview
 
+::: {.callout-note collapse="true" icon="false"}
+## 1. Data Sources and Processing
+
+This step utilizes intermediate datasets created earlier in the [Data Preparation](#data-preparation) and [Catchment Assignment](#catchment-assignment) processes.
+
+- **Geographic Crosswalk**: `csd-da-db-loc-correspondance.csv` - Links DB → DA → CSD geographies covering 751 CSDs
+- **Population Projections**: `full-db-projections-transformed.rds` - Contains DB-level projections filtered for total gender ('T') and years 2025, 2030, 2035
+- **Drivetime Data**: `full-processed-drivetime-data.csv` - Processed from DSS raw data, containing 2,052,803 address records across 41,991 DBs and 525 CSDs
+- **Catchment Assignments**: DB-to-facility assignments that inform the service accessibility calculations
+
+**Data Coverage Notes**: 
+  - Census data contains 52,387 DBs vs 52,423 in BC Geographic Warehouse (36 missing DBs around Vancouver Island/Lower Mainland)
+  - Drive data covers 525 of 751 CSDs, missing data primarily for Indigenous Reserve Lands (220/423), Regional District Areas (3/160), and Special Economic areas (3/3)
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 2. Calculated Metrics
+
+**Population Metrics:**
+
+- `estimated_population_2025`, `5_yr_projection_2030`, `10_year_projection_2035` - CSD-level population aggregated from DB projections
+- `est_population_under_19_yrs` - Ages 0-18 population for 2025
+- `est_population_19_to_64_yrs` - Working age population for 2025  
+- `est_population_over_64_yrs` - Ages 65+ population for 2025
+- `median_age` - Population-weighted median age by CSD (calculated separately)
+
+**Service Accessibility Metrics:**
+
+- `n_addresses` - Total address count within each CSD
+- `n_sbc_offices` - Count of distinct Service BC facilities serving each CSD
+- `avg_driving_distance` - Mean driving distance to nearest Service BC facility
+- `addresses_under_5_km` - Address count with high accessibility (under 5km)
+- `addresses_5_to_20_km` - Address count with moderate accessibility (5-20km)
+- `addresses_over_20_km` - Address count with low accessibility/rural (20km+)
+
+**Placeholder Fields:**
+
+- `rural_office` - 'Y/N' indicator for rural office classification (for future analysis)
+- `rural_residents` - Numeric field initialized to 0 for rural population metrics
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 3. Final CSD-Level Integration
+Calculated metrics are combined into a single comprehensive dataset by Census Subdivision and/or region level. Population projections and demographics serve as the foundation, with service accessibility metrics and rural classification placeholders integrated to create a complete analytical framework. This integration maintains complete provincial coverage across all 751 CSDs while highlighting that detailed service data is available for 525 CSDs where drive time analysis was possible.
+:::
+
 #### Key Outputs
 
-**1. **
+**Primary Output**: `csd-statistics-for-SBC.csv` - Comprehensive CSD-level table written to `{TABLES_OUT}` directory containing all calculated metrics above plus geographic identifiers (CSD name, ID, regional classification)
+
+**Coverage**: Complete provincial dataset with 751 CSDs, including both urban centers with full service metrics and rural/remote areas with population projections only
 
 
-### Script 4: Service BC Facility Tables (`05b-sbc-data-tables.R`)
+### Service BC Facility Tables
+
+*Source: `05b-sbc-data-tables.R`*
 
 #### Purpose
-Generates final output tables aggregated at the SBC Facility catchment level, incorporating drive time statistics, population data, and demographic projections.
+Generates final output tables aggregated at the Service BC facility catchment level, incorporating drive time statistics, population data, and demographic projections for operational planning and facility-based analysis. Produces standardized CSV output focused on individual facility service areas.
 
 #### Methodology Overview
 
-**1. **
+::: {.callout-note collapse="true" icon="false"}
+## 1. Data Sources and Processing
+
+This step utilizes intermediate datasets created by earlier pipeline processes (see [Data Preparation](#data-preparation) and [Catchment Assignment](#catchment-assignment) sections):
+
+- **Geographic Crosswalk**: `csd-da-db-loc-correspondance.csv` - Links DB → DA → CSD geographies
+- **Drivetime Data**: `full-processed-drivetime-data.csv` - Processed from DSS raw data
+- **Catchment Assignments**: `complete-db-assignments.csv` - Assigns 52,424 DBs across 65 Service BC locations
+- **Service BC Locations**: `full-service-bc-locs.csv` - Facility location data covering 65 Service BC locations across 526 CSDs
+- **Population Projections**: `full-db-projections-transformed.rds` - DB-level projections for demographic analysis
+
+**Data Integration**: Combines catchment assignments with drivetime data to create facility-focused datasets, with population projections linked through DB assignments.
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 2. Calculated Metrics
+
+**Population Metrics by Facility:**
+
+- `estimated_population_2025`, `5_yr_projection_2030`, `10_year_projection_2035` - Population served by each facility aggregated from assigned DBs
+- `est_population_under_19_yrs` - Ages 0-18 population served (2025)
+- `est_population_19_to_64_yrs` - Working age population served (2025)  
+- `est_population_over_64_yrs` - Ages 65+ population served (2025)
+- `median_age` - Population-weighted median age of facility catchment area
+
+**Service Performance Metrics:**
+
+- `n_addresses_served` - Total address count served by each facility
+- `n_csds_served` - Count of distinct CSDs within each facility's catchment
+- `avg_driving_distance` - Mean driving distance to facility from served addresses
+- `addresses_under_5_km` - Address count with high accessibility (under 5km)
+- `addresses_5_to_20_km` - Address count with moderate accessibility (5-20km)
+- `addresses_20_plus_km` - Address count with low accessibility (20km+)
+
+**Placeholder Fields:**
+
+- `rural_office` - 'Y/N' indicator for rural office classification (for future analysis)
+- `rural_residents` - Numeric field initialized to 0 for rural population metrics
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 3. Facility Catchment Integration
+
+Calculated metrics are aggregated by assigned Service BC facility (`sbc_location`) to create comprehensive facility-level performance datasets. Each facility's catchment area is defined by the DB assignments from the [Catchment Assignment](#catchment-assignment) process, ensuring complete coverage while providing detailed operational intelligence for individual Service BC locations and their service areas.
+:::
 
 #### Key Outputs
 
-### Script 5: Urban/Rural Classification Analysis (`05c-fsa.R`)
+**Primary Output**: `sbc-location-statistics-for-SBC.csv` - Comprehensive facility-level table written to `{TABLES_OUT}` directory containing all calculated metrics above organized by Service BC location
+
+**Coverage**: Complete dataset covering all 65 Service BC facilities with their respective catchment populations, service metrics, and accessibility measures
+
+### Urban/Rural Classification Analysis
+
+*Source: `05c-fsa.R`*
 
 #### Purpose
 Analyzes urban and rural accessibility patterns by classifying addresses using multiple methodological approaches. This script provides geographic context for service accessibility and supports rural service delivery policy development.
