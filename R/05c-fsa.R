@@ -208,6 +208,48 @@ divergence_by_office <- residence_region_crosswalk |>
 divergence_by_office
 
 # =========================================================================== #
+# Roll up of rural flag to catchment ----
+# =========================================================================== #
+# --- Create a summary table of rural/urban classification by catchment, 
+# --- according to # of addresses assigned
+catchment_rural_summary <- residence_region_crosswalk |>
+  st_drop_geometry() |>
+  group_by(nearest_facility) |>
+  summarise(
+    n_residences = n(),
+    n_rural_bcmaps_fsa = sum(urban_rural_bcmaps_fsa == "RURAL", na.rm = TRUE),
+    n_rural_statscan_fsa = sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE),
+    n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
+    p_rural_bcmaps_fsa = 100 * sum(urban_rural_bcmaps_fsa == "RURAL", na.rm = TRUE) / n(),
+    p_rural_statscan_fsa = 100 * sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n(),
+    is_rural_bcmaps_fsa = if_else(p_rural_bcmaps_fsa > 50, "RURAL", "URBAN"),
+    is_rural_statscan_fsa = if_else(p_rural_statscan_fsa > 50, "RURAL", "URBAN"),
+    is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
+    .groups = 'drop'
+  )
+
+catchment_rural_summary
+
+# note that due to an abundance of rural addresses, there are many more rural catchments than I might have expected
+# does this mean that using address is misleading, and we should use population? what would that look like? 
+# or are they truly placed out in rural areas?
+catchment_rural_summary |> 
+  summarize(
+    mean_rural_bcmaps_fsa = mean(p_rural_bcmaps_fsa, na.rm = TRUE),
+    mean_rural_statscan_fsa = mean(p_rural_statscan_fsa, na.rm = TRUE),
+    mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
+    median_rural_bcmaps_fsa = median(p_rural_bcmaps_fsa, na.rm = TRUE),
+    median_rural_statscan_fsa = median(p_rural_statscan_fsa, na.rm = TRUE),
+    median_rural_popcenter = median(p_rural_popcenter, na.rm = TRUE)
+  ) |> 
+  pivot_longer(everything())
+
+catchment_rural_summary |> 
+  count(is_rural_bcmaps_fsa, is_rural_statscan_fsa, is_rural_popcenter) |> 
+  arrange(desc(n))
+
+# =========================================================================== #
 # Plot urban vs rural for each method
 # =========================================================================== #
 
