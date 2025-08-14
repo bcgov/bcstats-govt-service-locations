@@ -155,7 +155,9 @@ rural_summary_by_method <- residence_region_crosswalk |>
     values_to = "count"
   )
 
-rural_summary_by_method
+rural_summary_by_method |> write_csv(
+  glue("{TABLES_OUT}/rural-summary-by-method.csv")
+)
 
 
 # --- Create a table of classification patterns
@@ -174,7 +176,9 @@ method_classification_patterns <- residence_region_crosswalk |>
   ) |>
   arrange(desc(n_residences))
 
-method_classification_patterns
+method_classification_patterns |> write_csv(
+  glue("{TABLES_OUT}/method-classification-patterns.csv")
+)
 
 
 # --- Calculate a divergence score for each office, so we can compare how each office is affected by the different methods
@@ -233,7 +237,11 @@ residence_region_long <- residence_region_crosswalk |>
 p <- residence_region_long |>
   plot_urban_rural(title = "Urban and Rural Areas - Population Centers") + facet_wrap(~ method, nrow = 2)
 
-p
+ggsave(
+  glue("{MAP_OUT}/fsa-methods/urban-rural-population_centers.png"),
+  plot = p,
+  width = 10, height = 8
+)
 
 # --- Plot urban/rural for select offices
 facility <- divergence_by_office |> slice(2) |> pull(nearest_facility)
