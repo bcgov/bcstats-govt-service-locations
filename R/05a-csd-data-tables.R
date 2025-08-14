@@ -103,7 +103,7 @@ summarize(
 
 
 #------------------------------------------------------------------------------
-# miscellaneous metrics by csd
+# drivetime metrics by csd
 #------------------------------------------------------------------------------
 
 other_metrics <- drivetime_data |>
