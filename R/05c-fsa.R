@@ -238,7 +238,7 @@ p <- residence_region_long |>
   plot_urban_rural(title = "Urban and Rural Areas - Population Centers") + facet_wrap(~ method, nrow = 2)
 
 ggsave(
-  glue("{MAP_OUT}/fsa-methods/urban-rural-population_centers.png"),
+  glue("{MAP_OUT}/fsa-methods/urban-rural-population-centers.png"),
   plot = p,
   width = 10, height = 8
 )
