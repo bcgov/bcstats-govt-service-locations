@@ -57,7 +57,7 @@ drivetime_data <- read_csv(
   mutate(across(c(drv_time_sec, drv_dist), as.numeric)) |>
   inner_join (crosswalk, join_by(dbid, daid))
 
-# these are from the census data, so contain 52,387 DB's and 751 CSD's.
+# these DBs are from the census data, so contain 52,387 DB's and 751 CSD's. Population projections come from BC Stats population projections + census population ratios. 
 # For those csdid's/db's that are not in the population projections, they 
 # were proportionally allocated to the corresponding Unincorporated CSD (regional district).
 
