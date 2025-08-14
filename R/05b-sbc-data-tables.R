@@ -141,12 +141,25 @@ population_estimates_three_year <- population_estimates_three_year_all |>
 #------------------------------------------------------------------------------
 age_estimates_current_year <- population_estimates_three_year_all |>
   filter(year == 2025) |>
-  group_by(assigned) |>
   summarize(
     est_population_under_19_yrs = sum(population[age < 19], na.rm = TRUE),
     est_population_19_to_64_yrs = sum(population[age >= 19 & age < 65], na.rm = TRUE),
-    est_population_over_64_yrs = sum(population[age >= 65], na.rm = TRUE)
+    est_population_over_64_yrs = sum(population[age >= 65], na.rm = TRUE),
+    .by = c(assigned)
   ) 
+
+median_population <- population_estimates_three_year_all |>
+  filter(year == 2025) |>
+  group_by(assigned, age) |>
+  summarize(
+     population = sum(population, na.rm = TRUE),
+     .groups = "drop_last") |>
+  summarize(
+    median_age = weighted.median(age, population, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+
 
 
 # =========================================================================== #
@@ -157,9 +170,12 @@ age_estimates_current_year <- population_estimates_three_year_all |>
 # If we want to rollup to Unincorporated areas then we can group by region_name/clean_csd in aggregations above
 combined_stats <- population_estimates_three_year |>
   left_join(age_estimates_current_year, by = c("assigned")) |>
+  left_join(median_population, by = c("assigned")) |>
   left_join(other_metrics, by = "assigned") |>
   left_join(drive_distance_bins, by = c("assigned")) |>
-  relocate(n_addresses_served, n_csds_served, avg_driving_distance, .after = `2035`) |>
+  mutate(rural_office = 'Y/N', rural_residents = 0) |>
+  relocate(n_addresses_served, n_csds_served, n_addresses_served, avg_driving_distance,
+           addresses_under_5_km, addresses_5_to_20_km, addresses_20_plus_km, median_age, .after = `2035`) |>
   rename(
     sbc_location = assigned,
     estimated_population_2025 = `2025`,
@@ -177,7 +193,7 @@ if (!dir.exists(TABLES_OUT)) {
 }
 
 # Write combined statistics table
-write_csv(combined_stats, file.path(TABLES_OUT, "sbc_location_statistics.csv"))
+write_csv(combined_stats, file.path(TABLES_OUT, "sbc_location_statistics_for SBC.csv"))
 
 # Print summary of what was written
 cat("SBC location statistics written to:", file.path(TABLES_OUT, "sbc_location_statistics.csv"), "\n")
