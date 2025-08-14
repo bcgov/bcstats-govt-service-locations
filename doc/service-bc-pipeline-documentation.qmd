@@ -270,7 +270,7 @@ Generates final output tables aggregated at the Census Subdivision (municipal) l
 ::: {.callout-note collapse="true" icon="false"}
 ## 1. Data Sources and Processing
 
-This step utilizes intermediate datasets created earlier in the [Data Preparation](#data-preparation) and [Catchment Assignment](#catchment-assignment) processeses.
+This step utilizes intermediate datasets created earlier in the [Data Preparation](#data-preparation) and [Catchment Assignment](#catchment-assignment) processes.
 
 - **Geographic Crosswalk**: `csd-da-db-loc-correspondance.csv` - Links DB → DA → CSD geographies covering 751 CSDs
 - **Population Projections**: `full-db-projections-transformed.rds` - Contains DB-level projections filtered for total gender ('T') and years 2025, 2030, 2035
