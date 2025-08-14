@@ -146,7 +146,7 @@ age_estimates_current_year <- population_estimates_three_year_all |>
     est_population_19_to_64_yrs = sum(population[age >= 19 & age < 65], na.rm = TRUE),
     est_population_over_64_yrs = sum(population[age >= 65], na.rm = TRUE),
     .by = c(assigned)
-  ) 
+  )
 
 median_population <- population_estimates_three_year_all |>
   filter(year == 2025) |>
@@ -158,9 +158,6 @@ median_population <- population_estimates_three_year_all |>
     median_age = weighted.median(age, population, na.rm = TRUE),
     .groups = "drop"
   )
-
-
-
 
 # =========================================================================== #
 # All together ----
