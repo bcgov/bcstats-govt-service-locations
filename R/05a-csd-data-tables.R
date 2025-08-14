@@ -114,7 +114,10 @@ other_metrics <- drivetime_data |>
   summarise(
     n_addresses = n(),
     n_sbc_offices = n_distinct(nearest_facility),
-    avg_driving_distance = mean(drv_dist, na.rm = TRUE),
+    mean_driving_distance = mean(drv_dist, na.rm = TRUE),
+    median_driving_distance = median(drv_dist, na.rm = TRUE),
+    mean_driving_time = mean(drv_time_sec, na.rm = TRUE) / 60,
+    median_driving_time = median(drv_time_sec, na.rm = TRUE) / 60,
     .by = c(csd_name, csdid))
 
 #------------------------------------------------------------------------------
@@ -126,7 +129,10 @@ drive_distance_bins <- drivetime_data |>
     dist_bin = case_when(
       drv_dist < 5 ~ "addresses_under_5_km",
       between(drv_dist, 5, 20) ~ "addresses_5_to_20_km",
-      TRUE ~ "addresses_over_20_km"
+      TRUE ~ "addresses_over_20_km", 
+      drv_time_sec < 600 ~ "addresses_under_10_min",
+      between(drv_time_sec, 600, 1800) ~ "addresses_10_to_30_min",
+      drv_time_sec > 1800 ~ "addresses_over_30_min"
     )
   ) |>
   summarise(total_count = n(),
