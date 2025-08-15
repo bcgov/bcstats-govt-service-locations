@@ -110,7 +110,7 @@ drive_time_bins <- drivetime_data_focused |>
 # miscellaneous metrics by assigned
 #------------------------------------------------------------------------------
 
-other_metrics <- drivetime_data_focused |>
+drivetime_metrics <- drivetime_data_focused |>
   summarize(
     n_addresses_served = n(),
     mean_driving_distance = mean(drv_dist, na.rm = TRUE),
@@ -146,7 +146,7 @@ population_estimates_three_year <- population_estimates_three_year_all |>
     names_from = year,
     values_from = pop,
     values_fill = 0
-  ) 
+  )
 
 #------------------------------------------------------------------------------
 # count of age groups by assigned
@@ -182,18 +182,18 @@ median_population <- population_estimates_three_year_all |>
 combined_stats <- population_estimates_three_year |>
   left_join(age_estimates_current_year, by = c("assigned")) |>
   left_join(median_population, by = c("assigned")) |>
-  left_join(other_metrics, by = "assigned") |>
+  left_join(drivetime_metrics, by = "assigned") |>
   left_join(drive_distance_bins, by = c("assigned")) |>
+  left_join(drive_time_bins, by = c("assigned")) |>
   mutate(rural_office = 'Y/N', rural_residents = 0) |>
-  relocate(n_addresses_served, n_csds_served, n_addresses_served, avg_driving_distance,
-           addresses_under_5_km, addresses_5_to_20_km, addresses_20_plus_km, median_age, .after = `2035`) |>
+  relocate(n_addresses_served, n_csds_served, .after = assigned) |>
+  relocate(mean_driving_time, median_driving_time, .after = addresses_20_plus_km) |>
   rename(
     sbc_location = assigned,
     estimated_population_2025 = `2025`,
     `5_yr_projection_2030` = `2030`,
     `10_year_projection_2035` = `2035`
   )
-
 # =========================================================================== #
 # Write output table to CSV ----
 # =========================================================================== #
