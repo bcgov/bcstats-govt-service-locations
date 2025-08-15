@@ -169,6 +169,7 @@ median_population <- population_estimates_three_year_all |>
      .groups = "drop_last") |>
   summarize(
     median_age = weighted.median(age, population, na.rm = TRUE),
+    mean_age = weighted.mean(age, population, na.rm = TRUE),
     .groups = "drop"
   )
 
