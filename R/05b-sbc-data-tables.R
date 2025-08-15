@@ -75,6 +75,7 @@ drivetime_data_full <- complete_assignments |>
   mutate(daid = str_sub(dbid, 1, 8))  #~ 10,000 extra dbids - TODO: investigate this.
 
 sbc_names <- sbc_locs |>
+  distinct(nearest_facility) |>
   #filter (csd_name %in% CSD_NAMES) |> # toggle comment to focus on specific CSD's
   pull(nearest_facility)
 
@@ -94,6 +95,14 @@ drive_distance_bins <- drivetime_data_focused |>
     addresses_under_5_km = sum(drv_dist < 5.0, na.rm = TRUE),
     addresses_5_to_20_km = sum(drv_dist >= 5.0 & drv_dist < 20.0, na.rm = TRUE),
     addresses_20_plus_km = sum(drv_dist >= 20.0, na.rm = TRUE),
+    .by = c(assigned)
+  )
+
+drive_time_bins <- drivetime_data_focused |>
+  summarize(
+    addresses_under_5_min = sum(drv_time_sec < 300, na.rm = TRUE),
+    addresses_5_to_20_min = sum(drv_time_sec >= 300 & drv_time_sec < 1200, na.rm = TRUE),
+    addresses_20_plus_min = sum(drv_time_sec >= 1200, na.rm = TRUE),
     .by = c(assigned)
   )
 
@@ -194,5 +203,4 @@ write_csv(combined_stats, file.path(TABLES_OUT, "sbc-location-statistics-for-SBC
 
 # Print summary of what was written
 cat("SBC location statistics written to:", file.path(TABLES_OUT, "sbc-location-statistics.csv"), "\n")
-cat("Total SBC locations in statistics:", nrow(combined_stats), "\n") 
-
+cat("Total SBC locations in statistics:", nrow(combined_stats), "\n")
