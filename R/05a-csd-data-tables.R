@@ -124,25 +124,41 @@ drivetime_metrics <- drivetime_data |>
 # bin the data by driving distance
 #------------------------------------------------------------------------------
 
-drive_distance_bins <- drivetime_data |>
+drivetime_binned <- drivetime_data |>
   mutate(
     dist_bin = case_when(
       drv_dist < 5 ~ "addresses_under_5_km",
       between(drv_dist, 5, 20) ~ "addresses_5_to_20_km",
-      TRUE ~ "addresses_over_20_km", 
+      TRUE ~ "addresses_over_20_km"
+    ) ,
+    time_bin = case_when( 
       drv_time_sec < 300 ~ "addresses_under_5_min",
       between(drv_time_sec, 300, 1200) ~ "addresses_5_to_20_min",
-      drv_time_sec > 1200 ~ "addresses_over_20_min"
+      TRUE ~ "addresses_over_20_min"
     )
+  ) 
+  
+drive_distance_bins <- drivetime_binned |>
+  summarise(
+    total_count = n(),
+    .by = c(csd_name, csdid, dist_bin)
   ) |>
-  summarise(total_count = n(),
-    .by = c(csd_name, csdid, dist_bin)) |>
   pivot_wider(
     names_from = dist_bin,
     values_from = total_count,
     values_fill = 0
   )
 
+  drive_time_bins <- drivetime_binned |>
+    summarise(
+      total_count = n(),
+      .by = c(csd_name, csdid, time_bin)
+    ) |>
+    pivot_wider(
+      names_from = time_bin,
+      values_from = total_count,
+      values_fill = 0
+    )
 
 # =========================================================================== #
 # All together ----
@@ -155,13 +171,15 @@ combined_stats <- population_estimates_three_year |>
   left_join(age_estimates_current_year, by = c("csdid", "region_name")) |>
   left_join(drivetime_metrics, by = "csdid") |>
   left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
+  left_join(drive_time_bins, by = c("csdid", "csd_name")) |>
   mutate(rural_office = 'Y/N', rural_residents = 0) |>
-  relocate(csd_name, .before = region_name) |>
-  relocate(n_addresses, n_sbc_offices, mean_driving_distance, median_driving_distance, .after = `2035`) |>
+  relocate(csd_name, csdid, .before = region_name) |>
+  relocate(n_addresses, n_sbc_offices, .after = region_name) |>
+  relocate(addresses_under_5_km, addresses_5_to_20_km, addresses_over_20_km, .after = median_driving_distance) |>
   rename(
     estimated_population_2025 = `2025`,
     `5_yr_projection_2030` = `2030`,
-    `10_year_projection_2035` = `2035`)
+    `10_year_projection_2035` = `2035`) 
 
 
 # =========================================================================== #
