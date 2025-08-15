@@ -113,14 +113,17 @@ drive_time_bins <- drivetime_data_focused |>
 other_metrics <- drivetime_data_focused |>
   summarize(
     n_addresses_served = n(),
-    avg_driving_distance = mean(drv_dist, na.rm = TRUE),
+    mean_driving_distance = mean(drv_dist, na.rm = TRUE),
+    median_driving_distance = median(drv_dist, na.rm = TRUE),
+    mean_driving_time = mean(drv_time_sec, na.rm = TRUE) / 60,
+    median_driving_time = median(drv_time_sec, na.rm = TRUE) / 60,
     n_csds_served = n_distinct(csdid),
     .by = c(assigned)
   )
 
 #------------------------------------------------------------------------------
 # DB population projections ----
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 population_estimates_three_year_all <- drivetime_data_focused |>
   distinct(assigned, assignment_method, csdid, dbid) |>
@@ -151,8 +154,9 @@ population_estimates_three_year <- population_estimates_three_year_all |>
 age_estimates_current_year <- population_estimates_three_year_all |>
   filter(year == 2025) |>
   summarize(
-    est_population_under_19_yrs = sum(population[age < 19], na.rm = TRUE),
-    est_population_19_to_64_yrs = sum(population[age >= 19 & age < 65], na.rm = TRUE),
+    est_population_0_to_14_yrs = sum(population[age >= 0 & age < 15], na.rm = TRUE),
+    est_population_15_to_24_yrs = sum(population[age >= 15 & age < 25], na.rm = TRUE),
+    est_population_25_to_64_yrs = sum(population[age >= 25 & age < 65], na.rm = TRUE),
     est_population_over_64_yrs = sum(population[age >= 65], na.rm = TRUE),
     .by = c(assigned)
   )
