@@ -14,22 +14,29 @@
 
 # =========================================================================== #
 # Notes ---
-# Method 1. Create rural flag based on Canada Post FSA
-# https://www.canadapost-postescanada.ca/cpc/en/support/articles/addressing-guidelines/postal-codes.page
-# Notes: fsa boundaries are a mix of polygon and multipolygon due to holes (likely waterbodies) and/or spaces
-# where the fsa is actually two polygons (may or may not be adjacent).
-
-# Method 2. Create rural flag based on bcmaps FSA
+# Method 1. Create rural flag based on bcmaps FSA
 # https://bcgov.github.io/bcmaps/
 # Notes: fsa boundaries are a mix of polygon and multipolygon due to holes (likely waterbodies) and/or spaces
 # where the fsa is actually two polygons (may or may not be adjacent).
 
-# Method 3. Create rural flag based on Statistics Canada's population centers.
+# Method 1b. Create rural flag based on Canada Post FSA
+# https://www.canadapost-postescanada.ca/cpc/en/support/articles/addressing-guidelines/postal-codes.page
+# Notes: fsa boundaries are a mix of polygon and multipolygon due to holes (likely waterbodies) and/or spaces
+# where the fsa is actually two polygons (may or may not be adjacent).
+# boundary files downloaded from Statistics Canada and turned to .gpkg
+# https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?Year=21
+
+# Method 2. Create rural flag based on Statistics Canada's population centers.
 # Statistics Canada defines rural areas as including all territory lying outside population centres.
 # https://www12.statcan.gc.ca/census-recensement/2021/ref/dict/az/definition-eng.cfm?ID=geo049a
+# boundary files downloaded from Statistics Canada and turned to .gpkg
+# https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?Year=21
 
+# More Rural references:
 # https://www12.statcan.gc.ca/census-recensement/2021/as-sa/98-200-x/2021002/98-200-x2021002-eng.cfm
 # https://www150.statcan.gc.ca/n1/pub/71-607-x/71-607-x2024012-eng.htm
+
+
 # =========================================================================== #
 
 # =========================================================================== #
