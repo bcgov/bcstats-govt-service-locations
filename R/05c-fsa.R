@@ -97,12 +97,10 @@ fsa_bcmaps <- bcmaps::fsa() |>
 
 # --- FSA boundary shapefiles - Method 1b
 fsa_statscan <- st_read(glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg")) |>
-  select(-c(dguid, landarea)) |>
   st_transform(crs = 3005)
 
 # --- Population center shapefiles - Method 2
-pop_centers <- st_read(glue("{SRC_DATA_FOLDER}/shapefiles/pop-centers-statscan.gpkg")) |>
-  select(popid = dguid, pcname, pcclass, pctype) |>
+pop_centers <- st_read(glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg")) |>
   st_transform(crs = 3005)
 
 # =========================================================================== #
@@ -217,7 +215,7 @@ divergence_by_office
 # =========================================================================== #
 # Roll up of rural flag to catchment ----
 # =========================================================================== #
-# --- Create a summary table of rural/urban classification by catchment, 
+# --- Create a summary table of rural/urban classification by catchment,
 # --- according to # of addresses assigned
 catchment_rural_summary <- residence_region_crosswalk |>
   st_drop_geometry() |>
@@ -249,11 +247,11 @@ catchment_rural_summary |>
     median_rural_bcmaps_fsa = median(p_rural_bcmaps_fsa, na.rm = TRUE),
     median_rural_statscan_fsa = median(p_rural_statscan_fsa, na.rm = TRUE),
     median_rural_popcenter = median(p_rural_popcenter, na.rm = TRUE)
-  ) |> 
+  ) |>
   pivot_longer(everything())
 
-catchment_rural_summary |> 
-  count(is_rural_bcmaps_fsa, is_rural_statscan_fsa, is_rural_popcenter) |> 
+catchment_rural_summary |>
+  count(is_rural_bcmaps_fsa, is_rural_statscan_fsa, is_rural_popcenter) |>
   arrange(desc(n))
 
 # =========================================================================== #
