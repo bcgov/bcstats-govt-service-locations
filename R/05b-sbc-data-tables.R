@@ -107,7 +107,7 @@ drive_time_bins <- drivetime_data_focused |>
   )
 
 #------------------------------------------------------------------------------
-# miscellaneous metrics by assigned
+# drivetime metrics by assigned SBC catchment
 #------------------------------------------------------------------------------
 
 drivetime_metrics <- drivetime_data_focused |>
