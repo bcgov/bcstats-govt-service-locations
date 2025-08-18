@@ -99,13 +99,14 @@ fsa_bcmaps <- bcmaps::fsa() |>
 fsa_statscan <- 
   st_read(glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg"), 
           layer = "fsa_statscan") |>
+  rename(geometry = geom) |>
   st_transform(crs = 3005)
-
 
 # --- Population center shapefiles - Method 2
 pop_centers <- 
   st_read(glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"), 
           layer = "popcenter_statscan") |>
+  rename(geometry = geom) |>
   st_transform(crs = 3005)
 
 
