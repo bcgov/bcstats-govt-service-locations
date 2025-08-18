@@ -172,53 +172,6 @@ rural_summary_by_method |> write_csv(
 )
 
 
-# --- Create a table of classification patterns
-
-method_classification_patterns <- residence_region_crosswalk |>
-  st_drop_geometry() |>
-  count(urban_rural_bcmaps_fsa, urban_rural_statscan_fsa, urban_rural_popcenter, name = "n_residences") |>
-  mutate(
-    agreement_type = case_when(
-      (urban_rural_bcmaps_fsa == urban_rural_statscan_fsa) & (urban_rural_bcmaps_fsa == urban_rural_popcenter) ~ "All methods agree",
-      (urban_rural_bcmaps_fsa == urban_rural_statscan_fsa) & (urban_rural_bcmaps_fsa != urban_rural_popcenter) ~ "FSA methods agree",
-      (urban_rural_bcmaps_fsa != urban_rural_statscan_fsa) & (urban_rural_bcmaps_fsa == urban_rural_popcenter) ~ "BCMaps & PopCenter agree",
-      (urban_rural_statscan_fsa != urban_rural_bcmaps_fsa) & (urban_rural_statscan_fsa == urban_rural_popcenter) ~ "StatsCan & PopCenter agree",
-      TRUE ~ "All methods disagree"
-    )
-  ) |>
-  arrange(desc(n_residences))
-
-method_classification_patterns |> write_csv(
-  glue("{TABLES_OUT}/method-classification-patterns.csv")
-)
-
-
-# --- Calculate a divergence score for each office, so we can compare how each office is affected by the different methods
-# --- Not super meaningful, but useful for plotting areas with  high disagreement between offices
-divergence_by_office <- residence_region_crosswalk |>
-  st_drop_geometry() |>
-  mutate(
-    divergence_score = case_when(
-      (urban_rural_bcmaps_fsa == urban_rural_statscan_fsa) & (urban_rural_bcmaps_fsa == urban_rural_popcenter) ~ 0, # all methods agree - no divergence
-      (urban_rural_bcmaps_fsa == urban_rural_statscan_fsa) & (urban_rural_bcmaps_fsa != urban_rural_popcenter) ~ 1, # only the FSA methods agree
-      (urban_rural_bcmaps_fsa != urban_rural_statscan_fsa) & (urban_rural_bcmaps_fsa == urban_rural_popcenter) ~ 1, # bcmaps_fsa agrees with popcenter, not statscan_fsa
-      (urban_rural_bcmaps_fsa != urban_rural_statscan_fsa) & (urban_rural_statscan_fsa == urban_rural_popcenter) ~ 1, # statscan_fsa agrees with popcenter, not bcmaps_fsa
-      TRUE ~ 2 # all methods disagree - this should only be possible when NA values
-    )
-  ) |>
-  group_by(nearest_facility) |>
-  summarise(
-    total_divergence = sum(divergence_score, na.rm = TRUE),
-    n_addresses = n(),
-    n_no_divergence = sum(divergence_score == 0, na.rm = TRUE),
-    n_partial_divergence = sum(divergence_score == 1, na.rm = TRUE),
-    pct_divergent = 100 * (n() - n_no_divergence) / n(),
-    .groups = 'drop'
-  ) |>
-  arrange(desc(pct_divergent))
-
-divergence_by_office
-
 # =========================================================================== #
 # Roll up of rural flag to catchment ----
 # =========================================================================== #
