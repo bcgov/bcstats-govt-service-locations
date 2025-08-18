@@ -96,12 +96,18 @@ fsa_bcmaps <- bcmaps::fsa() |>
   st_transform(crs = 3005)
 
 # --- FSA boundary shapefiles - Method 1b
-fsa_statscan <- st_read(glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg")) |>
+fsa_statscan <- 
+  st_read(glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg"), 
+          layer = "fsa_statscan") |>
   st_transform(crs = 3005)
 
+
 # --- Population center shapefiles - Method 2
-pop_centers <- st_read(glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg")) |>
+pop_centers <- 
+  st_read(glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"), 
+          layer = "popcenter_statscan") |>
   st_transform(crs = 3005)
+
 
 # =========================================================================== #
 # Create urban/rural flag for different methods and data sources ----
