@@ -64,16 +64,6 @@ db_shapefile <-
   st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
-# list of addresses with no valid routes
-db_no_route <- read_csv(
-    glue("{DT_DATA_FOLDER}/final_result_only_errors.csv")
-    ) %>%
-    select(dbid = DISSEMINATION_BLOCK_ID) %>%
-    mutate(
-        dbid = as.character(dbid),
-        no_route = TRUE
-        )  %>%
-    distinct()
 
 # ----------------------------------------------------------------------------
 # Create catchment areas using traditional drive time assignment
