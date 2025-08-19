@@ -43,7 +43,7 @@ sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")) |>
   st_as_sf(
     coords = c('coord_x', 'coord_y'),
     crs = 3005
-  ) 
+  )
 
 # Drive time data - required for 'SBC catchments'
 drivetime_data <-
@@ -61,18 +61,18 @@ pop_db <- read_csv(glue("{SRC_DATA_FOLDER}/full-population-db.csv"), col_types =
 
 # DB shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
 # list of addresses with no valid routes
 db_no_route <- read_csv(
     glue("{DT_DATA_FOLDER}/final_result_only_errors.csv")
-    ) %>% 
-    select(dbid = DISSEMINATION_BLOCK_ID) %>% 
+    ) %>%
+    select(dbid = DISSEMINATION_BLOCK_ID) %>%
     mutate(
         dbid = as.character(dbid),
         no_route = TRUE
-        )  %>% 
+        )  %>%
     distinct()
 
 # ----------------------------------------------------------------------------
@@ -96,7 +96,7 @@ message("Number of unassigned DBs before spatial assignment: ", unassigned_count
 
 # Assign all unassigned DBs directly to the nearest facility
 complete_assignments <- assign_unassigned_dbs(
-  db_shapefile, 
+  db_shapefile,
   drive_time_assignments,
   facility_locations = sbc_locs,
   batch_size = 20000,
@@ -124,9 +124,6 @@ write_csv(
   glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
 )
 
-# and the summary stats
-db_qa_summary %>% 
-  write_csv(glue("{TABLES_OUT}/unassigned_dbs_summary.csv"))
 
 # ----------------------------------------------------------------------------
 # Extra checks for QA here down. This is not part of the main assignment process.
@@ -160,6 +157,11 @@ db_qa_summary  <- db_check  %>%
     )  
 
 db_qa_summary
+
+# and the summary stats
+db_qa_summary %>% 
+  write_csv(glue("{TABLES_OUT}/unassigned_dbs_summary.csv"))
+
 
 # save the list of dbs that do/don't have assignees for further investigation
 db_check %>% 
