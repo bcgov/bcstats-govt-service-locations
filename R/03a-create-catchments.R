@@ -117,18 +117,21 @@ write_csv(
 # ----------------------------------------------------------------------------
 # Make complete assignments list to share with SBC
 # Also shapefiles containing service BC catchments
+# (shp file likely a more familiar format for SBC)
 # ----------------------------------------------------------------------------
 
-# remove unused columns (assignment_method, min_distance) for SBC cut, and save to disk
+# remove unused columns (assignment_method, min_distance) for SBC cut
 complete_assignments |>
   select(dbid, assigned) |>
-  distinct() |> # ensure no duplicates, shouldn't be any but just in case
+  distinct() |> # there shouldn't be any dups, but just in case
   write_csv(glue::glue("{FOR_SBC_OUT}/complete-db-assignments-for-SBC.csv"))
 
-  
-
-
-
+# create shapefiles for each SBC facility location catchment
+db_shapefile |>
+  left_join(complete_assignments, by = "dbid") |>
+  filter(!is.na(assigned)) |>  # there shouldn't be any nas, but just in case
+  summarize(geometry = st_union(geom), .by = "assigned") |>
+  st_write(glue::glue("{FOR_SBC_OUT}/sbc-catchments.shp"))
 
 # ----------------------------------------------------------------------------
 # Extra checks for QA here down. This is not part of the main assignment process.
