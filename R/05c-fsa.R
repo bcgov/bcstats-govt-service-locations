@@ -125,7 +125,10 @@ popcenter_residence_crosswalk_statscan <- resides_in_region(residences, pop_cent
 residence_region_crosswalk <- residences |>
   left_join(fsa_residence_crosswalk_bcmaps, by = "fid") |>
   left_join(fsa_residence_crosswalk_statscan, by = "fid", suffix = c("_bcmaps", "_statscan")) |>
-  left_join(popcenter_residence_crosswalk_statscan, by = "fid") |>
+  left_join(popcenter_residence_crosswalk_statscan, by = "fid") 
+
+# add flags for urban rural
+residence_region_crosswalk <- residence_region_crosswalk |>
   mutate(
     urban_rural_bcmaps_fsa = case_when(
       is.na(cfsauid_bcmaps) ~ NA,                
