@@ -114,6 +114,21 @@ write_csv(
   glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
 )
 
+# ----------------------------------------------------------------------------
+# Make complete assignments list to share with SBC
+# Also shapefiles containing service BC catchments
+# ----------------------------------------------------------------------------
+
+# remove unused columns (assignment_method, min_distance) for SBC cut, and save to disk
+complete_assignments |>
+  select(dbid, assigned) |>
+  distinct() |> # ensure no duplicates, shouldn't be any but just in case
+  write_csv(glue::glue("{FOR_SBC_OUT}/complete-db-assignments-for-SBC.csv"))
+
+  
+
+
+
 
 # ----------------------------------------------------------------------------
 # Extra checks for QA here down. This is not part of the main assignment process.
@@ -144,7 +159,7 @@ db_qa_summary  <- db_check  %>%
     pct_zero_pop = sum(population == 0, na.rm = TRUE) / n(),
     pct_na_pop = sum(is.na(population)) / n(),
     .groups = "drop"
-    )  
+    )
 
 db_qa_summary
 
