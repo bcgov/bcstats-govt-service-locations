@@ -131,7 +131,8 @@ db_shapefile |>
   left_join(complete_assignments, by = "dbid") |>
   filter(!is.na(assigned)) |>  # there shouldn't be any nas, but just in case
   summarize(geometry = st_union(geom), .by = "assigned") |>
-  st_write(glue::glue("{FOR_SBC_OUT}/sbc-catchments.shp"))
+  ms_simplify(keep = 0.01) |>
+  st_write(glue::glue("{FOR_SBC_OUT}/sbc-catchments/sbc-catchments.shp"))
 
 # ----------------------------------------------------------------------------
 # Extra checks for QA here down. This is not part of the main assignment process.
