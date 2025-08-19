@@ -109,12 +109,17 @@ pop_centers <-
   rename(geometry = geom) |>
   st_transform(crs = 3005)
 
+# catchments <- st_read(glue::glue("{FOR_SBC_OUT}/sbc-catchments.gpkg"), layer = "sbc_catchments")
+complete_assignments <- 
+  read_csv(glue::glue("{FOR_SBC_OUT}/complete-db-assignments-for-SBC.csv")) |>
+  clean_names() |>
+  mutate(across(everything(), as.character))
 
 # =========================================================================== #
 # Create urban/rural flag for different methods and data sources ----
 # =========================================================================== #
 
-residences <- drivetime_data |> select(fid, geometry, nearest_facility)
+residences <- drivetime_data |> select(fid, geometry, nearest_facility, dbid)
 
 # generate a crosswalk that maps each residence to a region, for each boundary (method).
 fsa_residence_crosswalk_bcmaps <- resides_in_region(residences, fsa_bcmaps, "cfsauid")
@@ -125,7 +130,7 @@ popcenter_residence_crosswalk_statscan <- resides_in_region(residences, pop_cent
 residence_region_crosswalk <- residences |>
   left_join(fsa_residence_crosswalk_bcmaps, by = "fid") |>
   left_join(fsa_residence_crosswalk_statscan, by = "fid", suffix = c("_bcmaps", "_statscan")) |>
-  left_join(popcenter_residence_crosswalk_statscan, by = "fid") 
+  left_join(popcenter_residence_crosswalk_statscan, by = "fid")
 
 # add flags for urban rural
 residence_region_crosswalk <- residence_region_crosswalk |>
@@ -182,7 +187,8 @@ rural_summary_by_method |> write_csv(
 # --- according to # of addresses assigned
 catchment_rural_summary <- residence_region_crosswalk |>
   st_drop_geometry() |>
-  group_by(nearest_facility) |>
+  left_join(complete_assignments, by = "dbid") |>
+  group_by(assigned) |>
   summarise(
     n_residences = n(),
     n_rural_bcmaps_fsa = sum(urban_rural_bcmaps_fsa == "RURAL", na.rm = TRUE),
