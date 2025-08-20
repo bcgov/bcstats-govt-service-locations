@@ -113,7 +113,17 @@ csd_db_crosswalk <-
     col_types = cols(.default = "c")
   ) |>
   clean_names()
-  
+
+
+db_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg"))
+
+db_projections_transformed_agg <- 
+  readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds")) |>
+  filter(gender == 'T', year == 2025) |>
+  summarize(population = sum(population, na.rm = TRUE),
+            .by = c("dbid")) |>
+  left_join(db_shapefiles, by = "dbid") |>
+  st_as_sf(crs = 3005)
 
 # =========================================================================== #
 # Create urban/rural flag for different methods and data sources ----
@@ -194,7 +204,7 @@ catchment_rural_summary <- residence_region_crosswalk |>
 catchment_rural_summary
 
 # note that due to an abundance of rural addresses, there are many more rural catchments than I might have expected
-# does this mean that using address is misleading, and we should use population? what would that look like? 
+# does this mean that using address is misleading, and we should use population? what would that look like?
 # or are they truly placed out in rural areas?
 catchment_rural_summary |> 
   summarize(
@@ -208,6 +218,41 @@ catchment_rural_summary |>
 catchment_rural_summary |>
   count(is_rural_statscan_fsa, is_rural_popcenter) |>
   arrange(desc(n))
+
+# =========================================================================== #
+# look at similar results with population estimates
+# =========================================================================== #
+dbs <- db_projections_transformed_agg  |>
+  select(dbid, population, geometry = geom, csdid)
+
+# generate a crosswalk that maps each residence to a region, for each boundary (method).
+popcenter_dbs_crosswalk_statscan <- resides_in_region(dbs |> rename(fid = dbid), pop_centers, "pcname") |>
+  select(dbid = fid, pcname) 
+
+# add flags for urban rural
+dbs_region_crosswalk <- dbs |>
+  right_join(popcenter_dbs_crosswalk_statscan, by = "dbid") |>
+  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN"))
+
+catchment_rural_summary <- residence_region_crosswalk |>
+  st_drop_geometry() |>
+  left_join(complete_assignments, by = "dbid") |>
+  group_by(assigned, urban_rural_statscan_popcenter) |>
+  summarise(
+    dbids = n(),
+    population = sum(population, na.rm = TRUE),
+    .groups = 'drop_last'
+  ) |>
+  mutate(
+    ttl_dbids = sum(dbids, na.rm = TRUE),
+    ttl_population = sum(population, na.rm = TRUE)) |>
+  filter(urban_rural_statscan_popcenter == "RURAL") |>
+  mutate(
+    n_rural_population = population,
+    p_rural_population = 100 * population / ttl_population) |>
+  select(-c(urban_rural_statscan_popcenter, dbids, population))
+
+
 
 # =========================================================================== #
 # Roll up of rural flag to CSD ----
