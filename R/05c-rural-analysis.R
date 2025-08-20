@@ -275,7 +275,7 @@ p <- residence_region_long |>
   facet_wrap(~ method, nrow = 2)
 
 ggsave(
-  glue("{MAP_OUT}/fsa-methods/urban-rural-population-centers.png"),
+  glue("{MAP_OUT}/rural-analysis/all-data-urban-rural.png"),
   plot = p,
   width = 10, height = 8
 )
@@ -289,7 +289,7 @@ p <- residence_region_long |>
   facet_wrap(~ method, nrow = 2)
 
 ggsave(
-  glue("{MAP_OUT}/fsa-methods/{facility}-urban-rural.png"),
+  glue("{MAP_OUT}/rural-analysis/{make_clean_names(facility, sep_out = '-')}-urban-rural.png"),
   plot = p,
   width = 10, height = 8
 )
@@ -297,11 +297,11 @@ ggsave(
 # --- Plot urban/rural for each method
 p <- residence_region_long |>
   plot_urban_rural(title = "Urban and Rural Areas - Population Centers") +
-  geom_sf(data = catchments, aes(color = assigned)) +
+  geom_sf(data = catchments, color = "black", alpha = 0) +
   facet_wrap(~ method, nrow = 2)
 
 ggsave(
-  glue("{MAP_OUT}/fsa-methods/catchment-urban-rural.png"),
+  glue("{MAP_OUT}/rural-analysis/catchment-urban-rural.png"),
   plot = p,
   width = 10, height = 8
 )
