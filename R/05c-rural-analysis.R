@@ -221,6 +221,7 @@ catchment_rural_summary |>
 
 # =========================================================================== #
 # look at similar results with population estimates
+# TBD: Review this in the AM
 # =========================================================================== #
 dbs <- db_projections_transformed_agg  |>
   select(dbid, population, geometry = geom, csdid)
@@ -231,13 +232,14 @@ popcenter_dbs_crosswalk_statscan <- resides_in_region(dbs |> rename(fid = dbid),
 
 # add flags for urban rural
 dbs_region_crosswalk <- dbs |>
-  right_join(popcenter_dbs_crosswalk_statscan, by = "dbid") |>
+  left_join(popcenter_dbs_crosswalk_statscan, by = "dbid") |>
   mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN"))
 
-catchment_rural_summary <- residence_region_crosswalk |>
+# I need to review this still
+catchment_rural_summary_pop <- dbs_region_crosswalk |>
   st_drop_geometry() |>
   left_join(complete_assignments, by = "dbid") |>
-  group_by(assigned, urban_rural_statscan_popcenter) |>
+  group_by(assigned, urban_rural) |>
   summarise(
     dbids = n(),
     population = sum(population, na.rm = TRUE),
@@ -246,13 +248,12 @@ catchment_rural_summary <- residence_region_crosswalk |>
   mutate(
     ttl_dbids = sum(dbids, na.rm = TRUE),
     ttl_population = sum(population, na.rm = TRUE)) |>
-  filter(urban_rural_statscan_popcenter == "RURAL") |>
+  filter(urban_rural == "RURAL") |>
   mutate(
     n_rural_population = population,
     p_rural_population = 100 * population / ttl_population) |>
-  select(-c(urban_rural_statscan_popcenter, dbids, population))
-
-
+  select(-c(urban_rural, population)) |>
+  rename(n_rural_dbids = dbids)
 
 # =========================================================================== #
 # Roll up of rural flag to CSD ----
@@ -260,7 +261,7 @@ catchment_rural_summary <- residence_region_crosswalk |>
 # --- Create a summary table of rural/urban classification by CSD
 # --- according to # of addresses assigned
 csd_rural_summary <- residence_region_crosswalk |>
-  st_drop_geometry() |>
+  st_drop_geometry() |
   group_by(csdid, csd_name, csd_desc) |>
   summarise(
     n_residences = n(),
