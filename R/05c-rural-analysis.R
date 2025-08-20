@@ -100,7 +100,8 @@ pop_centers <-
   rename(geometry = geom) |>
   st_transform(crs = 3005)
 
-# catchments <- st_read(glue::glue("{FOR_SBC_OUT}/sbc-catchments.gpkg"), layer = "sbc_catchments")
+catchments <- st_read(glue::glue("{FOR_SBC_OUT}/sbc-catchments/sbc-catchments.shp"))
+
 complete_assignments <- 
   read_csv(glue::glue("{FOR_SBC_OUT}/complete-db-assignments-for-SBC.csv")) |>
   clean_names() |>
@@ -251,7 +252,7 @@ plot_urban_rural <- function(data, title = "Rural and Urban Areas - BC") {
 
   data |>
     ggplot() +
-    geom_sf(aes(color = rural), size = 0.5, alpha = 0.25) +
+    geom_sf(aes(color = rural), size = 0.5, alpha = 0.1) +
     scale_color_manual(values = c("URBAN" = "#074607", "RURAL" = "#8888f5"), name = "Rural") +
     labs(title = title,
          subtitle = "Colored by Rural Flag and Method",
@@ -270,7 +271,8 @@ residence_region_long <- residence_region_crosswalk |>
 
 # --- Plot urban/rural for each method
 p <- residence_region_long |>
-  plot_urban_rural(title = "Urban and Rural Areas - Population Centers") + facet_wrap(~ method, nrow = 2)
+  plot_urban_rural(title = "Urban and Rural Areas - Population Centers") + 
+  facet_wrap(~ method, nrow = 2)
 
 ggsave(
   glue("{MAP_OUT}/fsa-methods/urban-rural-population-centers.png"),
@@ -278,11 +280,28 @@ ggsave(
   width = 10, height = 8
 )
 
-# --- Plot urban/rural for select offices
-facility <- divergence_by_office |> slice(2) |> pull(nearest_facility)
+# --- Plot urban/rural for select csd/office
+facility <- catchment_rural_summary |> arrange(p_rural_popcenter) |> slice(1) |> pull(assigned)
 
 p <- residence_region_long |>
   filter(nearest_facility %in% facility) |>
-  plot_urban_rural(title = glue::glue("{facility}")) + facet_wrap(~ method, nrow = 2)
+  plot_urban_rural(title = glue::glue("{facility}")) + 
+  facet_wrap(~ method, nrow = 2)
 
-p
+ggsave(
+  glue("{MAP_OUT}/fsa-methods/{facility}-urban-rural.png"),
+  plot = p,
+  width = 10, height = 8
+)
+
+# --- Plot urban/rural for each method
+p <- residence_region_long |>
+  plot_urban_rural(title = "Urban and Rural Areas - Population Centers") +
+  geom_sf(data = catchments, aes(color = assigned)) +
+  facet_wrap(~ method, nrow = 2)
+
+ggsave(
+  glue("{MAP_OUT}/fsa-methods/catchment-urban-rural.png"),
+  plot = p,
+  width = 10, height = 8
+)
