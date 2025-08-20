@@ -105,6 +105,13 @@ complete_assignments <-
   read_csv(glue::glue("{FOR_SBC_OUT}/complete-db-assignments-for-SBC.csv")) |>
   clean_names() |>
   mutate(across(everything(), as.character))
+
+csd_db_crosswalk <-
+  read_csv(
+    glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"),
+    col_types = cols(.default = "c")
+  ) |>
+  clean_names()
   
 
 # =========================================================================== #
@@ -119,18 +126,19 @@ popcenter_residence_crosswalk_statscan <- resides_in_region(residences, pop_cent
 
 # combine and add an urban/rural flag for each method
 residence_region_crosswalk <- residences |>
-  left_join(fsa_residence_crosswalk_statscan, by = "fid", suffix = c("_bcmaps", "_statscan")) |>
-  left_join(popcenter_residence_crosswalk_statscan, by = "fid")
+  left_join(fsa_residence_crosswalk_statscan, by = "fid") |>
+  left_join(popcenter_residence_crosswalk_statscan, by = "fid") |>
+  left_join(csd_db_crosswalk, by = "dbid") 
 
 # add flags for urban rural
 residence_region_crosswalk <- residence_region_crosswalk |>
   mutate(
     urban_rural_statscan_fsa = case_when(
-      is.na(cfsauid_statscan) ~ NA,
-      grepl("^V0", cfsauid_statscan) ~ "RURAL",
+      is.na(cfsauid) ~ NA,
+      grepl("^V0", cfsauid) ~ "RURAL",
       TRUE ~ "URBAN"
     ),
-    urban_rural_popcenter = case_when(
+    urban_rural_statscan_popcenter = case_when(
       is.na(pcname) ~ "RURAL",  # an area is rural if outside a population center
       TRUE ~ "URBAN"
     )
@@ -155,7 +163,7 @@ rural_summary_by_method <- residence_region_crosswalk |>
     cols = starts_with(c("n_", "p_")),
     names_to = "method",
     values_to = "count"
-  )
+)
 
 rural_summary_by_method |> write_csv(
   glue("{TABLES_OUT}/rural-summary-by-method.csv")
@@ -197,6 +205,40 @@ catchment_rural_summary |>
   pivot_longer(everything())
 
 catchment_rural_summary |>
+  count(is_rural_statscan_fsa, is_rural_popcenter) |>
+  arrange(desc(n))
+
+# =========================================================================== #
+# Roll up of rural flag to CSD ----
+# =========================================================================== #
+# --- Create a summary table of rural/urban classification by CSD
+# --- according to # of addresses assigned
+csd_rural_summary <- residence_region_crosswalk |>
+  st_drop_geometry() |>
+  group_by(csdid, csd_name, csd_desc) |>
+  summarise(
+    n_residences = n(),
+    n_rural_statscan_fsa = sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE),
+    n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
+    p_rural_statscan_fsa = 100 * sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n(),
+    is_rural_statscan_fsa = if_else(p_rural_statscan_fsa > 50, "RURAL", "URBAN"),
+    is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
+    .groups = 'drop'
+  )
+
+csd_rural_summary
+
+csd_rural_summary |> 
+  summarize(
+    mean_rural_statscan_fsa = mean(p_rural_statscan_fsa, na.rm = TRUE),
+    mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
+    median_rural_statscan_fsa = median(p_rural_statscan_fsa, na.rm = TRUE),
+    median_rural_popcenter = median(p_rural_popcenter, na.rm = TRUE)
+  ) |>
+  pivot_longer(everything())
+
+csd_rural_summary |>
   count(is_rural_statscan_fsa, is_rural_popcenter) |>
   arrange(desc(n))
 
