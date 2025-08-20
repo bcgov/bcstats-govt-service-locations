@@ -244,7 +244,7 @@ csd_rural_summary |>
   arrange(desc(n))
 
 # =========================================================================== #
-# Plot urban vs rural for each method
+# Plot urban vs rural for each method, different catchments
 # =========================================================================== #
 
 # --- Create a reusable plotting function for urban/rural maps
