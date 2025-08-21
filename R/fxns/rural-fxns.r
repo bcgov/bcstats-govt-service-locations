@@ -13,12 +13,12 @@
 # limitations under the License.
 
 
-resides_in_region <- function(residences, regions, region_name_col) {
+resides_in_region <- function(residences, regions, id_col, region_name_col) {
 
   results <- st_within(residences, regions, sparse = FALSE)
 
   colnames(results) <- regions[[region_name_col]]
-  rownames(results) <- residences$fid
+  rownames(results) <- residences[[id_col]]
   
   # print a message saying how many residences were matched
   n_unmatched <- sum(rowSums(results) == 0)
@@ -31,8 +31,8 @@ resides_in_region <- function(residences, regions, region_name_col) {
   # collapse the results matrix and join to drive data
   results |>
     as.data.frame() |>
-    rownames_to_column("fid") |>
-    pivot_longer(-fid, names_to = region_name_col, values_to = "in_region") |>
+    rownames_to_column(id_col) |>
+    pivot_longer(-all_of(id_col), names_to = region_name_col, values_to = "in_region") |>
     filter(in_region) |>
     select(-in_region)
 

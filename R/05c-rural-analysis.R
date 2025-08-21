@@ -108,14 +108,14 @@ db_projections_transformed_agg <-
 residences <- drivetime_data |> select(fid, geometry, nearest_facility, dbid)
 
 # generate a crosswalk that maps each residence to a region, for each boundary (method).
-fsa_residence_crosswalk_statscan <- resides_in_region(residences, fsa_statscan, "cfsauid")
-popcenter_residence_crosswalk_statscan <- resides_in_region(residences, pop_centers, "pcname")
+fsa_residence_crosswalk_statscan <- resides_in_region(residences, fsa_statscan, "fid", "cfsauid")
+popcenter_residence_crosswalk_statscan <- resides_in_region(residences, pop_centers, "fid", "pcname")
 
 # combine and add an urban/rural flag for each method
 residence_region_crosswalk <- residences |>
   left_join(fsa_residence_crosswalk_statscan, by = "fid") |>
   left_join(popcenter_residence_crosswalk_statscan, by = "fid") |>
-  left_join(csd_db_crosswalk, by = "dbid") 
+  left_join(csd_db_crosswalk, by = "dbid")
 
 # add flags for urban rural
 residence_region_crosswalk <- residence_region_crosswalk |>
@@ -141,10 +141,10 @@ rural_summary_by_method <- residence_region_crosswalk |>
   summarise(
     n_residences = n(),
     n_rural_statscan_fsa = sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE),
-    n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
+    n_rural_popcenter = sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE),
     n_missing_statscan_fsa = sum(is.na(urban_rural_statscan_fsa), na.rm = TRUE),
     p_rural_statscan_fsa = 100*sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100*sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n()
+    p_rural_popcenter = 100*sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE) / n()
   ) |>
   pivot_longer(
     cols = starts_with(c("n_", "p_")),
@@ -169,9 +169,9 @@ catchment_rural_summary <- residence_region_crosswalk |>
   summarise(
     n_residences = n(),
     n_rural_statscan_fsa = sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE),
-    n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
+    n_rural_popcenter = sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE),
     p_rural_statscan_fsa = 100 * sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100 * sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE) / n(),
     is_rural_statscan_fsa = if_else(p_rural_statscan_fsa > 50, "RURAL", "URBAN"),
     is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
     .groups = 'drop'
@@ -199,37 +199,37 @@ catchment_rural_summary |>
 # look at similar results with population estimates
 # TBD: Review this in the AM
 # =========================================================================== #
-dbs <- db_projections_transformed_agg  |>
+db_pop_est <- db_projections_transformed_agg  |>
   select(dbid, population, geometry = geom, csdid)
 
 # generate a crosswalk that maps each residence to a region, for each boundary (method).
-popcenter_dbs_crosswalk_statscan <- resides_in_region(dbs |> rename(fid = dbid), pop_centers, "pcname") |>
-  select(dbid = fid, pcname) 
+popcenter_dbs_crosswalk_statscan <- resides_in_region(db_pop_est, pop_centers, "dbid", "pcname") 
 
 # add flags for urban rural
-dbs_region_crosswalk <- dbs |>
+dbs_region_crosswalk <- db_pop_est |>
   left_join(popcenter_dbs_crosswalk_statscan, by = "dbid") |>
   mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN"))
 
-# I need to review this still
-catchment_rural_summary_pop <- dbs_region_crosswalk |>
+# prevalence of estimated rural population overall (excludes)
+dbs_region_crosswalk |>
+  st_drop_geometry() |>
+  group_by(urban_rural) |>
+  summarise(sum(population, na.rm = TRUE))
+
+# Notes: reversing the left_join changes count of dbids slightly due to 37 fewer dbid's in the projections.
+# It has no effect on population per facility
+catchment_rural_summary_pop <- dbs_region_crosswalk |> 
   st_drop_geometry() |>
   left_join(complete_assignments, by = "dbid") |>
-  group_by(assigned, urban_rural) |>
-  summarise(
-    dbids = n(),
-    population = sum(population, na.rm = TRUE),
-    .groups = 'drop_last'
-  ) |>
-  mutate(
-    ttl_dbids = sum(dbids, na.rm = TRUE),
-    ttl_population = sum(population, na.rm = TRUE)) |>
+  summarise(urban_rural_population = sum(population, na.rm = TRUE), .by = c("assigned", "urban_rural")) |>
+  group_by(assigned) |>
+  mutate(population = sum(urban_rural_population, na.rm = TRUE)) |>
   filter(urban_rural == "RURAL") |>
-  mutate(
-    n_rural_population = population,
-    p_rural_population = 100 * population / ttl_population) |>
-  select(-c(urban_rural, population)) |>
-  rename(n_rural_dbids = dbids)
+  rename(rural_population = urban_rural_population) |>
+  mutate(p_rural_population = 100 * rural_population / population) |>
+  select(-c(urban_rural))
+
+catchment_rural_summary_pop 
 
 # =========================================================================== #
 # Roll up of rural flag to CSD ----
