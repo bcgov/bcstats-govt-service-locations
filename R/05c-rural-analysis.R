@@ -41,36 +41,12 @@
 # data source (bcmaps, statscan, or pop centers).
 # =========================================================================== #
 
-resides_in_region <- function(residences, regions, region_name_col) {
-
-  results <- st_within(residences, regions, sparse = FALSE)
-
-  colnames(results) <- regions[[region_name_col]]
-  rownames(results) <- residences$fid
-  
-  # print a message saying how many residences were matched
-  n_unmatched <- sum(rowSums(results) == 0)
-  n_multi_matched <- sum(rowSums(results) > 1)
-  
-  message(glue("{nrow(residences)} residences processed."))
-  message(glue("{n_unmatched} ({round(100*n_unmatched/nrow(residences), 1)}%) were unmatched to a region."))
-  message(glue("{n_multi_matched} ({round(100*n_multi_matched/nrow(residences), 1)}%) were matched to more than one region."))
-
-  # collapse the results matrix and join to drive data
-  results |>
-    as.data.frame() |>
-    rownames_to_column("fid") |>
-    pivot_longer(-fid, names_to = region_name_col, values_to = "in_region") |>
-    filter(in_region) |>
-    select(-in_region)
-
-}
-
 # =========================================================================== #
 # Load libraries and settings ----
 # =========================================================================== #
 
 source("R/settings.R")
+source("R/fxns/rural-fxns.R")
 
 # =========================================================================== #
 # Load data ----
@@ -292,20 +268,6 @@ csd_rural_summary |>
 # =========================================================================== #
 # Plot urban vs rural for each method, different catchments
 # =========================================================================== #
-
-# --- Create a reusable plotting function for urban/rural maps
-plot_urban_rural <- function(data, title = "Rural and Urban Areas - BC") {
-
-  data |>
-    ggplot() +
-    geom_sf(aes(color = rural), size = 0.5, alpha = 0.1) +
-    scale_color_manual(values = c("URBAN" = "#074607", "RURAL" = "#8888f5"), name = "Rural") +
-    labs(title = title,
-         subtitle = "Colored by Rural Flag and Method",
-         x = "Longitude", y = "Latitude") + 
-    guides(color = guide_legend(override.aes = list(shape = 15, size = 5, alpha = 1))) +
-    theme_minimal()
-}
 
 # --- Create data for mapping all the regions
 residence_region_long <- residence_region_crosswalk |>
