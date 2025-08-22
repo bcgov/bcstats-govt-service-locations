@@ -136,6 +136,7 @@ residence_region_crosswalk <- residence_region_crosswalk |>
 # =========================================================================== #
 
 # --- generate a summary table so we can compares how different classification methods label residences as "rural" or "urban." 
+# the percentage of rural addresses is inline with BC estimates produced by Statistics Canada.  
 rural_summary_by_method <- residence_region_crosswalk |>
   st_drop_geometry() |>
   summarise(
@@ -197,7 +198,6 @@ catchment_rural_summary |>
 
 # =========================================================================== #
 # look at similar results with population estimates
-# TBD: Review this in the AM
 # =========================================================================== #
 db_pop_est <- db_projections_transformed_agg  |>
   select(dbid, population, geometry = geom, csdid)
@@ -210,13 +210,13 @@ dbs_region_crosswalk <- db_pop_est |>
   left_join(popcenter_dbs_crosswalk_statscan, by = "dbid") |>
   mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN"))
 
-# estimated urban/rural population overall
+# estimated urban/rural population overall is higher than address-based.
 dbs_region_crosswalk |>
   st_drop_geometry() |>
-  group_by(urban_rural) |>
-  summarise(sum(population, na.rm = TRUE))
+  summarise(population = sum(population, na.rm = TRUE), .by = c("urban_rural")) |>
+  mutate(p_pop = population/sum(population)) 
 
-catchment_rural_summary_pop <- dbs_region_crosswalk |> #reversing the left_join has no effect on population per facility
+catchment_rural_summary_pop <- dbs_region_crosswalk |> #reversing the left_join has no effect on population per facility, but a small handful of DB's get dropped (not many)
   st_drop_geometry() |>
   left_join(complete_assignments, by = "dbid") |>
   summarise(
@@ -231,6 +231,8 @@ catchment_rural_summary_pop <- dbs_region_crosswalk |> #reversing the left_join 
   select(-c(urban_rural)) |>
   arrange(desc(p_rural_population))
 
+catchment_rural_summary_pop 
+
 # compare the two methods (address and population, use popcenter method)
 catchment_rural_summary_compare <- catchment_rural_summary |>
   select(assigned, n_residences, p_rural_popcenter) |>
@@ -243,22 +245,40 @@ catchment_rural_summary_compare <- catchment_rural_summary |>
 
 catchment_rural_summary_compare
 
-#what's going on with Atlin?
 catchment_rural_summary_compare |>
   filter(assigned %in% c("Service BC - Atlin"))
 
-# address-based and population-based are proportional, with greater variation around the mean
-# lower density areas 
 catchment_rural_summary_compare |>
   filter(!assigned %in% c("Service BC - Atlin")) |> 
   ggplot(aes(x = p_rural_popcenter, y = p_rural_population)) +
   geom_point(aes(color = ppl_per_address), size = 5) +
+  geom_smooth() +
   scale_color_viridis_c(trans = "reverse") +
   labs(
-    title = "Rural Population Estimates",
-    x = "Rural Population (Population Centers)",
-    y = "Rural Population (StatsCan FSA)"
+    title = "",
+    x = "% Rural (Address-Based)",
+    y = "% Rural (Population-Based)"
   )
+
+# where are the offices themselves located, urban/rural?
+facilities <- drivetime_data |> st_drop_geometry() |> distinct(nearest_facility, coord_x, coord_y) |>
+  st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
+
+urban_facilities <- resides_in_region(facilities, pop_centers, "nearest_facility", "pcname") # OR
+# urban_facilities <- resides_in_region(facilities, fsa_statscan, "nearest_facility", "cfsauid")
+
+facilities <- facilities |> left_join(urban_facilities, by = "nearest_facility") |>
+  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN"))
+
+facilities |>  
+ggplot() +
+  geom_sf(data = facilities, aes(color = urban_rural)) +
+  scale_color_manual(values = c("RURAL" = "blue", "URBAN" = "red")) +
+  labs(
+    title = "Urban and Rural Facilities",
+    fill = "Urban/Rural"
+)
+
 
 # =========================================================================== #
 # Roll up of rural flag to CSD ----
