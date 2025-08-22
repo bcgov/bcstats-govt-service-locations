@@ -45,6 +45,7 @@ library(tidyverse)
 library(janitor)
 library(snakecase)
 library(ggplot2)
+library(viridis)
 library(scales)
 library(readxl)
 

@@ -181,7 +181,7 @@ catchment_rural_summary
 
 # note that due to an abundance of rural addresses, there are many more rural catchments than I might have expected
 # does this mean that using address is misleading, and we should use population? what would that look like?
-# or are they truly placed out in rural areas?
+# or are they truly placed out in rural areas? 
 catchment_rural_summary |> 
   summarize(
     mean_rural_statscan_fsa = mean(p_rural_statscan_fsa, na.rm = TRUE),
@@ -203,33 +203,62 @@ db_pop_est <- db_projections_transformed_agg  |>
   select(dbid, population, geometry = geom, csdid)
 
 # generate a crosswalk that maps each residence to a region, for each boundary (method).
-popcenter_dbs_crosswalk_statscan <- resides_in_region(db_pop_est, pop_centers, "dbid", "pcname") 
+popcenter_dbs_crosswalk_statscan <- resides_in_region(db_pop_est, pop_centers, "dbid", "pcname")
 
 # add flags for urban rural
 dbs_region_crosswalk <- db_pop_est |>
   left_join(popcenter_dbs_crosswalk_statscan, by = "dbid") |>
   mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN"))
 
-# prevalence of estimated rural population overall (excludes)
+# estimated urban/rural population overall
 dbs_region_crosswalk |>
   st_drop_geometry() |>
   group_by(urban_rural) |>
   summarise(sum(population, na.rm = TRUE))
 
-# Notes: reversing the left_join changes count of dbids slightly due to 37 fewer dbid's in the projections.
-# It has no effect on population per facility
-catchment_rural_summary_pop <- dbs_region_crosswalk |> 
+catchment_rural_summary_pop <- dbs_region_crosswalk |> #reversing the left_join has no effect on population per facility
   st_drop_geometry() |>
   left_join(complete_assignments, by = "dbid") |>
-  summarise(urban_rural_population = sum(population, na.rm = TRUE), .by = c("assigned", "urban_rural")) |>
+  summarise(
+    urban_rural_population = sum(population, na.rm = TRUE), 
+    .by = c("assigned", "urban_rural")
+  ) |>
   group_by(assigned) |>
   mutate(population = sum(urban_rural_population, na.rm = TRUE)) |>
   filter(urban_rural == "RURAL") |>
   rename(rural_population = urban_rural_population) |>
   mutate(p_rural_population = 100 * rural_population / population) |>
-  select(-c(urban_rural))
+  select(-c(urban_rural)) |>
+  arrange(desc(p_rural_population))
 
-catchment_rural_summary_pop 
+# compare the two methods (address and population, use popcenter method)
+catchment_rural_summary_compare <- catchment_rural_summary |>
+  select(assigned, n_residences, p_rural_popcenter) |>
+  inner_join(catchment_rural_summary_pop, by = "assigned") |>
+  mutate(ppl_per_address = population / n_residences) |>
+  select(
+    assigned, n_residences, population, rural_population, ppl_per_address, 
+    p_rural_popcenter, p_rural_population
+  )
+
+catchment_rural_summary_compare
+
+#what's going on with Atlin?
+catchment_rural_summary_compare |>
+  filter(assigned %in% c("Service BC - Atlin"))
+
+# address-based and population-based are proportional, with greater variation around the mean
+# lower density areas 
+catchment_rural_summary_compare |>
+  filter(!assigned %in% c("Service BC - Atlin")) |> 
+  ggplot(aes(x = p_rural_popcenter, y = p_rural_population)) +
+  geom_point(aes(color = ppl_per_address), size = 5) +
+  scale_color_viridis_c(trans = "reverse") +
+  labs(
+    title = "Rural Population Estimates",
+    x = "Rural Population (Population Centers)",
+    y = "Rural Population (StatsCan FSA)"
+  )
 
 # =========================================================================== #
 # Roll up of rural flag to CSD ----
@@ -244,7 +273,7 @@ csd_rural_summary <- residence_region_crosswalk |>
     n_rural_statscan_fsa = sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE),
     n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
     p_rural_statscan_fsa = 100 * sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n(),a
     is_rural_statscan_fsa = if_else(p_rural_statscan_fsa > 50, "RURAL", "URBAN"),
     is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
     .groups = 'drop'
