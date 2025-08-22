@@ -293,7 +293,7 @@ csd_rural_summary <- residence_region_crosswalk |>
     n_rural_statscan_fsa = sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE),
     n_rural_popcenter = sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE),
     p_rural_statscan_fsa = 100 * sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n(),a
+    p_rural_popcenter = 100 * sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE) / n(),
     is_rural_statscan_fsa = if_else(p_rural_statscan_fsa > 50, "RURAL", "URBAN"),
     is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
     .groups = 'drop'
