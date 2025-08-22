@@ -286,7 +286,7 @@ ggplot() +
 # --- Create a summary table of rural/urban classification by CSD
 # --- according to # of addresses assigned
 csd_rural_summary <- residence_region_crosswalk |>
-  st_drop_geometry() |
+  st_drop_geometry() |>
   group_by(csdid, csd_name, csd_desc) |>
   summarise(
     n_residences = n(),
