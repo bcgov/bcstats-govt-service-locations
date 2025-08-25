@@ -63,14 +63,14 @@ drivetime_data <-
   st_as_sf(coords = c("address_albers_x", "address_albers_y"), crs = 3005)
 
 # --- FSA boundary shapefiles - Method 1
-fsa_statscan <-
+fsa_boundaries <-
   st_read(glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg"),
           layer = "fsa_statscan") |>
   rename(geometry = geom) |>
   st_transform(crs = 3005)
 
 # --- Population center shapefiles - Method 2
-pop_centers <-
+popcenter_boundaries <-
   st_read(glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"),
           layer = "popcenter_statscan") |>
   rename(geometry = geom) |>
@@ -107,24 +107,24 @@ db_projections_transformed_agg <-
 residences <- drivetime_data |> select(fid, geometry, nearest_facility, dbid)
 
 # generate a crosswalk that maps each residence to a region, for each boundary (method).
-fsa_residence_crosswalk_statscan <- resides_in_region(residences, fsa_statscan, "fid", "cfsauid")
-popcenter_residence_crosswalk_statscan <- resides_in_region(residences, pop_centers, "fid", "pcname")
+fsa_residence_crosswalk <- resides_in_region(residences, fsa_boundaries, "fid", "cfsauid")
+popcenter_residence_crosswalk <- resides_in_region(residences, popcenter_boundaries, "fid", "pcname")
 
 # combine and add an urban/rural flag for each method
 residence_region_crosswalk <- residences |>
-  left_join(fsa_residence_crosswalk_statscan, by = "fid") |>
-  left_join(popcenter_residence_crosswalk_statscan, by = "fid") |>
+  left_join(fsa_residence_crosswalk, by = "fid") |>
+  left_join(popcenter_residence_crosswalk, by = "fid") |>
   left_join(csd_db_crosswalk, by = "dbid")
 
 # add flags for urban rural
 residence_region_crosswalk <- residence_region_crosswalk |>
   mutate(
-    urban_rural_statscan_fsa = case_when(
+    urban_rural_fsa = case_when(
       is.na(cfsauid) ~ NA,
       grepl("^V0", cfsauid) ~ "RURAL",
       TRUE ~ "URBAN"
     ),
-    urban_rural_statscan_popcenter = case_when(
+    urban_rural_popcenter = case_when(
       is.na(pcname) ~ "RURAL",  # an area is rural if outside a population center
       TRUE ~ "URBAN"
     )
@@ -140,11 +140,11 @@ rural_summary_by_method <- residence_region_crosswalk |>
   st_drop_geometry() |>
   summarise(
     n_residences = n(),
-    n_rural_statscan_fsa = sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE),
-    n_rural_popcenter = sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE),
-    n_missing_statscan_fsa = sum(is.na(urban_rural_statscan_fsa), na.rm = TRUE),
-    p_rural_statscan_fsa = 100*sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100*sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE) / n()
+    n_rural_fsa = sum(urban_rural_fsa == "RURAL", na.rm = TRUE),
+    n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
+    n_missing_fsa = sum(is.na(urban_rural_fsa), na.rm = TRUE),
+    p_rural_fsa = 100*sum(urban_rural_fsa == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100*sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n()
   ) |>
   pivot_longer(
     cols = starts_with(c("n_", "p_")),
@@ -168,11 +168,11 @@ catchment_rural_summary <- residence_region_crosswalk |>
   group_by(assigned) |>
   summarise(
     n_residences = n(),
-    n_rural_statscan_fsa = sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE),
-    n_rural_popcenter = sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE),
-    p_rural_statscan_fsa = 100 * sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100 * sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE) / n(),
-    is_rural_statscan_fsa = if_else(p_rural_statscan_fsa > 50, "RURAL", "URBAN"),
+    n_rural_fsa = sum(urban_rural_fsa == "RURAL", na.rm = TRUE),
+    n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
+    p_rural_fsa = 100 * sum(urban_rural_fsa == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n(),
+    is_rural_fsa = if_else(p_rural_fsa > 50, "RURAL", "URBAN"),
     is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
     .groups = 'drop'
   )
@@ -184,15 +184,15 @@ catchment_rural_summary
 # or are they truly placed out in rural areas? 
 catchment_rural_summary |> 
   summarize(
-    mean_rural_statscan_fsa = mean(p_rural_statscan_fsa, na.rm = TRUE),
+    mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
     mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
-    median_rural_statscan_fsa = median(p_rural_statscan_fsa, na.rm = TRUE),
+    median_rural_fsa = median(p_rural_fsa, na.rm = TRUE),
     median_rural_popcenter = median(p_rural_popcenter, na.rm = TRUE)
   ) |>
   pivot_longer(everything())
 
 catchment_rural_summary |>
-  count(is_rural_statscan_fsa, is_rural_popcenter) |>
+  count(is_rural_fsa, is_rural_popcenter) |>
   arrange(desc(n))
 
 # =========================================================================== #
@@ -200,14 +200,14 @@ catchment_rural_summary |>
 # =========================================================================== #
 
 # generate a crosswalk that maps each dbid to a population center, for each boundary (method).
-popcenter_dbs_crosswalk_statscan <- resides_in_region(db_shapefiles, pop_centers, "dbid", "pcname")
-fsa_dbs_crosswalk_statscan <- resides_in_region(db_shapefiles, fsa_statscan, "dbid", "cfsauid")
+popcenter_dbs_crosswalk <- resides_in_region(db_shapefiles, pop_centers, "dbid", "pcname")
+fsa_dbs_crosswalk <- resides_in_region(db_shapefiles, fsa, "dbid", "cfsauid")
 
 # add flags for urban rural
 dbs_population_crosswalk  <- db_projections_transformed_agg |> 
   st_drop_geometry() |>
-  left_join(popcenter_dbs_crosswalk_statscan, by = "dbid") |>
-  left_join(fsa_dbs_crosswalk_statscan, by = "dbid") |>
+  left_join(popcenter_dbs_crosswalk, by = "dbid") |>
+  left_join(fsa_dbs_crosswalk, by = "dbid") |>
   left_join(complete_assignments, by = "dbid")
   
   # add flags for urban rural
@@ -283,7 +283,7 @@ facilities <- drivetime_data |> st_drop_geometry() |> distinct(nearest_facility,
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
 
 urban_facilities <- resides_in_region(facilities, pop_centers, "nearest_facility", "pcname") # OR
-# urban_facilities <- resides_in_region(facilities, fsa_statscan, "nearest_facility", "cfsauid")
+# urban_facilities <- resides_in_region(facilities, fsa, "nearest_facility", "cfsauid")
 
 facilities <- facilities |> left_join(urban_facilities, by = "nearest_facility") |>
   mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN"))
@@ -308,11 +308,11 @@ csd_rural_summary <- residence_region_crosswalk |>
   group_by(csdid, csd_name, csd_desc) |>
   summarise(
     n_residences = n(),
-    n_rural_statscan_fsa = sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE),
-    n_rural_popcenter = sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE),
-    p_rural_statscan_fsa = 100 * sum(urban_rural_statscan_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100 * sum(urban_rural_statscan_popcenter == "RURAL", na.rm = TRUE) / n(),
-    is_rural_statscan_fsa = if_else(p_rural_statscan_fsa > 50, "RURAL", "URBAN"),
+    n_rural_fsa = sum(urban_rural_fsa == "RURAL", na.rm = TRUE),
+    n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
+    p_rural_fsa = 100 * sum(urban_rural_fsa == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n(),
+    is_rural_fsa = if_else(p_rural_fsa > 50, "RURAL", "URBAN"),
     is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
     .groups = 'drop'
   )
@@ -321,15 +321,15 @@ csd_rural_summary
 
 csd_rural_summary |> 
   summarize(
-    mean_rural_statscan_fsa = mean(p_rural_statscan_fsa, na.rm = TRUE),
+    mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
     mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
-    median_rural_statscan_fsa = median(p_rural_statscan_fsa, na.rm = TRUE),
+    median_rural_fsa = median(p_rural_fsa, na.rm = TRUE),
     median_rural_popcenter = median(p_rural_popcenter, na.rm = TRUE)
   ) |>
   pivot_longer(everything())
 
 csd_rural_summary |>
-  count(is_rural_statscan_fsa, is_rural_popcenter) |>
+  count(is_rural_fsa, is_rural_popcenter) |>
   arrange(desc(n))
 
 # =========================================================================== #
