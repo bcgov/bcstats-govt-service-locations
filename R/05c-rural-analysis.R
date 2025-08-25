@@ -78,7 +78,7 @@ popcenter_boundaries <-
 
 catchments <- st_read(glue::glue("{FOR_SBC_OUT}/sbc-catchments/sbc-catchments.shp"))
 
-complete_assignments <- 
+complete_assignments <-
   read_csv(glue::glue("{FOR_SBC_OUT}/complete-db-assignments-for-SBC.csv")) |>
   clean_names() |>
   mutate(across(everything(), as.character))
@@ -114,10 +114,7 @@ popcenter_residence_crosswalk <- resides_in_region(residences, popcenter_boundar
 residence_region_crosswalk <- residences |>
   left_join(fsa_residence_crosswalk, by = "fid") |>
   left_join(popcenter_residence_crosswalk, by = "fid") |>
-  left_join(csd_db_crosswalk, by = "dbid")
-
-# add flags for urban rural
-residence_region_crosswalk <- residence_region_crosswalk |>
+  left_join(csd_db_crosswalk, by = "dbid") |>
   mutate(
     urban_rural_fsa = case_when(
       is.na(cfsauid) ~ NA,
@@ -130,12 +127,7 @@ residence_region_crosswalk <- residence_region_crosswalk |>
     )
   )
 
-# =========================================================================== #
-# Analyze results for different methods and data sources ----
-# =========================================================================== #
-
-# --- generate a summary table so we can compares how different classification methods label residences as "rural" or "urban." 
-# the percentage of rural addresses is inline with BC estimates produced by Statistics Canada.  
+# --- summary table so we can compare how classification methods label residences as "rural" or "urban."
 rural_summary_by_method <- residence_region_crosswalk |>
   st_drop_geometry() |>
   summarise(
@@ -208,10 +200,7 @@ dbs_population_crosswalk  <- db_projections_transformed_agg |>
   st_drop_geometry() |>
   left_join(popcenter_dbs_crosswalk, by = "dbid") |>
   left_join(fsa_dbs_crosswalk, by = "dbid") |>
-  left_join(complete_assignments, by = "dbid")
-  
-  # add flags for urban rural
-dbs_population_crosswalk <- dbs_population_crosswalk |>
+  left_join(complete_assignments, by = "dbid") |>
   mutate(
     urban_rural_fsa = case_when(
       is.na(cfsauid) ~ NA,
