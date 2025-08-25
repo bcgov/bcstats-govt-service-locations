@@ -13,20 +13,20 @@
 # limitations under the License.
 
 
-resides_in_region <- function(residences, regions, id_col, region_name_col) {
+is_in_region <- function(locations, regions, id_col, region_name_col) {
 
-  results <- st_within(residences, regions, sparse = FALSE)
+  results <- st_within(locations, regions, sparse = FALSE)
 
   colnames(results) <- regions[[region_name_col]]
-  rownames(results) <- residences[[id_col]]
-  
-  # print a message saying how many residences were matched
+  rownames(results) <- locations[[id_col]]
+
+  # print a message saying how many locations were matched
   n_unmatched <- sum(rowSums(results) == 0)
   n_multi_matched <- sum(rowSums(results) > 1)
-  
-  message(glue("{nrow(residences)} residences processed."))
-  message(glue("{n_unmatched} ({round(100*n_unmatched/nrow(residences), 1)}%) were unmatched to a region."))
-  message(glue("{n_multi_matched} ({round(100*n_multi_matched/nrow(residences), 1)}%) were matched to more than one region."))
+
+  message(glue("{nrow(results)} {id_col}'s processed."))
+  message(glue("{n_unmatched} ({round(100*n_unmatched/nrow(results), 1)}%) of {id_col}'s were found within a(n) {region_name_col} region."))
+  message(glue("{n_multi_matched} ({round(100*n_multi_matched/nrow(results), 1)}%) of {id_col}'s were found within more than one {region_name_col} region."))
 
   # collapse the results matrix and join to drive data
   results |>
