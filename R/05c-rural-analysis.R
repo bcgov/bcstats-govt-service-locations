@@ -201,40 +201,61 @@ catchment_rural_summary |>
 
 # generate a crosswalk that maps each dbid to a population center, for each boundary (method).
 popcenter_dbs_crosswalk_statscan <- resides_in_region(db_shapefiles, pop_centers, "dbid", "pcname")
+fsa_dbs_crosswalk_statscan <- resides_in_region(db_shapefiles, fsa_statscan, "dbid", "cfsauid")
 
 # add flags for urban rural
-dbs_popcenter_crosswalk  <- db_projections_transformed_agg |> 
+dbs_population_crosswalk  <- db_projections_transformed_agg |> 
   st_drop_geometry() |>
   left_join(popcenter_dbs_crosswalk_statscan, by = "dbid") |>
-  left_join(complete_assignments, by = "dbid") |>
-  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN"))
+  left_join(fsa_dbs_crosswalk_statscan, by = "dbid") |>
+  left_join(complete_assignments, by = "dbid")
+  
+  # add flags for urban rural
+dbs_population_crosswalk <- dbs_population_crosswalk |>
+  mutate(
+    urban_rural_fsa = case_when(
+      is.na(cfsauid) ~ NA,
+      grepl("^V0", cfsauid) ~ "RURAL",
+      TRUE ~ "URBAN"
+    ),
+    urban_rural_popcenter = case_when(
+      is.na(pcname) ~ "RURAL",  # an area is rural if outside a population center
+      TRUE ~ "URBAN"
+    )
+  )
 
-catchment_rural_summary_pop <- dbs_popcenter_crosswalk |>
+catchment_rural_summary_population <- dbs_population_crosswalk |>
   summarise(
-    n_dbids = n(), 
-    n_rural_dbids = sum(urban_rural == "RURAL", na.rm = TRUE),
-    n_rural_population = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
+    n_dbids = n(),
+    n_rural_population_fsa = sum(population[urban_rural_fsa == "RURAL"], na.rm = TRUE),
+    n_rural_population_popcenter = sum(population[urban_rural_popcenter == "RURAL"], na.rm = TRUE),
     ttl_population = sum(population, na.rm = TRUE),
-    p_rural_population = 100 * n_rural_population / ttl_population,
-    is_rural_population = if_else(p_rural_population > 50, "RURAL", "URBAN"),
+    p_rural_population_fsa = 100 * n_rural_population_fsa / ttl_population,
+    p_rural_population_popcenter = 100 * n_rural_population_popcenter / ttl_population,
+    is_rural_population_fsa = if_else(p_rural_population_fsa > 50, "RURAL", "URBAN"),
+    is_rural_population_popcenter = if_else(p_rural_population_popcenter > 50, "RURAL", "URBAN"),
     .by = c("assigned")
   )
 
-catchment_rural_summary_pop 
+catchment_rural_summary_population
 
-catchment_rural_summary_pop |> 
+catchment_rural_summary_population |> 
   summarize(
-    mean_rural_population = mean(p_rural_population, na.rm = TRUE),
-    median_rural_population = median(p_rural_population, na.rm = TRUE),
+    mean_rural_population_fsa = mean(p_rural_population_fsa, na.rm = TRUE),
+    median_rural_population_fsa = median(p_rural_population_fsa, na.rm = TRUE),
+    mean_rural_population_popcenter = mean(p_rural_population_popcenter, na.rm = TRUE),
+    median_rural_population_popcenter = median(p_rural_population_popcenter, na.rm = TRUE)
   ) |>
   pivot_longer(everything())
 
-catchment_rural_summary_pop |>
-  count(is_rural_population) |>
+catchment_rural_summary_population |>
+  count(is_rural_population_fsa, is_rural_population_popcenter) |>
   arrange(desc(n))
 
-
+# =========================================================================== #
 # compare the two methods (address and population, use popcenter method)
+# =========================================================================== #
+
 catchment_rural_summary_compare <- catchment_rural_summary |>
   select(assigned, n_residences, p_rural_popcenter) |>
   inner_join(catchment_rural_summary_pop, by = "assigned") |>
