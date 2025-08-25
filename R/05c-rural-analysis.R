@@ -165,10 +165,10 @@ catchment_rural_summary_addresses <- addresses_region_crosswalk |>
 # or are they truly placed out in rural areas? 
 catchment_rural_summary_addresses |> 
   summarize(
-    mean_rural_fsa = mean(p_rural_address_fsa, na.rm = TRUE),
-    mean_rural_popcenter = mean(p_rural_address_popcenter, na.rm = TRUE),
-    median_rural_fsa = median(p_rural_address_fsa, na.rm = TRUE),
-    median_rural_popcenter = median(p_rural_address_popcenter, na.rm = TRUE)
+    mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
+    mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
+    median_rural_fsa = median(p_rural_fsa, na.rm = TRUE),
+    median_rural_popcenter = median(p_rural_popcenter, na.rm = TRUE)
   ) |>
   pivot_longer(everything())
 
@@ -224,13 +224,13 @@ population_region_crosswalk |>
 catchment_rural_summary_population <- population_region_crosswalk |>
   summarise(
     n_dbids = n(),
-    n_rural_population_fsa = sum(population[urban_rural_fsa == "RURAL"], na.rm = TRUE),
-    n_rural_population_popcenter = sum(population[urban_rural_popcenter == "RURAL"], na.rm = TRUE),
-    ttl_population = sum(population, na.rm = TRUE),
-    p_rural_population_fsa = 100 * n_rural_population_fsa / ttl_population,
-    p_rural_population_popcenter = 100 * n_rural_population_popcenter / ttl_population,
-    is_rural_population_fsa = if_else(p_rural_population_fsa > 50, "RURAL", "URBAN"),
-    is_rural_population_popcenter = if_else(p_rural_population_popcenter > 50, "RURAL", "URBAN"),
+    n_rural_fsa = sum(population[urban_rural_fsa == "RURAL"], na.rm = TRUE),
+    n_rural_popcenter = sum(population[urban_rural_popcenter == "RURAL"], na.rm = TRUE),
+    est_population = sum(population, na.rm = TRUE),
+    p_rural_fsa = 100 * n_rural_fsa / est_population,
+    p_rural_popcenter = 100 * n_rural_popcenter / est_population,
+    is_rural_fsa = if_else(p_rural_fsa > 50, "RURAL", "URBAN"),
+    is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
     .by = c("assigned")
   )
 
@@ -238,35 +238,39 @@ catchment_rural_summary_population
 
 catchment_rural_summary_population |> 
   summarize(
-    mean_rural_population_fsa = mean(p_rural_population_fsa, na.rm = TRUE),
-    median_rural_population_fsa = median(p_rural_population_fsa, na.rm = TRUE),
-    mean_rural_population_popcenter = mean(p_rural_population_popcenter, na.rm = TRUE),
-    median_rural_population_popcenter = median(p_rural_population_popcenter, na.rm = TRUE)
+    mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
+    median_rural_fsa = median(p_rural_fsa, na.rm = TRUE),
+    mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
+    median_rural_popcenter = median(p_rural_popcenter, na.rm = TRUE)
   ) |>
   pivot_longer(everything())
 
 catchment_rural_summary_population |>
-  count(is_rural_population_fsa, is_rural_population_popcenter) |>
+  count(is_rural_fsa, is_rural_popcenter) |>
   arrange(desc(n))
 
 # =========================================================================== #
 # compare the two methods (address and population, use popcenter method)
 # =========================================================================== #
 
-catchment_rural_summary_compare <- catchment_rural_summary_residence |>
-  select(assigned, n_residences, p_rural_popcenter) |>
-  inner_join(catchment_rural_summary_population, by = "assigned") |>
-  mutate(ppl_per_address = ttl_population / n_residences)
+catchment_rural_summary_compare <- catchment_rural_summary_addresses |>
+  inner_join(catchment_rural_summary_population, by = "assigned", suffix = c("_address", "_population")) |> 
+  relocate(est_population, .after = n_dbids)
+
+catchment_rural_summary_compare  |>
+  count(is_rural_fsa_address, is_rural_popcenter_address, is_rural_fsa_population, is_rural_popcenter_population) |>
+  rename_with(function (x) gsub("is_rural_", "", x)) |> # rename so all cols fit in output window
+  arrange(desc(n))
 
 catchment_rural_summary_compare
 
 catchment_rural_summary_compare |>
-  filter(assigned %in% c("Service BC - Atlin"))
+  filter(assigned %in% c("Service BC - Atlin")) |> View()
 
 catchment_rural_summary_compare |>
   filter(!assigned %in% c("Service BC - Atlin")) |> 
-  ggplot(aes(x =  p_rural_population_popcenter, y = n_rural_population_popcenter/ttl_population)) +
-  geom_point(aes(color = ppl_per_address), size = 5) +
+  ggplot(aes(x =  p_rural_popcenter_address, y = p_rural_popcenter_population)) +
+  geom_point(aes(color = est_population / n_addresses), size = 5) +  # I'm not sure about mixing these
   geom_smooth() +
   scale_color_viridis_c(trans = "reverse") +
   labs(
@@ -279,7 +283,7 @@ catchment_rural_summary_compare |>
 facilities <- drivetime_data |> st_drop_geometry() |> distinct(nearest_facility, coord_x, coord_y) |>
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
 
-urban_facilities <- resides_in_region(facilities, pop_centers, "nearest_facility", "pcname") # OR
+urban_facilities <- resides_in_region(facilities, popcenter_boundaries, "nearest_facility", "pcname") # OR
 # urban_facilities <- resides_in_region(facilities, fsa, "nearest_facility", "cfsauid")
 
 facilities <- facilities |> left_join(urban_facilities, by = "nearest_facility") |>
