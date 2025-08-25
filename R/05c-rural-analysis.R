@@ -101,19 +101,19 @@ db_projections_transformed_agg <-
             .by = c("dbid"))
 
 # =========================================================================== #
-# Create urban/rural flag for different methods and data sources ----
+# Create (address-based) urban/rural flag using fsa and popcenter boundary files
 # =========================================================================== #
 
 residences <- drivetime_data |> select(fid, geometry, nearest_facility, dbid)
 
 # generate a crosswalk that maps each residence to a region, for each boundary (method).
-fsa_residence_crosswalk <- resides_in_region(residences, fsa_boundaries, "fid", "cfsauid")
-popcenter_residence_crosswalk <- resides_in_region(residences, popcenter_boundaries, "fid", "pcname")
+fsa_residence <- resides_in_region(residences, fsa_boundaries, "fid", "cfsauid")
+popcenter_residence <- resides_in_region(residences, popcenter_boundaries, "fid", "pcname")
 
 # combine and add an urban/rural flag for each method
 residence_region_crosswalk <- residences |>
-  left_join(fsa_residence_crosswalk, by = "fid") |>
-  left_join(popcenter_residence_crosswalk, by = "fid") |>
+  left_join(fsa_residence, by = "fid") |>
+  left_join(popcenter_residence, by = "fid") |>
   left_join(csd_db_crosswalk, by = "dbid") |>
   mutate(
     urban_rural_fsa = case_when(
@@ -127,8 +127,8 @@ residence_region_crosswalk <- residences |>
     )
   )
 
-# --- summary table so we can compare how classification methods label residences as "rural" or "urban."
-rural_summary_by_method <- residence_region_crosswalk |>
+# --- BC-level summary of classification methods (address-based)
+residence_region_crosswalk |>
   st_drop_geometry() |>
   summarise(
     n_residences = n(),
@@ -144,15 +144,7 @@ rural_summary_by_method <- residence_region_crosswalk |>
     values_to = "count"
 )
 
-rural_summary_by_method |> write_csv(
-  glue("{TABLES_OUT}/rural-summary-by-method.csv")
-)
-
-
-# =========================================================================== #
-# Roll up of rural flag to catchment ----
-# =========================================================================== #
-# --- Create a summary table of rural/urban classification by catchment,
+# --- Catchment-level summaries of classification methods
 # --- according to # of addresses assigned
 catchment_rural_summary <- residence_region_crosswalk |>
   st_drop_geometry() |>
@@ -168,8 +160,6 @@ catchment_rural_summary <- residence_region_crosswalk |>
     is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
     .groups = 'drop'
   )
-
-catchment_rural_summary
 
 # note that due to an abundance of rural addresses, there are many more rural catchments than I might have expected
 # does this mean that using address is misleading, and we should use population? what would that look like?
@@ -188,18 +178,18 @@ catchment_rural_summary |>
   arrange(desc(n))
 
 # =========================================================================== #
-# look at similar results with population estimates
+# Create (population-based) urban/rural flag using fsa and popcenter boundary files
 # =========================================================================== #
 
 # generate a crosswalk that maps each dbid to a population center, for each boundary (method).
-popcenter_dbs_crosswalk <- resides_in_region(db_shapefiles, pop_centers, "dbid", "pcname")
-fsa_dbs_crosswalk <- resides_in_region(db_shapefiles, fsa, "dbid", "cfsauid")
+popcenter_population <- resides_in_region(db_shapefiles, popcenter_boundaries, "dbid", "pcname")
+fsa_population <- resides_in_region(db_shapefiles, fsa_boundaries, "dbid", "cfsauid")
 
 # add flags for urban rural
-dbs_population_crosswalk  <- db_projections_transformed_agg |> 
+population_region_crosswalk  <- db_projections_transformed_agg |> 
   st_drop_geometry() |>
-  left_join(popcenter_dbs_crosswalk, by = "dbid") |>
-  left_join(fsa_dbs_crosswalk, by = "dbid") |>
+  left_join(popcenter_population, by = "dbid") |>
+  left_join(fsa_population, by = "dbid") |>
   left_join(complete_assignments, by = "dbid") |>
   mutate(
     urban_rural_fsa = case_when(
@@ -213,7 +203,27 @@ dbs_population_crosswalk  <- db_projections_transformed_agg |>
     )
   )
 
-catchment_rural_summary_population <- dbs_population_crosswalk |>
+# --- BC-level summary of classification methods (population-based)
+population_region_crosswalk |>
+  st_drop_geometry() |>
+  summarise(
+    n_population = sum(population, na.rm = TRUE),
+    n_rural_fsa = sum(population[urban_rural_fsa == "RURAL"], na.rm = TRUE),
+    n_rural_popcenter = sum(population[urban_rural_popcenter == "RURAL"], na.rm = TRUE),
+    n_missing_fsa = sum(population[is.na(urban_rural_fsa)], na.rm = TRUE),
+    p_rural_fsa = 100 * n_rural_fsa / n_population,
+    p_rural_popcenter = 100 * n_rural_popcenter / n_population
+  ) |>
+  pivot_longer(
+    cols = starts_with(c("n_", "p_")),
+    names_to = "method",
+    values_to = "count"
+)
+
+
+# --- Catchment-level summaries of classification methods
+# --- according to # population estimates
+catchment_rural_summary_population <- population_region_crosswalk |>
   summarise(
     n_dbids = n(),
     n_rural_population_fsa = sum(population[urban_rural_fsa == "RURAL"], na.rm = TRUE),
