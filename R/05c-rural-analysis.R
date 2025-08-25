@@ -106,8 +106,8 @@ db_projections_transformed_agg <-
 addresses <- drivetime_data |> select(fid, geometry, nearest_facility, dbid)
 
 # generate a crosswalk that maps each address to a region, for each boundary (method).
-fsa_address <- resides_in_region(addresses, fsa_boundaries, "fid", "cfsauid")
-popcenter_address <- resides_in_region(addresses, popcenter_boundaries, "fid", "pcname")
+fsa_address <- is_in_region(addresses, fsa_boundaries, "fid", "cfsauid")
+popcenter_address <- is_in_region(addresses, popcenter_boundaries, "fid", "pcname")
 
 # combine and add an urban/rural flag for each method
 addresses_region_crosswalk <- addresses |>
@@ -181,8 +181,8 @@ catchment_rural_summary_addresses |>
 # =========================================================================== #
 
 # generate a crosswalk that maps each dbid to a population center, for each boundary (method).
-popcenter_population <- resides_in_region(db_shapefiles, popcenter_boundaries, "dbid", "pcname")
-fsa_population <- resides_in_region(db_shapefiles, fsa_boundaries, "dbid", "cfsauid")
+popcenter_population <- is_in_region(db_shapefiles, popcenter_boundaries, "dbid", "pcname")
+fsa_population <- is_in_region(db_shapefiles, fsa_boundaries, "dbid", "cfsauid")
 
 # add flags for urban rural
 population_region_crosswalk  <- db_projections_transformed_agg |> 
