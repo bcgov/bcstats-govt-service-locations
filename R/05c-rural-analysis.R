@@ -134,8 +134,8 @@ addresses_region_crosswalk |>
     n_rural_fsa = sum(urban_rural_fsa == "RURAL", na.rm = TRUE),
     n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
     n_missing_fsa = sum(is.na(urban_rural_fsa), na.rm = TRUE),
-    p_rural_fsa = 100*sum(urban_rural_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100*sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n()
+    p_rural_fsa = 100 * sum(urban_rural_fsa == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n()
   ) |>
   pivot_longer(
     cols = starts_with(c("n_", "p_")),
@@ -163,7 +163,7 @@ catchment_rural_summary_addresses <- addresses_region_crosswalk |>
 # note that due to an abundance of rural addresses, there are many more rural catchments than I might have expected
 # does this mean that using address is misleading, and we should use population? what would that look like?
 # or are they truly placed out in rural areas? 
-catchment_rural_summary_addresses |> 
+catchment_rural_summary_addresses |>
   summarize(
     mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
     mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
