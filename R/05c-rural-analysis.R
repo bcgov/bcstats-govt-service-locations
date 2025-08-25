@@ -146,7 +146,7 @@ residence_region_crosswalk |>
 
 # --- Catchment-level summaries of classification methods
 # --- according to # of addresses assigned
-catchment_rural_summary <- residence_region_crosswalk |>
+catchment_rural_summary_residence <- residence_region_crosswalk |>
   st_drop_geometry() |>
   left_join(complete_assignments, by = "dbid") |>
   group_by(assigned) |>
@@ -164,7 +164,7 @@ catchment_rural_summary <- residence_region_crosswalk |>
 # note that due to an abundance of rural addresses, there are many more rural catchments than I might have expected
 # does this mean that using address is misleading, and we should use population? what would that look like?
 # or are they truly placed out in rural areas? 
-catchment_rural_summary |> 
+catchment_rural_summary_residence |> 
   summarize(
     mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
     mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
@@ -173,7 +173,7 @@ catchment_rural_summary |>
   ) |>
   pivot_longer(everything())
 
-catchment_rural_summary |>
+catchment_rural_summary_residence |>
   count(is_rural_fsa, is_rural_popcenter) |>
   arrange(desc(n))
 
@@ -221,8 +221,7 @@ population_region_crosswalk |>
 )
 
 
-# --- Catchment-level summaries of classification methods
-# --- according to # population estimates
+# --- Catchment-level summaries of classification methods (population-based)
 catchment_rural_summary_population <- population_region_crosswalk |>
   summarise(
     n_dbids = n(),
@@ -255,7 +254,7 @@ catchment_rural_summary_population |>
 # compare the two methods (address and population, use popcenter method)
 # =========================================================================== #
 
-catchment_rural_summary_compare <- catchment_rural_summary |>
+catchment_rural_summary_compare <- catchment_rural_summary_residence |>
   select(assigned, n_residences, p_rural_popcenter) |>
   inner_join(catchment_rural_summary_pop, by = "assigned") |>
   mutate(ppl_per_address = ttl_population / n_residences) 
