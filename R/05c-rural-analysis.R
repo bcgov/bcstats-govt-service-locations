@@ -103,17 +103,16 @@ db_projections_transformed_agg <-
 # =========================================================================== #
 # Create (address-based) urban/rural flag using fsa and popcenter boundary files
 # =========================================================================== #
+addresses <- drivetime_data |> select(fid, geometry, nearest_facility, dbid)
 
-residences <- drivetime_data |> select(fid, geometry, nearest_facility, dbid)
-
-# generate a crosswalk that maps each residence to a region, for each boundary (method).
-fsa_residence <- resides_in_region(residences, fsa_boundaries, "fid", "cfsauid")
-popcenter_residence <- resides_in_region(residences, popcenter_boundaries, "fid", "pcname")
+# generate a crosswalk that maps each address to a region, for each boundary (method).
+fsa_address <- resides_in_region(addresses, fsa_boundaries, "fid", "cfsauid")
+popcenter_address <- resides_in_region(addresses, popcenter_boundaries, "fid", "pcname")
 
 # combine and add an urban/rural flag for each method
-residence_region_crosswalk <- residences |>
-  left_join(fsa_residence, by = "fid") |>
-  left_join(popcenter_residence, by = "fid") |>
+addresses_region_crosswalk <- addresses |>
+  left_join(fsa_address, by = "fid") |>
+  left_join(popcenter_address, by = "fid") |>
   left_join(csd_db_crosswalk, by = "dbid") |>
   mutate(
     urban_rural_fsa = case_when(
@@ -128,10 +127,10 @@ residence_region_crosswalk <- residences |>
   )
 
 # --- BC-level summary of classification methods (address-based)
-residence_region_crosswalk |>
+addresses_region_crosswalk |>
   st_drop_geometry() |>
   summarise(
-    n_residences = n(),
+    n_addresses = n(),
     n_rural_fsa = sum(urban_rural_fsa == "RURAL", na.rm = TRUE),
     n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
     n_missing_fsa = sum(is.na(urban_rural_fsa), na.rm = TRUE),
@@ -146,12 +145,12 @@ residence_region_crosswalk |>
 
 # --- Catchment-level summaries of classification methods
 # --- according to # of addresses assigned
-catchment_rural_summary_residence <- residence_region_crosswalk |>
+catchment_rural_summary_addresses <- addresses_region_crosswalk |>
   st_drop_geometry() |>
   left_join(complete_assignments, by = "dbid") |>
   group_by(assigned) |>
   summarise(
-    n_residences = n(),
+    n_addresses = n(),
     n_rural_fsa = sum(urban_rural_fsa == "RURAL", na.rm = TRUE),
     n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
     p_rural_fsa = 100 * sum(urban_rural_fsa == "RURAL", na.rm = TRUE) / n(),
@@ -164,16 +163,16 @@ catchment_rural_summary_residence <- residence_region_crosswalk |>
 # note that due to an abundance of rural addresses, there are many more rural catchments than I might have expected
 # does this mean that using address is misleading, and we should use population? what would that look like?
 # or are they truly placed out in rural areas? 
-catchment_rural_summary_residence |> 
+catchment_rural_summary_addresses |> 
   summarize(
-    mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
-    mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
-    median_rural_fsa = median(p_rural_fsa, na.rm = TRUE),
-    median_rural_popcenter = median(p_rural_popcenter, na.rm = TRUE)
+    mean_rural_fsa = mean(p_rural_address_fsa, na.rm = TRUE),
+    mean_rural_popcenter = mean(p_rural_address_popcenter, na.rm = TRUE),
+    median_rural_fsa = median(p_rural_address_fsa, na.rm = TRUE),
+    median_rural_popcenter = median(p_rural_address_popcenter, na.rm = TRUE)
   ) |>
   pivot_longer(everything())
 
-catchment_rural_summary_residence |>
+catchment_rural_summary_addresses |>
   count(is_rural_fsa, is_rural_popcenter) |>
   arrange(desc(n))
 
@@ -256,8 +255,8 @@ catchment_rural_summary_population |>
 
 catchment_rural_summary_compare <- catchment_rural_summary_residence |>
   select(assigned, n_residences, p_rural_popcenter) |>
-  inner_join(catchment_rural_summary_pop, by = "assigned") |>
-  mutate(ppl_per_address = ttl_population / n_residences) 
+  inner_join(catchment_rural_summary_population, by = "assigned") |>
+  mutate(ppl_per_address = ttl_population / n_residences)
 
 catchment_rural_summary_compare
 
@@ -266,7 +265,7 @@ catchment_rural_summary_compare |>
 
 catchment_rural_summary_compare |>
   filter(!assigned %in% c("Service BC - Atlin")) |> 
-  ggplot(aes(x = p_rural_popcenter, y = n_rural_population/ttl_population)) +
+  ggplot(aes(x =  p_rural_population_popcenter, y = n_rural_population_popcenter/ttl_population)) +
   geom_point(aes(color = ppl_per_address), size = 5) +
   geom_smooth() +
   scale_color_viridis_c(trans = "reverse") +
