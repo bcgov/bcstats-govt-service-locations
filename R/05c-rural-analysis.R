@@ -184,6 +184,10 @@ catchment_rural_summary_addresses |>
 fsa_population <- is_in_region_optim(db_shapefiles, fsa_boundaries, "dbid", "cfsauid")
 popcenter_population <- is_in_region_optim(db_shapefiles, popcenter_boundaries, "dbid", "pcname")
 
+popcenter_population |> 
+  rename(urban_dbid = dbid, in_popcenter = pcname) |>
+  write_csv(glue("{FOR_SBC_OUT}/urban-dbid-popcenter-crosswalk.csv"))
+
 # add flags for urban rural
 population_region_crosswalk  <- db_projections_transformed_agg |> 
   st_drop_geometry() |>
@@ -262,7 +266,9 @@ catchment_rural_summary_compare  |>
   rename_with(function (x) gsub("is_rural_", "", x)) |> # rename so all cols fit in output window
   arrange(desc(n))
 
-catchment_rural_summary_compare
+catchment_rural_summary_compare |> 
+  mutate(across(where(is.numeric), ~round(., 2))) |>
+  write_csv(glue("{FOR_SBC_OUT}/catchment_rural_methods_comparison.csv"))
 
 catchment_rural_summary_compare |>
   filter(assigned %in% c("Service BC - Atlin")) |> View()
