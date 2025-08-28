@@ -52,6 +52,34 @@ db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
     csdid = census_subdivision_id,
     landarea = feature_area_sqm
   )
+
+#------------------------------------------------------------------------------
+# Make shapefiles for statscan FSA and population centers - exploratory only
+# .shp boundary files are downloaded from Statistics Canada:
+# https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/boundary-limites/index2021-eng.cfm?Year=21
+#------------------------------------------------------------------------------
+
+popcenter_statscan <-
+  read_sf(glue::glue("{SRC_DATA_FOLDER}/shapefiles/lpc_000b21a_e/lpc_000b21a_e.shp"),
+          query = "SELECT dguid AS popid, pcname, pcclass, pctype
+                   FROM \"lpc_000b21a_e\" 
+                   WHERE pruid = '59'"
+  ) |>
+  clean_names() |> # I think we can even omit this
+  st_transform(crs = 3005) |>
+  write_sf(glue::glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"),
+           layer = "popcenter_statscan")
+
+fsa_statscan  <-
+  read_sf(glue::glue("{SRC_DATA_FOLDER}/shapefiles/lfsa000b21a_e/lfsa000b21a_e.shp"),
+          query = "SELECT cfsauid, prname
+                   FROM \"lfsa000b21a_e\" 
+                   WHERE pruid = '59'") |>
+  clean_names() |>
+  st_transform(crs = 3005) |>
+  write_sf(glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg"),
+           layer = "fsa_statscan")
+
 #------------------------------------------------------------------------------
 ## population projections ----
 ## from catalogue
