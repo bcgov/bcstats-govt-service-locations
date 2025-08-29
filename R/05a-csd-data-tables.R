@@ -49,6 +49,11 @@ db_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
    st_transform(crs = 3005) |>
    select(dbid, csdid, geometry)
 
+csd_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-csd-with-location.gpkg")) |>
+   rename(geometry = geom) |>
+   st_transform(crs = 3005) |>
+   select(csdid, csd_name, csd_desc, geometry)
+
 popcenter_boundaries <- 
   st_read(glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"), layer = "popcenter_statscan") |>
   rename(geometry = geom) |>
@@ -187,11 +192,29 @@ rural_csdid  <- db_population_estimates_one_year |>
   summarise(
     n_rural = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
     n = sum(population, na.rm = TRUE),
-    p_rural = if_else(n == 0, 0, 100*n_rural/n),
+    p_rural = if_else(n == 0, 0, n_rural/n),
     is_rural = if_else(p_rural > 50, "RURAL", "URBAN"),
     .by = csdid
- )
+ ) |>
+ select(csdid, p_rural)
 
+# The is_in_region_optim function may not assign a popcenter if a CSD extends beyond
+# popcenter limits or the intersection area is below the threshold.
+# This would need to be addressed if we were to use this code.  
+# Omitting from final tables.
+rural_csd <- csd_shapefiles |>
+st_drop_geometry() |>
+  left_join(
+    is_in_region_optim(
+      locations = csd_shapefiles,
+      regions = popcenter_boundaries, 
+      id_col = "csdid", 
+      region_name_col = "pcname", 
+      area_threshold = 0
+    ), 
+    by = "csdid"
+  ) |>
+  mutate(rural_csd = if_else(is.na(pcname), "Y", "N"))
 
 # =========================================================================== #
 # All together ----
@@ -205,10 +228,11 @@ combined_stats <- population_estimates_three_year |>
   left_join(drivetime_metrics, by = "csdid") |>
   left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
   left_join(drive_time_bins, by = c("csdid", "csd_name")) |>
-  mutate(rural_office = 'Y/N', rural_residents = 0) |>
+  left_join(rural_csdid, by = "csdid") |>
+  mutate(rural_office = NA) |>
   relocate(csd_name, csdid, .before = region_name) |>
   relocate(n_addresses, n_sbc_offices, .after = region_name) |>
-  relocate(addresses_under_5_km, addresses_5_to_20_km, addresses_over_20_km, .after = median_driving_distance) |>
+  relocate(starts_with("n_addresses") & ends_with("km"), .after = median_driving_distance) |>
   rename(
     estimated_population_2025 = `2025`,
     `5_yr_projection_2030` = `2030`,
