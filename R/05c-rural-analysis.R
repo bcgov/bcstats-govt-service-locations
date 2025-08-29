@@ -355,7 +355,6 @@ csd_rural_summary_population <- population_region_crosswalk |>
     .by = c("csdid", "csd_name", "csd_desc")
   )
 
-  
 csd_rural_summary_population |> 
   summarize(
     mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),

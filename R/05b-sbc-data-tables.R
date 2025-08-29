@@ -64,8 +64,6 @@ sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
 # CSD's is actually 191.
 db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
 
-
-
 # --------------------------------------------------------------------------------
 # make drivetime data
 # --------------------------------------------------------------------------------
@@ -189,6 +187,32 @@ median_population <- population_estimates_three_year_all |>
     mean_age = weighted.mean(age, population, na.rm = TRUE),
     .by = c(assigned)
   )
+
+# =========================================================================== #
+# Add proportion rural for service bc location
+# =========================================================================== #
+popcenter_population <- is_in_region_optim(db_shapefiles, popcenter_boundaries, "dbid", "pcname")
+
+db_population_estimates_one_year <- db_projections_transformed_raw |>
+  filter(gender == 'T', year == 2025) |>
+  summarize(
+    population = sum(population, na.rm = TRUE), 
+    .by = c("dbid", "csdid")
+  )
+
+# add flags for urban rural and summarize by csdid
+catchment_rural_summary_population  <- db_population_estimates_one_year |> 
+  left_join(popcenter_population, by = "dbid") |>
+  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |> 
+  left_join(complete_assignments, by = "dbid") |>
+  summarise(
+    n_rural = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
+    n = sum(population, na.rm = TRUE),
+    p_rural = if_else(n == 0, 0, 100*n_rural/n),
+    is_rural = if_else(p_rural > 50, "RURAL", "URBAN"),
+    .by = assigned
+ )
+
 
 # =========================================================================== #
 # All together ----
