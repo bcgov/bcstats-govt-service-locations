@@ -201,17 +201,31 @@ db_population_estimates_one_year <- db_projections_transformed_raw |>
   )
 
 # add flags for urban rural and summarize by csdid
-catchment_rural_summary_population <- db_population_estimates_one_year |> 
+rural_summary <- db_population_estimates_one_year |> 
   left_join(popcenter_population, by = "dbid") |>
   mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |> 
   left_join(complete_assignments, by = "dbid") |>
   summarise(
-    n_rural = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
+    n_rural_residents = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
     n = sum(population, na.rm = TRUE),
-    p_rural = if_else(n == 0, 0, 100*n_rural/n),
-    is_rural = if_else(p_rural > 50, "RURAL", "URBAN"),
+    p_rural_residents = if_else(n == 0, 0, 100*n_rural_residents/n),
+    is_rural = if_else(p_rural_residents > 50, "RURAL", "URBAN"),
     .by = assigned
- )
+ ) |>
+ select(assigned, p_rural_residents)
+
+rural_office <- sbc_locs |> 
+  distinct(nearest_facility, coord_x, coord_y) |>
+  st_as_sf(
+    coords = c("coord_x", "coord_y"), 
+    crs = 3005
+  ) |>
+  is_in_region_optim(
+    regions = popcenter_boundaries, 
+    id_col = "nearest_facility", 
+    region_name_col = "pcname"
+  ) |>
+  mutate(rural_office = if_else(is.na(pcname), "Y", "N"))
 
 
 # =========================================================================== #
@@ -226,15 +240,17 @@ combined_stats <- population_estimates_three_year |>
   left_join(drivetime_metrics, by = "assigned") |>
   left_join(drive_distance_bins, by = c("assigned")) |>
   left_join(drive_time_bins, by = c("assigned")) |>
-  mutate(rural_office = 'Y/N', rural_residents = 0) |>
+  left_join(rural_summary, by = c("assigned")) |>
+  left_join(rural_office, by = c("assigned" = "nearest_facility")) |>
   relocate(n_addresses_served, n_csds_served, .after = assigned) |>
-  relocate(mean_driving_time, median_driving_time, .after = addresses_20_plus_km) |>
+  relocate(mean_driving_time, median_driving_time, .after = n_addresses_over_150_min) |>
   rename(
     sbc_location = assigned,
     estimated_population_2025 = `2025`,
     `5_yr_projection_2030` = `2030`,
     `10_year_projection_2035` = `2035`
   )
+  
 # =========================================================================== #
 # Write output table to CSV ----
 # =========================================================================== #
