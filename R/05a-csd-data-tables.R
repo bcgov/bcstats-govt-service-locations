@@ -76,22 +76,14 @@ population_estimates_three_year <- db_projections_transformed_raw  |>
   pivot_wider(names_from = year, values_from = population, values_fill = 0)
 
 age_estimates_current_year <- db_projections_transformed_raw |>
-  filter(year == 2025) |>
-  mutate(age_grp = case_when(
-    age < 15 ~ "est_population_under_15_yrs",
-    age >= 15 & age < 25 ~ "est_population_15_to_24_yrs",
-    age >= 25 & age < 65 ~ "est_population_25_to_64_yrs",
-    age >= 65 ~ "est_population_over_64_yrs",
-    age >= 14 & age < 65 ~ "est_population_15_to_64_yrs",
-    age >= 65 ~ "est_population_over_64_yrs"
-  )) |>
-  summarise(
-    population = sum(population, na.rm = TRUE),
-    .by = c(region_name, csdid, age_grp)) |>
-  pivot_wider(
-    names_from = age_grp,
-    values_from = population,
-    values_fill = 0)
+filter(year == 2025) |>
+  summarize(
+    est_population_0_to_14_yrs = sum(population[age >= 0 & age < 15], na.rm = TRUE),
+    est_population_15_to_24_yrs = sum(population[age >= 15 & age < 25], na.rm = TRUE),
+    est_population_25_to_64_yrs = sum(population[age >= 25 & age < 65], na.rm = TRUE),
+    est_population_over_64_yrs = sum(population[age >= 65], na.rm = TRUE),
+    .by = c(region_name, csdid)
+  )
 
 median_population <- db_projections_transformed_raw |>
   filter(year == 2025) |>
