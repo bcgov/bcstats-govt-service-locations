@@ -201,7 +201,7 @@ db_population_estimates_one_year <- db_projections_transformed_raw |>
   )
 
 # add flags for urban rural and summarize by csdid
-catchment_rural_summary_population  <- db_population_estimates_one_year |> 
+catchment_rural_summary_population <- db_population_estimates_one_year |> 
   left_join(popcenter_population, by = "dbid") |>
   mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |> 
   left_join(complete_assignments, by = "dbid") |>
