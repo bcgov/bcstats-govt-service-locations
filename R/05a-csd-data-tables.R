@@ -72,8 +72,13 @@ db_projections_transformed_raw <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projec
 # =========================================================================== #
 
 population_estimates_three_year <- db_projections_transformed_raw  |>
-  summarise(population = sum(population, na.rm = TRUE), .by = c(year, region_name, csdid)) |>
-  pivot_wider(names_from = year, values_from = population, values_fill = 0)
+  summarise(
+    population = sum(population, na.rm = TRUE), 
+    .by = c(year, region_name, csdid)) |>
+  pivot_wider(
+    names_from = year, 
+    values_from = population, 
+    values_fill = 0)
 
 age_estimates_current_year <- db_projections_transformed_raw |>
 filter(year == 2025) |>
@@ -90,9 +95,9 @@ median_population <- db_projections_transformed_raw |>
   summarize(
      population = sum(population, na.rm = TRUE),
      .by = c(csdid, csd_name, age)) |>
-   summarize(
-     median_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.median(age, population, na.rm = TRUE)),
-     mean_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.mean(age, population, na.rm = TRUE)),
+  summarize(
+    median_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.median(age, population, na.rm = TRUE)),
+    mean_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.mean(age, population, na.rm = TRUE)),
     .by = c(csdid, csd_name)
   )
 
@@ -108,47 +113,28 @@ drivetime_metrics <- drivetime_data |>
     median_driving_distance = median(drv_dist, na.rm = TRUE),
     mean_driving_time = mean(drv_time_sec, na.rm = TRUE) / 60,
     median_driving_time = median(drv_time_sec, na.rm = TRUE) / 60,
-    .by = c(csd_name, csdid))
-
-#------------------------------------------------------------------------------
-# bin the data by driving distance
-#------------------------------------------------------------------------------
-
-drivetime_binned <- drivetime_data |>
-  mutate(
-    dist_bin = case_when(
-      drv_dist < 5 ~ "addresses_under_5_km",
-      between(drv_dist, 5, 20) ~ "addresses_5_to_20_km",
-      TRUE ~ "addresses_over_20_km"
-    ) ,
-    time_bin = case_when( 
-      drv_time_sec < 300 ~ "addresses_under_5_min",
-      between(drv_time_sec, 300, 1200) ~ "addresses_5_to_20_min",
-      TRUE ~ "addresses_over_20_min"
-    )
-  ) 
-  
-drive_distance_bins <- drivetime_binned |>
-  summarise(
-    total_count = n(),
-    .by = c(csd_name, csdid, dist_bin)
-  ) |>
-  pivot_wider(
-    names_from = dist_bin,
-    values_from = total_count,
-    values_fill = 0
+    .by = c(csd_name, csdid)
   )
 
-  drive_time_bins <- drivetime_binned |>
-    summarise(
-      total_count = n(),
-      .by = c(csd_name, csdid, time_bin)
-    ) |>
-    pivot_wider(
-      names_from = time_bin,
-      values_from = total_count,
-      values_fill = 0
-    )
+#------------------------------------------------------------------------------
+# bin the data by driving distance and time
+#------------------------------------------------------------------------------
+
+drive_distance_bins <- drivetime_data |>
+  summarize(
+    addresses_under_5_km = sum(drv_dist < 5, na.rm = TRUE),
+    addresses_5_to_20_km = sum(between(drv_dist, 5, 20), na.rm = TRUE),
+    addresses_over_20_km = sum(drv_dist > 20, na.rm = TRUE),
+    .by = c(csd_name, csdid)
+  )
+
+drive_time_bins <- drivetime_data |>
+  summarize(
+    addresses_under_5_min = sum(drv_time_sec < 300, na.rm = TRUE),
+    addresses_5_to_20_min = sum(between(drv_time_sec, 300, 1200), na.rm = TRUE),
+    addresses_over_20_min = sum(drv_time_sec > 1200, na.rm = TRUE),
+    .by = c(csd_name, csdid)
+  )
 
 # =========================================================================== #
 # All together ----
