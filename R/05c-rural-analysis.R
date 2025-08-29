@@ -193,7 +193,7 @@ population_region_crosswalk  <- db_projections_transformed_agg |>
   st_drop_geometry() |>
   left_join(popcenter_population, by = "dbid") |>
   left_join(fsa_population, by = "dbid") |>
-  left_join(complete_assignments, by = "dbid") |>
+  left_join(csd_db_crosswalk, by = "dbid") |>
   mutate(
     urban_rural_fsa = case_when(
       is.na(cfsauid) ~ NA,
@@ -226,6 +226,7 @@ population_region_crosswalk |>
 
 # --- Catchment-level summaries of classification methods (population-based)
 catchment_rural_summary_population <- population_region_crosswalk |>
+  left_join(complete_assignments, by = "dbid") |>
   summarise(
     n_dbids = n(),
     n_rural_fsa = sum(population[urban_rural_fsa == "RURAL"], na.rm = TRUE),
@@ -310,7 +311,7 @@ ggplot() +
 # =========================================================================== #
 # --- Create a summary table of rural/urban classification by CSD
 # --- according to # of addresses assigned
-csd_rural_summary <- residence_region_crosswalk |>
+csd_rural_summary <- addresses_region_crosswalk |>
   st_drop_geometry() |>
   group_by(csdid, csd_name, csd_desc) |>
   summarise(
@@ -339,12 +340,41 @@ csd_rural_summary |>
   count(is_rural_fsa, is_rural_popcenter) |>
   arrange(desc(n))
 
+
+# --- Create a summary table of rural/urban classification by CSD (population based)
+csd_rural_summary_population <- population_region_crosswalk |>
+  summarise(
+    n_dbids = n(),
+    n_rural_fsa = sum(population[urban_rural_fsa == "RURAL"], na.rm = TRUE),
+    n_rural_popcenter = sum(population[urban_rural_popcenter == "RURAL"], na.rm = TRUE),
+    est_population = sum(population, na.rm = TRUE),
+    p_rural_fsa = 100 * n_rural_fsa / est_population,
+    p_rural_popcenter = 100 * n_rural_popcenter / est_population,
+    is_rural_fsa = if_else(p_rural_fsa > 50, "RURAL", "URBAN"),
+    is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
+    .by = c("csdid", "csd_name", "csd_desc")
+  )
+
+  
+csd_rural_summary_population |> 
+  summarize(
+    mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
+    mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
+    median_rural_fsa = median(p_rural_fsa, na.rm = TRUE),
+    median_rural_popcenter = median(p_rural_popcenter, na.rm = TRUE)
+  ) |>
+  pivot_longer(everything())
+
+csd_rural_summary_population |>
+  count(is_rural_fsa, is_rural_popcenter) |>
+  arrange(desc(n))
+
 # =========================================================================== #
 # Plot urban vs rural for each method, different catchments
 # =========================================================================== #
 
 # --- Create data for mapping all the regions
-residence_region_long <- residence_region_crosswalk |>
+residence_region_long <- addresses_region_crosswalk |>
   pivot_longer(
     cols = starts_with("urban_rural_"),
     names_to = "method",

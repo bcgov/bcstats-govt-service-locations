@@ -18,6 +18,7 @@
 # =========================================================================== #
 
 source("R/settings.R")
+source("R/fxns/rural-fxns.R")
 
 # =========================================================================== #
 # Read required data
@@ -42,6 +43,21 @@ pop_db <- read_csv(
   clean_names() |>
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric)) |>
   inner_join(crosswalk, by = join_by(dbid))
+
+db_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
+   rename(geometry = geom) |>
+   st_transform(crs = 3005) |>
+   select(dbid, csdid, geometry)
+
+popcenter_boundaries <- 
+  st_read(glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"), layer = "popcenter_statscan") |>
+  rename(geometry = geom) |>
+  st_transform(crs = 3005)
+
+complete_assignments <-
+  read_csv(glue::glue("{FOR_SBC_OUT}/complete-db-assignments-for-SBC.csv")) |>
+  clean_names() |>
+  mutate(across(everything(), as.character))
 
 # our full set of drive data from DSS:  2,052,803 records over 41,991 DB's and 525 CSD's.
 # This is 10,432 fewer DB's than in the BC Data Catalog/BC Geographic Warehouse data (52,423).
@@ -151,6 +167,31 @@ drive_time_bins <- drivetime_data |>
     n_addresses_over_150_min = sum(drv_time_min >= 150, na.rm = TRUE),
     .by = c(csd_name, csdid)
   )
+
+# =========================================================================== #
+# Add proportion rural for each CSD
+# =========================================================================== #
+popcenter_population <- is_in_region_optim(db_shapefiles, popcenter_boundaries, "dbid", "pcname")
+
+db_population_estimates_one_year <- db_projections_transformed_raw |>
+  filter(gender == 'T', year == 2025) |>
+  summarize(
+    population = sum(population, na.rm = TRUE), 
+    .by = c("dbid", "csdid")
+  )
+
+# add flags for urban rural and summarize by csdid
+rural_csdid  <- db_population_estimates_one_year |> 
+  left_join(popcenter_population, by = "dbid") |>
+  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |> 
+  summarise(
+    n_rural = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
+    n = sum(population, na.rm = TRUE),
+    p_rural = if_else(n == 0, 0, 100*n_rural/n),
+    is_rural = if_else(p_rural > 50, "RURAL", "URBAN"),
+    .by = csdid
+ )
+
 
 # =========================================================================== #
 # All together ----
