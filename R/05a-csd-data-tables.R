@@ -87,16 +87,14 @@ filter(year == 2025) |>
 
 median_population <- db_projections_transformed_raw |>
   filter(year == 2025) |>
-  group_by(csdid, csd_name, age) |> 
   summarize(
      population = sum(population, na.rm = TRUE),
-     .groups = "drop_last") |>
-summarize(
+     .by = c(csdid, csd_name, age)) |>
+   summarize(
      median_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.median(age, population, na.rm = TRUE)),
      mean_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.mean(age, population, na.rm = TRUE)),
-    .groups = "drop"
+    .by = c(csdid, csd_name)
   )
-
 
 #------------------------------------------------------------------------------
 # drivetime metrics by csd
