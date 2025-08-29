@@ -122,17 +122,33 @@ drivetime_metrics <- drivetime_data |>
 
 drive_distance_bins <- drivetime_data |>
   summarize(
-    addresses_under_5_km = sum(drv_dist < 5, na.rm = TRUE),
-    addresses_5_to_20_km = sum(between(drv_dist, 5, 20), na.rm = TRUE),
-    addresses_over_20_km = sum(drv_dist > 20, na.rm = TRUE),
+    n_addresses_0_5_km = sum(drv_dist < 5.0, na.rm = TRUE),
+    n_addresses_5_10_km = sum(drv_dist >= 5.0 & drv_dist < 10.0, na.rm = TRUE),
+    n_addresses_10_15_km = sum(drv_dist >= 10.0 & drv_dist < 15.0, na.rm = TRUE),
+    n_addresses_15_30_km = sum(drv_dist >= 15.0 & drv_dist < 30.0, na.rm = TRUE),
+    n_addresses_30_45_km = sum(drv_dist >= 30.0 & drv_dist < 45.0, na.rm = TRUE),
+    n_addresses_45_60_km = sum(drv_dist >= 45.0 & drv_dist < 60.0, na.rm = TRUE),
+    n_addresses_60_90_km = sum(drv_dist >= 60.0 & drv_dist < 90.0, na.rm = TRUE),
+    n_addresses_90_135_km = sum(drv_dist >= 90.0 & drv_dist < 135.0, na.rm = TRUE),
+    n_addresses_135_180_km = sum(drv_dist >= 135.0 & drv_dist < 180.0, na.rm = TRUE),
+    n_addresses_180_plus_km = sum(drv_dist >= 180.0, na.rm = TRUE),
     .by = c(csd_name, csdid)
   )
 
 drive_time_bins <- drivetime_data |>
+  mutate(drv_time_min = drv_time_sec / 60) |>
   summarize(
-    addresses_under_5_min = sum(drv_time_sec < 300, na.rm = TRUE),
-    addresses_5_to_20_min = sum(between(drv_time_sec, 300, 1200), na.rm = TRUE),
-    addresses_over_20_min = sum(drv_time_sec > 1200, na.rm = TRUE),
+    n_addresses_0_5_min = sum(drv_time_min < 5, na.rm = TRUE),
+    n_addresses_5_10_min = sum(drv_time_min >= 5 & drv_time_min < 10, na.rm = TRUE),
+    n_addresses_10_15_min = sum(drv_time_min >= 10 & drv_time_min < 15, na.rm = TRUE),
+    n_addresses_15_20_min = sum(drv_time_min >= 15 & drv_time_min < 20, na.rm = TRUE),
+    n_addresses_20_30_min = sum(drv_time_min >= 20 & drv_time_min < 30, na.rm = TRUE),
+    n_addresses_30_40_min = sum(drv_time_min >= 30 & drv_time_min < 40, na.rm = TRUE),
+    n_addresses_40_60_min = sum(drv_time_min >= 40 & drv_time_min < 60, na.rm = TRUE),
+    n_addresses_60_90_min = sum(drv_time_min >= 60 & drv_time_min < 90, na.rm = TRUE),
+    n_addresses_90_120_min = sum(drv_time_min >= 90 & drv_time_min < 120, na.rm = TRUE),
+    n_addresses_120_150_min = sum(drv_time_min >= 120 & drv_time_min < 150, na.rm = TRUE),
+    n_addresses_over_150_min = sum(drv_time_min >= 150, na.rm = TRUE),
     .by = c(csd_name, csdid)
   )
 
