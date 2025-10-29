@@ -273,11 +273,13 @@ if (!dir.exists(TABLES_OUT)) {
 }
 
 # Write combined statistics table
+fn <- paste0("sbc-location-statistics-for-SBC-", format(Sys.Date(), "%Y-%m-%d"), ".csv")
+
 combined_stats |>
   arrange(sbc_location) |>
   mutate(across(where(is.double), ~ round(., 1))) |>
-  write_csv(file.path(TABLES_OUT, "sbc-location-statistics-for-SBC.csv"))
+  write_csv(file.path(TABLES_OUT, fn))
 
 # Print summary of what was written
-cat("SBC location statistics written to:", file.path(TABLES_OUT, "sbc-location-statistics.csv"), "\n")
+cat("SBC location statistics written to:", file.path(TABLES_OUT, fn), "\n")
 cat("Total SBC locations in statistics:", nrow(combined_stats), "\n")
