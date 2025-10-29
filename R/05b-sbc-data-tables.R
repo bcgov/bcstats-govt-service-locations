@@ -36,6 +36,15 @@ crosswalk <-
   ) |>
   clean_names()
 
+db_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
+   rename(geometry = geom) |>
+   st_transform(crs = 3005) |>
+   select(dbid, csdid, geometry)
+
+popcenter_boundaries <- 
+  st_read(glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"), layer = "popcenter_statscan") |>
+  rename(geometry = geom) |>
+  st_transform(crs = 3005)
 
 # Read in the full set of data provided by DSS.
 # Includes 2,052,805 records over 41,992 DB's and 526 CSD's
