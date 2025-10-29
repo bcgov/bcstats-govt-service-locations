@@ -203,7 +203,8 @@ median_population <- population_estimates_three_year_all |>
 # =========================================================================== #
 popcenter_population <- is_in_region_optim(db_shapefiles, popcenter_boundaries, "dbid", "pcname")
 
-db_population_estimates_one_year <- db_projections_transformed_raw |>
+db_population_estimates_one_year <- db_projections_transformed |>
+  filter(dbid %in% (crosswalk |> pull(dbid))) |>
   filter(gender == 'T', year == 2025) |>
   summarize(
     population = sum(population, na.rm = TRUE), 
@@ -224,19 +225,19 @@ rural_summary <- db_population_estimates_one_year |>
  ) |>
  select(assigned, p_rural_residents)
 
-rural_office <- sbc_locs |> 
+rural_office <- sbc_locs |>
   distinct(nearest_facility, coord_x, coord_y) |>
   st_as_sf(
-    coords = c("coord_x", "coord_y"), 
+    coords = c("coord_x", "coord_y"),
     crs = 3005
   ) |>
   is_in_region_optim(
-    regions = popcenter_boundaries, 
-    id_col = "nearest_facility", 
+    regions = popcenter_boundaries,
+    id_col = "nearest_facility",
     region_name_col = "pcname"
   ) |>
+  right_join(sbc_locs |> distinct(nearest_facility), by = "nearest_facility") |>
   mutate(rural_office = if_else(is.na(pcname), "Y", "N"))
-
 
 # =========================================================================== #
 # All together ----
