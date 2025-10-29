@@ -17,6 +17,7 @@
 # Load libraries and settings ----
 # =========================================================================== #
 
+
 source("R/settings.R")
 source("R/fxns/rural-fxns.R")
 
@@ -272,7 +273,10 @@ if (!dir.exists(TABLES_OUT)) {
 }
 
 # Write combined statistics table
-write_csv(combined_stats, file.path(TABLES_OUT, "sbc-location-statistics-for-SBC.csv"))
+combined_stats |>
+  arrange(sbc_location) |>
+  mutate(across(where(is.double), ~ round(., 1))) |>
+  write_csv(file.path(TABLES_OUT, "sbc-location-statistics-for-SBC.csv"))
 
 # Print summary of what was written
 cat("SBC location statistics written to:", file.path(TABLES_OUT, "sbc-location-statistics.csv"), "\n")
