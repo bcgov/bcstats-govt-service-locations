@@ -68,23 +68,25 @@ complete_assignments <-
 # This is 10,432 fewer DB's than in the BC Data Catalog/BC Geographic Warehouse data (52,423).
 # 4 db's from our drive data are not in the census data, but they are all in the data from BC Data Catalog.  They
 # represent very small areas (islands, looks like) around vancouver island.
-# They are in the set of 36 DB's that are missing, which are also mostly areas around vancouver island and the lower mainland.
+# They are in the set of 36 DB's that are missing, which are also mostly areas around vancouver island and 
+# the lower mainland.
 
 drivetime_data <- read_csv(
     glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
     col_types = cols(.default = "c")
-) |>
+  ) |>
   clean_names() |>
   mutate(across(c(drv_time_sec, drv_dist), as.numeric)) |>
-  inner_join (crosswalk, join_by(dbid, daid))
+  inner_join(crosswalk, join_by(dbid, daid))
 
-# these DBs are from the census data, so contain 52,387 DB's and 751 CSD's. Population projections come from BC Stats population projections + census population ratios. 
-# For those csdid's/db's that are not in the population projections, they 
+# these DBs are from the census data, so contain 52,387 DB's and 751 CSD's.
+# Population projections come from BC Stats population projections + census population ratios.
+# For those csdid's/db's that are not in the population projections, they
 # were proportionally allocated to the corresponding Unincorporated CSD (regional district).
 
 db_projections_transformed_raw <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds")) |>
   filter(dbid %in% (crosswalk |> pull(dbid))) |>
-  filter(gender == 'T', year %in% c(2025, 2030, 2035))
+  filter(gender == "T", year %in% c(2025, 2030, 2035))
 
 # =========================================================================== #
 # DB population projections, current, 5yr, 10yr
@@ -114,8 +116,8 @@ age_estimates_current_year <- db_projections_transformed_raw |>
 median_population <- db_projections_transformed_raw |>
   filter(year == 2025) |>
   summarize(
-     population = sum(population, na.rm = TRUE),
-     .by = c(csdid, csd_name, age)) |>
+    population = sum(population, na.rm = TRUE),
+    .by = c(csdid, csd_name, age)) |>
   summarize(
     median_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.median(age, population, na.rm = TRUE)),
     mean_age = ifelse(sum(population, na.rm = TRUE) == 0, 0, weighted.mean(age, population, na.rm = TRUE)),
@@ -179,42 +181,42 @@ drive_time_bins <- drivetime_data |>
 popcenter_population <- is_in_region_optim(db_shapefiles, popcenter_boundaries, "dbid", "pcname")
 
 db_population_estimates_one_year <- db_projections_transformed_raw |>
-  filter(gender == 'T', year == 2025) |>
+  filter(gender == "T", year == 2025) |>
   summarize(
     population = sum(population, na.rm = TRUE),
     .by = c("dbid", "csdid")
   )
 
 # add flags for urban rural and summarize by csdid
-rural_csdid  <- db_population_estimates_one_year |> 
+rural_csdid  <- db_population_estimates_one_year |>
   left_join(popcenter_population, by = "dbid") |>
   mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |>
   summarise(
     n_rural = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
     n = sum(population, na.rm = TRUE),
-    p_rural = if_else(n == 0, 0, n_rural/n),
+    p_rural = if_else(n == 0, 0, n_rural / n),
     .by = csdid
- ) |>
- select(csdid, p_rural)
+  ) |>
+  select(csdid, p_rural)
 
 # The is_in_region_optim function may not assign a popcenter if a CSD extends beyond
 # popcenter limits or the intersection area is below the threshold.
-# This would need to be addressed if we were to use this code.  
+# This would need to be addressed if we were to use this code.
 # Omitting from final tables.
 rural_csd <- csd_shapefiles |>
-st_drop_geometry() |>
+  st_drop_geometry() |>
   left_join(
     is_in_region_optim(
       locations = csd_shapefiles,
-      regions = popcenter_boundaries, 
-      id_col = "csdid", 
-      region_name_col = "pcname", 
+      regions = popcenter_boundaries,
+      id_col = "csdid",
+      region_name_col = "pcname",
       area_threshold = 0
-    ), 
+    ),
     by = "csdid"
   ) |>
   mutate(rural_csd = if_else(is.na(pcname), "Y", "N"))
-  
+
 
 # =========================================================================== #
 # All together ----
