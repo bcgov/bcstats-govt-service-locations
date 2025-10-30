@@ -82,8 +82,8 @@ drivetime_data <- read_csv(
 # For those csdid's/db's that are not in the population projections, they 
 # were proportionally allocated to the corresponding Unincorporated CSD (regional district).
 
-db_projections_transformed_raw <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds")) |> 
-  filter(dbid %in% (crosswalk |> pull(dbid))) |> 
+db_projections_transformed_raw <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds")) |>
+  filter(dbid %in% (crosswalk |> pull(dbid))) |>
   filter(gender == 'T', year %in% c(2025, 2030, 2035))
 
 # =========================================================================== #
@@ -94,15 +94,15 @@ db_projections_transformed_raw <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projec
 
 population_estimates_three_year <- db_projections_transformed_raw  |>
   summarise(
-    population = sum(population, na.rm = TRUE), 
+    population = sum(population, na.rm = TRUE),
     .by = c(year, region_name, csdid)) |>
   pivot_wider(
-    names_from = year, 
-    values_from = population, 
+    names_from = year,
+    values_from = population,
     values_fill = 0)
 
 age_estimates_current_year <- db_projections_transformed_raw |>
-filter(year == 2025) |>
+  filter(year == 2025) |>
   summarize(
     est_population_0_to_14_yrs = sum(population[age >= 0 & age < 15], na.rm = TRUE),
     est_population_15_to_24_yrs = sum(population[age >= 15 & age < 25], na.rm = TRUE),
@@ -236,7 +236,7 @@ combined_stats <- population_estimates_three_year |>
   rename(
     estimated_population_2025 = `2025`,
     `5_yr_projection_2030` = `2030`,
-    `10_year_projection_2035` = `2035`) 
+    `10_year_projection_2035` = `2035`)
 
 
 # =========================================================================== #
