@@ -15,7 +15,7 @@
 
 is_in_region <- function(locations, regions, id_col, region_name_col) {
 
-  results <- st_within(locations, regions, sparse = FALSE)
+  results <- sf::st_within(locations, regions, sparse = FALSE)
 
   colnames(results) <- regions[[region_name_col]]
   rownames(results) <- locations[[id_col]]
@@ -24,9 +24,9 @@ is_in_region <- function(locations, regions, id_col, region_name_col) {
   n_matched <- sum(rowSums(results) > 0)
   n_multi_matched <- sum(rowSums(results) > 1)
 
-  message(glue("{nrow(results)} {id_col}'s processed."))
-  message(glue("{n_matched} ({round(100*n_matched/nrow(results), 1)}%) of {id_col}'s were found within at least one {region_name_col} region.")) # nolint
-  message(glue("{n_multi_matched} ({round(100*n_multi_matched/nrow(results), 1)}%) of {id_col}'s were found within more than one {region_name_col} region.")) # nolint
+  message(glue::glue("{nrow(results)} {id_col}'s processed."))
+  message(glue::glue("{n_matched} ({round(100*n_matched/nrow(results), 1)}%) of {id_col}'s were found within at least one {region_name_col} region.")) # nolint
+  message(glue::glue("{n_multi_matched} ({round(100*n_multi_matched/nrow(results), 1)}%) of {id_col}'s were found within more than one {region_name_col} region.")) # nolint
 
   # collapse the results matrix and join to drive data
   results |>
@@ -45,7 +45,7 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
                   nrow(locations), id_col, nrow(regions), region_name_col))
 
   # STEP 1: Find locations that are fully contained within regions
-  contains_matrix <- st_contains(regions, locations, sparse = FALSE)
+  contains_matrix <- sf::st_contains(regions, locations, sparse = FALSE)
   contains_indices <- which(contains_matrix, arr.ind = TRUE)
 
   if (length(contains_indices) > 0) {
@@ -82,10 +82,10 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
   }
 
   message(sprintf("%d locations fully contained. Checking intersections for remaining %d locations...",
-                    length(contained_ids), nrow(remaining_locations)))
+                  length(contained_ids), nrow(remaining_locations)))
 
   # STEP 3: Check intersections only for remaining locations
-  intersects_matrix <- st_intersects(regions, remaining_locations, sparse = FALSE)
+  intersects_matrix <- sf::st_intersects(regions, remaining_locations, sparse = FALSE)
   intersects_indices <- which(intersects_matrix, arr.ind = TRUE)
 
   if (length(intersects_indices) == 0) {
