@@ -251,8 +251,13 @@ if (!dir.exists(TABLES_OUT)) {
 }
 
 # Write combined statistics table
-write_csv(combined_stats, file.path(TABLES_OUT, "csd-statistics-for-SBC.csv"))
+fn <- paste0("csd-statistics-for-SBC-", format(Sys.Date(), "%Y-%m-%d"), ".csv")
+
+combined_stats |>
+  arrange(csdid) |>
+  mutate(across(where(is.double), ~ round(., 1))) |>
+  write_csv(file.path(TABLES_OUT, fn))
 
 # Print summary of what was written
-cat("Combined statistics written to:", file.path(TABLES_OUT, "csd-statistics-for-SBC.csv"), "\n")
+cat("Combined statistics written to:", file.path(TABLES_OUT, fn), "\n")
 cat("Total CSDs in combined statistics:", nrow(combined_stats), "\n")
