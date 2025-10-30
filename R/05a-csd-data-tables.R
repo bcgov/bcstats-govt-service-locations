@@ -181,19 +181,18 @@ popcenter_population <- is_in_region_optim(db_shapefiles, popcenter_boundaries, 
 db_population_estimates_one_year <- db_projections_transformed_raw |>
   filter(gender == 'T', year == 2025) |>
   summarize(
-    population = sum(population, na.rm = TRUE), 
+    population = sum(population, na.rm = TRUE),
     .by = c("dbid", "csdid")
   )
 
 # add flags for urban rural and summarize by csdid
 rural_csdid  <- db_population_estimates_one_year |> 
   left_join(popcenter_population, by = "dbid") |>
-  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |> 
+  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |>
   summarise(
     n_rural = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
     n = sum(population, na.rm = TRUE),
     p_rural = if_else(n == 0, 0, n_rural/n),
-    is_rural = if_else(p_rural > 50, "RURAL", "URBAN"),
     .by = csdid
  ) |>
  select(csdid, p_rural)
@@ -215,6 +214,7 @@ st_drop_geometry() |>
     by = "csdid"
   ) |>
   mutate(rural_csd = if_else(is.na(pcname), "Y", "N"))
+  
 
 # =========================================================================== #
 # All together ----
