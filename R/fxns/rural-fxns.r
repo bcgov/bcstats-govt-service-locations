@@ -12,6 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+get_fully_contained <- function(locations, regions, id_col, region_name_col) {
+  contains_matrix <- sf::st_contains(regions, locations, sparse = FALSE)
+  contains_indices <- which(contains_matrix, arr.ind = TRUE)
+
+  if (length(contains_indices) == 0) {
+    # No locations fully contained
+    res <- data.frame(
+      temp_id = character(0),
+      temp_region = character(0),
+      stringsAsFactors = FALSE
+    )
+  } else {
+    # Create data.frame with proper column names
+    res <- data.frame(
+      temp_id = locations[[id_col]][contains_indices[, 2]],
+      temp_region = regions[[region_name_col]][contains_indices[, 1]],
+      stringsAsFactors = FALSE
+    )
+  }
+  # Set correct column names
+  names(res) <- c(id_col, region_name_col)
+
+  return(res)
+}
 
 is_in_region_optim <- function(locations, regions, id_col, region_name_col, area_threshold = 0.3) {
 
@@ -19,34 +43,17 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
   message(sprintf("Processing %d %s's against %d %s regions...",
                   nrow(locations), id_col, nrow(regions), region_name_col))
 
-  # STEP 1: Find locations that are fully contained within regions
-  contains_matrix <- sf::st_contains(regions, locations, sparse = FALSE)
-  contains_indices <- which(contains_matrix, arr.ind = TRUE)
+  # STEP 1: Check for full containment first
+  fully_contained <- get_fully_contained(locations, regions, id_col, region_name_col)
 
-  if (length(contains_indices) > 0) {
-    # Create data.frame with proper column names
-    fully_contained <- data.frame(
-      temp_id = locations[[id_col]][contains_indices[, 2]],
-      temp_region = regions[[region_name_col]][contains_indices[, 1]],
-      stringsAsFactors = FALSE
-    )
-    # Set correct column names
-    names(fully_contained) <- c(id_col, region_name_col)
-
-    # Get IDs of locations that were fully contained
+  # STEP 2: Only check intersections for locations NOT fully contained
+  # Get IDs of locations that were fully contained
+  if (nrow(fully_contained) > 0) {
     contained_ids <- unique(fully_contained[[id_col]])
   } else {
-    # Create empty data.frame with correct column names
-    fully_contained <- data.frame(
-      temp_id = character(0),
-      temp_region = character(0),
-      stringsAsFactors = FALSE
-    )
-    names(fully_contained) <- c(id_col, region_name_col)
     contained_ids <- character(0)
   }
 
-  # STEP 2: Only check intersections for locations NOT fully contained
   remaining_locations <- locations[!locations[[id_col]] %in% contained_ids, ]
 
   if (nrow(remaining_locations) == 0) {
