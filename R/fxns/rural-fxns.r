@@ -71,6 +71,43 @@ get_single_intersect_cases <- function(cases, id_col) {
     return(res)
 }
 
+get_multiple_intersect_cases <- function(cases, id_col, region_namecol, area_threshold) {
+
+  intersection_counts <- table(cases[[id_col]])
+  multiple_intersections <- names(intersection_counts)[intersection_counts > 1]
+  
+   # Do we need to handle the case in which there are no multiple intersections?
+  #if (length(multiple_intersections) > 0) {
+    multiple_candidates <- all_intersect_cases[all_intersect_cases[[id_col]] %in% multiple_intersections, ]
+
+    # Get geometries only for locations/regions involved in multiple intersections
+    multi_loc_ids <- unique(multiple_candidates[[id_col]])
+    multi_region_names <- unique(multiple_candidates[[region_name_col]])
+
+    loc_geoms <- remaining_locations[remaining_locations[[id_col]] %in% multi_loc_ids, ] |>
+      select(all_of(id_col), geometry) |>
+      mutate(loc_area = st_area(geometry))
+
+    reg_geoms <- regions[regions[[region_name_col]] %in% multi_region_names, ] |>
+      select(all_of(region_name_col), geometry)
+
+    # Calculate intersection areas and select best match
+    res <- multiple_candidates |>
+      left_join(loc_geoms, by = id_col, suffix = c("", "_loc")) |>
+      left_join(reg_geoms, by = region_name_col, suffix = c("", "_reg")) |>
+      mutate(
+        int_area = map2_dbl(geometry, geometry_reg,
+                           ~ st_area(st_intersection(.x, .y))),
+        area_ratio = as.numeric(int_area) / as.numeric(loc_area)
+      ) |>
+      filter(area_ratio > area_threshold) |>
+      slice_max(int_area, n = 1, with_ties = FALSE, by = all_of(id_col)) |>
+      select(all_of(c(id_col, region_name_col)))
+  #}
+
+  return(res)
+}
+
 is_in_region_optim2 <- function(locations, regions, id_col, region_name_col, area_threshold = 0.3) {
 
   message(sprintf("Processing %d %s's against %d %s regions...",
@@ -99,38 +136,10 @@ is_in_region_optim2 <- function(locations, regions, id_col, region_name_col, are
   # Do we need to handle the case in which there are no single intersections?
 
   # b) Multiple intersections - need area calculations
-  intersection_counts <- table(all_intersect_cases[[id_col]])
-  multiple_intersections <- names(intersection_counts)[intersection_counts > 1]
-  if (length(multiple_intersections) > 0) {
-    multiple_candidates <- all_intersect_cases[all_intersect_cases[[id_col]] %in% multiple_intersections, ]
-
-    # Get geometries only for locations/regions involved in multiple intersections
-    multi_loc_ids <- unique(multiple_candidates[[id_col]])
-    multi_region_names <- unique(multiple_candidates[[region_name_col]])
-
-    loc_geoms <- remaining_locations[remaining_locations[[id_col]] %in% multi_loc_ids, ] |>
-      select(all_of(id_col), geometry) |>
-      mutate(loc_area = st_area(geometry))
-
-    reg_geoms <- regions[regions[[region_name_col]] %in% multi_region_names, ] |>
-      select(all_of(region_name_col), geometry)
-
-    # Calculate intersection areas and select best match
-    multiple_intersect_cases <- multiple_candidates |>
-      left_join(loc_geoms, by = id_col, suffix = c("", "_loc")) |>
-      left_join(reg_geoms, by = region_name_col, suffix = c("", "_reg")) |>
-      mutate(
-        int_area = map2_dbl(geometry, geometry_reg,
-                           ~ st_area(st_intersection(.x, .y))),
-        area_ratio = as.numeric(int_area) / as.numeric(loc_area)
-      ) |>
-      filter(area_ratio > area_threshold) |>
-      slice_max(int_area, n = 1, with_ties = FALSE, by = all_of(id_col)) |>
-      select(all_of(c(id_col, region_name_col)))
-
-  }
-
+  
   # Do we need to handle the case in which there are no multiple intersections?
+  multiple_intersect_cases <- get_multiple_intersect_cases (all_intersect_cases, id_col, region_name_col, area_threshold)
+
   # Combine all results
   final_result <- bind_rows(fully_contained_cases, single_intersect_cases, multiple_intersect_cases)
 
