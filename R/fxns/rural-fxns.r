@@ -37,6 +37,31 @@ get_fully_contained <- function(locations, regions, id_col, region_name_col) {
   return(res)
 }
 
+get_intersection_candidates <- function(locations, regions, id_col, region_name_col) {
+  intersects_matrix <- sf::st_intersects(regions, locations, sparse = FALSE)
+  intersects_indices <- which(intersects_matrix, arr.ind = TRUE)
+
+  if (length(intersects_indices) == 0) {
+    # No intersections found
+    res <- data.frame(
+      temp_id = character(0),
+      temp_region = character(0),
+      stringsAsFactors = FALSE
+    )
+  } else {
+    # Create data.frame with proper column names
+    res <- data.frame(
+      temp_id = locations[[id_col]][intersects_indices[, 2]],
+      temp_region = regions[[region_name_col]][intersects_indices[, 1]],
+      stringsAsFactors = FALSE
+    )
+  }
+  # Set correct column names
+  names(res) <- c(id_col, region_name_col)
+
+  return(res)
+}
+
 is_in_region_optim <- function(locations, regions, id_col, region_name_col, area_threshold = 0.3) {
 
   # Input validation
@@ -46,46 +71,19 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
   # STEP 1: Check for full containment first
   fully_contained <- get_fully_contained(locations, regions, id_col, region_name_col)
 
-  # STEP 2: Only check intersections for locations NOT fully contained
-  # Get IDs of locations that were fully contained
-  if (nrow(fully_contained) > 0) {
-    contained_ids <- unique(fully_contained[[id_col]])
-  } else {
-    contained_ids <- character(0)
-  }
-
+  # STEP 2: Check intersections for locations NOT fully contained
+  contained_ids <- unique(fully_contained[[id_col]]) #IDs of fully contained locations
   remaining_locations <- locations[!locations[[id_col]] %in% contained_ids, ]
-
-  if (nrow(remaining_locations) == 0) {
-    # All locations were fully contained, no intersection checks needed
-    message(sprintf("All %d locations were fully contained within regions.",
-                    length(contained_ids)))
-    return(fully_contained)
-  }
-
   message(sprintf("%d locations fully contained. Checking intersections for remaining %d locations...",
                   length(contained_ids), nrow(remaining_locations)))
 
+  # Do we need to return fully contained here, in the event there are no remaining locations?
+  # if (nrow(remaining_locations) == 0) {return(fully_contained)}
+
   # STEP 3: Check intersections only for remaining locations
-  intersects_matrix <- sf::st_intersects(regions, remaining_locations, sparse = FALSE)
-  intersects_indices <- which(intersects_matrix, arr.ind = TRUE)
-
-  if (length(intersects_indices) == 0) {
-    # No intersections found
-    n_total <- nrow(locations)
-    n_matched <- length(contained_ids)
-    message(sprintf("%d (%.1f%%) of %s's were matched to %s regions.",
-                    n_matched, 100 * n_matched / n_total, id_col, region_name_col))
-    return(fully_contained)
-  }
-
-  # Create intersection candidates
-  intersection_candidates <- data.frame(
-    temp_id = remaining_locations[[id_col]][intersects_indices[, 2]],
-    temp_region = regions[[region_name_col]][intersects_indices[, 1]],
-    stringsAsFactors = FALSE
-  )
-  names(intersection_candidates) <- c(id_col, region_name_col)
+  intersection_candidates <- get_intersection_candidates(remaining_locations, regions, id_col, region_name_col)
+  # Do we need to return fully contained here, in the event there are no remaining locations?
+  # if (nrow(intersection_candidates) == 0) {return(fully_contained)}
 
   # STEP 4: Handle intersection cases
   # Count how many regions each location intersects with
