@@ -71,14 +71,14 @@ get_single_intersect_cases <- function(cases, id_col) {
     return(res)
 }
 
-get_multiple_intersect_cases <- function(cases, id_col, region_namecol, area_threshold) {
+get_multiple_intersect_cases <- function(cases, remaining_locations, regions, id_col, region_name_col, area_threshold) {
 
-  intersection_counts <- table(cases[[id_col]])
-  multiple_intersections <- names(intersection_counts)[intersection_counts > 1]
+   intersection_counts <- table(cases[[id_col]])
+   multiple_intersections <- names(intersection_counts)[intersection_counts > 1]
   
    # Do we need to handle the case in which there are no multiple intersections?
-  #if (length(multiple_intersections) > 0) {
-    multiple_candidates <- all_intersect_cases[all_intersect_cases[[id_col]] %in% multiple_intersections, ]
+   #if (length(multiple_intersections) > 0) {
+    multiple_candidates <- cases[cases[[id_col]] %in% multiple_intersections, ]
 
     # Get geometries only for locations/regions involved in multiple intersections
     multi_loc_ids <- unique(multiple_candidates[[id_col]])
@@ -129,30 +129,24 @@ is_in_region_optim2 <- function(locations, regions, id_col, region_name_col, are
   # i.e. if (nrow(intersect_cases) == 0) {return(fully_contained)}
 
   # 3: Handle different types of intersection cases (single, multiple, none)
-    # a) Single intersections - these occur when only the boundaries touch so we can accept directly
+  # 3a) Single intersections - these occur when only the boundaries touch so we can accept directly
 
   single_intersect_cases <- get_single_intersect_cases(all_intersect_cases, id_col)
 
   # Do we need to handle the case in which there are no single intersections?
 
-  # b) Multiple intersections - need area calculations
+  # 3b) Multiple intersections - need area calculations
   
   # Do we need to handle the case in which there are no multiple intersections?
-  multiple_intersect_cases <- get_multiple_intersect_cases (all_intersect_cases, id_col, region_name_col, area_threshold)
+  multiple_intersect_cases <- get_multiple_intersect_cases (all_intersect_cases, remaining_locations, regions, id_col, region_name_col, area_threshold)
 
-  # Combine all results
+  # 4. Combine all results and return
   final_result <- bind_rows(fully_contained_cases, single_intersect_cases, multiple_intersect_cases)
 
-  # 4. Print final statistics and return
-  n_total <- nrow(locations)
-  n_matched <- nrow(final_result)
-  n_from_contains <- nrow(fully_contained_cases)
-  n_from_intersects <- n_matched - n_from_contains
-
   message(sprintf("%d (%.1f%%) of %s's were matched to %s regions.",
-                  n_matched, 100 * n_matched / n_total, id_col, region_name_col))
-  message(sprintf("  - %d from full containment", n_from_contains))
-  message(sprintf("  - %d from intersection analysis", n_from_intersects))
+                 nrow(final_result), 100 * nrow(final_result) / nrow(locations), id_col, region_name_col))
+  message(sprintf("  - %d from full containment", nrow(fully_contained_cases)))
+  message(sprintf("  - %d from intersection analysis", nrow(final_result) - nrow(fully_contained_cases)))
 
   return(final_result)
 }
