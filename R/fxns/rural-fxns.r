@@ -68,33 +68,31 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
   message(sprintf("Processing %d %s's against %d %s regions...",
                   nrow(locations), id_col, nrow(regions), region_name_col))
 
-  # STEP 1: Check for full containment first
+  # 1: Check for full containment first
   fully_contained <- get_fully_contained(locations, regions, id_col, region_name_col)
 
-  # STEP 2: Check intersections for locations NOT fully contained
+  # 2: Check intersections only for locations NOT fully contained
   contained_ids <- unique(fully_contained[[id_col]]) #IDs of fully contained locations
   remaining_locations <- locations[!locations[[id_col]] %in% contained_ids, ]
+  # Do we want to return fully contained here, in the event there are no remaining locations?
+  # i.e. if (nrow(remaining_locations) == 0) {return(fully_contained)}
   message(sprintf("%d locations fully contained. Checking intersections for remaining %d locations...",
                   length(contained_ids), nrow(remaining_locations)))
 
-  # Do we need to return fully contained here, in the event there are no remaining locations?
-  # if (nrow(remaining_locations) == 0) {return(fully_contained)}
-
-  # STEP 3: Check intersections only for remaining locations
   intersection_candidates <- get_intersection_candidates(remaining_locations, regions, id_col, region_name_col)
-  # Do we need to return fully contained here, in the event there are no remaining locations?
-  # if (nrow(intersection_candidates) == 0) {return(fully_contained)}
+  # Do we need to return fully contained here, in the event there are no intersecting locations?
+  # i.e. if (nrow(intersection_candidates) == 0) {return(fully_contained)}
 
-  # STEP 4: Handle intersection cases
+  # 3: Handle different types of intersection cases (single, multiple, none)
   # Count how many regions each location intersects with
   intersection_counts <- table(intersection_candidates[[id_col]])
   single_intersections <- names(intersection_counts)[intersection_counts == 1]
   multiple_intersections <- names(intersection_counts)[intersection_counts > 1]
 
-  # Single intersections - accept directly
+  # a) Single intersections - accept directly
   single_intersect_cases <- intersection_candidates[intersection_candidates[[id_col]] %in% single_intersections, ]
 
-  # Multiple intersections - need area calculations
+  # b) Multiple intersections - need area calculations
   if (length(multiple_intersections) > 0) {
     multiple_candidates <- intersection_candidates[intersection_candidates[[id_col]] %in% multiple_intersections, ]
 
