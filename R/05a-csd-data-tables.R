@@ -159,7 +159,7 @@ drivetime_metrics <- drivetime_data |>
 # bin the data by driving distance and time
 #------------------------------------------------------------------------------
 
-drive_distance_bins <- drivetime_data_focused |>
+drive_distance_bins <- drivetime_data |>
   summarize(
     n_0_5_km = sum(hh_size_estimate[drv_dist < 5.0], na.rm = TRUE),
     n_5_10_km = sum(hh_size_estimate[drv_dist >= 5.0 & drv_dist < 10.0], na.rm = TRUE),
@@ -174,7 +174,7 @@ drive_distance_bins <- drivetime_data_focused |>
     .by = c(csd_name, csdid)
   )
 
-drive_time_bins <- drivetime_data_focused |>
+drive_time_bins <- drivetime_data |>
   mutate(drv_time_min = drv_time_sec / 60) |>
   summarize(
     n_within_0_5_min = sum(hh_size_estimate[drv_time_min < 5], na.rm = TRUE),
