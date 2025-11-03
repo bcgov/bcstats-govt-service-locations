@@ -108,7 +108,7 @@ get_multiple_intersect_cases <- function(cases, remaining_locations, regions, id
   return(res)
 }
 
-is_in_region_optim2 <- function(locations, regions, id_col, region_name_col, area_threshold = 0.3) {
+is_in_region_optim <- function(locations, regions, id_col, region_name_col, area_threshold = 0.3) {
 
   message(sprintf("Processing %d %s's against %d %s regions...",
                   nrow(locations), id_col, nrow(regions), region_name_col))
