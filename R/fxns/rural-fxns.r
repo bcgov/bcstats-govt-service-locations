@@ -13,6 +13,7 @@
 # limitations under the License.
 
 get_fully_contained_cases <- function(locations, regions, id_col, region_name_col) {
+  # Returns an empty, initialized dataframe if there are no fully contained locations.
   contains_matrix <- sf::st_contains(regions, locations, sparse = FALSE)
   contains_indices <- which(contains_matrix, arr.ind = TRUE)
 
@@ -38,6 +39,7 @@ get_fully_contained_cases <- function(locations, regions, id_col, region_name_co
 }
 
 get_intersect_cases <- function(locations, regions, id_col, region_name_col) {
+  # Returns an empty, initialized dataframe if there are no intersecting locations.
   intersects_matrix <- sf::st_intersects(regions, locations, sparse = FALSE)
   intersects_indices <- which(intersects_matrix, arr.ind = TRUE)
 
@@ -63,52 +65,55 @@ get_intersect_cases <- function(locations, regions, id_col, region_name_col) {
 }
 
 get_single_intersect_cases <- function(cases, id_col) {
+  # Returns an empty, initialized dataframe if there are no single intersecting locations.
 
-    counts <- table(cases[[id_col]])
-    singles <- names(counts)[counts == 1]
-    res <- cases[cases[[id_col]] %in% singles, ]
+  counts <- table(cases[[id_col]])
+  singles <- names(counts)[counts == 1]
+  res <- cases[cases[[id_col]] %in% singles, ]
 
-    return(res)
+  return(res)
 }
 
 get_multiple_intersect_cases <- function(cases, remaining_locations, regions, id_col, region_name_col, area_threshold) {
+  # Returns an empty, initialized dataframe if there are no multiple intersecting locations.
 
-   intersection_counts <- table(cases[[id_col]])
-   multiple_intersections <- names(intersection_counts)[intersection_counts > 1]
-  
-   # Do we need to handle the case in which there are no multiple intersections?
-   #if (length(multiple_intersections) > 0) {
-    multiple_candidates <- cases[cases[[id_col]] %in% multiple_intersections, ]
+  intersection_counts <- table(cases[[id_col]])
+  multiple_intersections <- names(intersection_counts)[intersection_counts > 1]
 
-    # Get geometries only for locations/regions involved in multiple intersections
-    multi_loc_ids <- unique(multiple_candidates[[id_col]])
-    multi_region_names <- unique(multiple_candidates[[region_name_col]])
+  # Do we need to handle the case in which there are no multiple intersections?
+  #if (length(multiple_intersections) > 0) {
+  multiple_candidates <- cases[cases[[id_col]] %in% multiple_intersections, ]
 
-    loc_geoms <- remaining_locations[remaining_locations[[id_col]] %in% multi_loc_ids, ] |>
-      select(all_of(id_col), geometry) |>
-      mutate(loc_area = st_area(geometry))
+  # Get geometries only for locations/regions involved in multiple intersections
+  multi_loc_ids <- unique(multiple_candidates[[id_col]])
+  multi_region_names <- unique(multiple_candidates[[region_name_col]])
 
-    reg_geoms <- regions[regions[[region_name_col]] %in% multi_region_names, ] |>
-      select(all_of(region_name_col), geometry)
+  loc_geoms <- remaining_locations[remaining_locations[[id_col]] %in% multi_loc_ids, ] |>
+    select(all_of(id_col), geometry) |>
+    mutate(loc_area = st_area(geometry))
 
-    # Calculate intersection areas and select best match
-    res <- multiple_candidates |>
-      left_join(loc_geoms, by = id_col, suffix = c("", "_loc")) |>
-      left_join(reg_geoms, by = region_name_col, suffix = c("", "_reg")) |>
-      mutate(
-        int_area = map2_dbl(geometry, geometry_reg,
+  reg_geoms <- regions[regions[[region_name_col]] %in% multi_region_names, ] |>
+    select(all_of(region_name_col), geometry)
+
+  # Calculate intersection areas and select best match
+  res <- multiple_candidates |>
+    left_join(loc_geoms, by = id_col, suffix = c("", "_loc")) |>
+    left_join(reg_geoms, by = region_name_col, suffix = c("", "_reg")) |>
+    mutate(
+      int_area = map2_dbl(geometry, geometry_reg,
                            ~ st_area(st_intersection(.x, .y))),
-        area_ratio = as.numeric(int_area) / as.numeric(loc_area)
-      ) |>
-      filter(area_ratio > area_threshold) |>
-      slice_max(int_area, n = 1, with_ties = FALSE, by = all_of(id_col)) |>
-      select(all_of(c(id_col, region_name_col)))
+      area_ratio = as.numeric(int_area) / as.numeric(loc_area)
+    ) |>
+    filter(area_ratio > area_threshold) |>
+    slice_max(int_area, n = 1, with_ties = FALSE, by = all_of(id_col)) |>
+    select(all_of(c(id_col, region_name_col)))
   #}
 
   return(res)
 }
 
 is_in_region_optim <- function(locations, regions, id_col, region_name_col, area_threshold = 0.3) {
+  # Returns an empty, initialized dataframe if there are no contained or intersecting locations.
 
   message(sprintf("Processing %d %s's against %d %s regions...",
                   nrow(locations), id_col, nrow(regions), region_name_col))
@@ -117,28 +122,22 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
   fully_contained_cases <- get_fully_contained_cases(locations, regions, id_col, region_name_col)
 
   # 2: Check intersections, but only for locations NOT fully contained)
-  contained_ids <- unique(fully_contained_cases[[id_col]]) #IDs of fully contained locations
+  #IDs of fully contained locations, or empty character string if none
+  contained_ids <- unique(fully_contained_cases[[id_col]]) 
   remaining_locations <- locations[!locations[[id_col]] %in% contained_ids, ]
-  # Do we want to return fully contained here, in the event there are no remaining locations?
-  # i.e. if (nrow(remaining_locations) == 0) {return(fully_contained)}
+
   message(sprintf("%d locations fully contained. Checking intersections for remaining %d locations...",
                   length(contained_ids), nrow(remaining_locations)))
 
   all_intersect_cases <- get_intersect_cases(remaining_locations, regions, id_col, region_name_col)
-  # Do we need to return fully contained here, in the event there are no intersecting locations?
-  # i.e. if (nrow(intersect_cases) == 0) {return(fully_contained)}
 
   # 3: Handle different types of intersection cases (single, multiple, none)
-  # 3a) Single intersections - these occur when only the boundaries touch so we can accept directly
-
+  # Single intersections - these occur when only the boundaries touch so we can accept directly
   single_intersect_cases <- get_single_intersect_cases(all_intersect_cases, id_col)
 
-  # Do we need to handle the case in which there are no single intersections?
-
-  # 3b) Multiple intersections - need area calculations
-  
-  # Do we need to handle the case in which there are no multiple intersections?
-  multiple_intersect_cases <- get_multiple_intersect_cases (all_intersect_cases, remaining_locations, regions, id_col, region_name_col, area_threshold)
+  # Multiple intersections - utilizes area calculations
+  multiple_intersect_cases <-
+    get_multiple_intersect_cases(all_intersect_cases, remaining_locations, regions, id_col, region_name_col, area_threshold)
 
   # 4. Combine all results and return
   final_result <- bind_rows(fully_contained_cases, single_intersect_cases, multiple_intersect_cases)

@@ -65,12 +65,12 @@ complete_assignments <-
   ) |>
   mutate(dbid = as.character(dbid))
 
-# 65 Service BC locations over 526 CSD's.  So, this file will contain 
-# multiple csd's for some service bc locations.  This comes from our drivetime data. 
+# 65 Service BC locations over 526 CSD's.  So, this file will contain
+# multiple csd's for some service bc locations.  This comes from our drivetime data.
 sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
   clean_names()
 
-# contains pre-processed population projections for 52387 DB's and 751 CSD's, 
+# contains pre-processed population projections for 52387 DB's and 751 CSD's,
 # the unincorporated municipalities are rolled up into 29 regions, so the count of
 # CSD's is actually 191.
 db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
@@ -208,14 +208,14 @@ db_population_estimates_one_year <- db_projections_transformed |>
   filter(dbid %in% (crosswalk |> pull(dbid))) |>
   filter(gender == 'T', year == 2025) |>
   summarize(
-    population = sum(population, na.rm = TRUE), 
+    population = sum(population, na.rm = TRUE),
     .by = c("dbid", "csdid")
   )
 
 # add flags for urban rural and summarize by csdid
-rural_summary <- db_population_estimates_one_year |> 
+rural_summary <- db_population_estimates_one_year |>
   left_join(popcenter_population, by = "dbid") |>
-  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |> 
+  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |>
   left_join(complete_assignments, by = "dbid") |>
   summarise(
     n_rural_residents = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
@@ -262,7 +262,7 @@ combined_stats <- population_estimates_three_year |>
     `5_yr_projection_2030` = `2030`,
     `10_year_projection_2035` = `2035`
   )
-  
+
 # =========================================================================== #
 # Write output table to CSV ----
 # =========================================================================== #
