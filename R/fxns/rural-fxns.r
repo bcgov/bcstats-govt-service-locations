@@ -112,6 +112,36 @@ get_multiple_intersect_cases <- function(cases, remaining_locations, regions, id
   return(res)
 }
 
+assign_area <- function(data, locs, regs, id_col, reg_col) {
+  # join region and locs geometries, add only the geometry columns.
+  # relabel columns to avoid confusion
+  res <- data |>
+    left_join(locs |>
+        select(all_of(id_col), geometry) |>
+        mutate(area_loc = st_area(geometry)) |>
+        rename(geom_loc = geometry)
+      , by = id_col) |>
+    left_join(regs |>
+        select(all_of(reg_col), geometry) |>
+        mutate(area_reg = st_area(geometry)) |>
+        rename(geom_reg = geometry)
+      , by = reg_col)
+
+  # calculate intersection area between geoms (location and region) for each observation
+  # calculate the 'rurality' of each location: that is, the proportion of area "found' in the region
+  res <- res |>
+    mutate(
+      area_int = map2_dbl(geom_loc, geom_reg, ~ as.numeric(st_area(st_intersection(.x, .y)))),
+      area_ratio = area_int / area_loc
+    )
+
+  # return only the relevent columns. After testing this function, we can remove geometry cols and optimize performance.
+  res <- res |>
+    select(all_of(c(names(data), "geom_loc", "geom_reg", "area_loc", "area_reg", "area_int", "area_ratio")))
+
+  return(res)
+}
+
 is_in_region_optim <- function(locations, regions, id_col, region_name_col, area_threshold = 0.3) {
   # Returns an empty, initialized dataframe if there are no contained or intersecting locations.
 
@@ -123,21 +153,34 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
 
   # 2: Check intersections, but only for locations NOT fully contained)
   #IDs of fully contained locations, or empty character string if none
-  contained_ids <- unique(fully_contained_cases[[id_col]]) 
+  contained_ids <- unique(fully_contained_cases[[id_col]])
   remaining_locations <- locations[!locations[[id_col]] %in% contained_ids, ]
 
   message(sprintf("%d locations fully contained. Checking intersections for remaining %d locations...",
                   length(contained_ids), nrow(remaining_locations)))
 
-  all_intersect_cases <- get_intersect_cases(remaining_locations, regions, id_col, region_name_col)
+  intersect_cases <- get_intersect_cases(remaining_locations, regions, id_col, region_name_col)
+  intersect_cases <- assign_area(intersect_cases, remaining_locations, regions, id_col, region_name_col)
+  intersect_cases <-   intersect_cases |>
+    group_by(dbid) |>
+    #slice_max(area_ratio, n = 1, with_ties = FALSE)
+    mutate(multi_flag = if_else(n() > 1, 1, 0)) |>
+    mutate(max_area_flag = if_else(area_ratio == max(area_ratio, na.rm = TRUE), 1, 0)) |>
+    filter(max_area_flag == 1)
+
+
+
+
+  res |> filter(multi_flag == 0) |> select(-contains("geom")) |> 
+  arrange(dbid, desc(area_ratio)) |> View()
 
   # 3: Handle different types of intersection cases (single, multiple, none)
   # Single intersections - these occur when only the boundaries touch so we can accept directly
-  single_intersect_cases <- get_single_intersect_cases(all_intersect_cases, id_col)
+  single_intersect_cases <- get_single_intersect_cases(intersect_cases, id_col)
 
   # Multiple intersections - utilizes area calculations
   multiple_intersect_cases <-
-    get_multiple_intersect_cases(all_intersect_cases, remaining_locations, regions, id_col, region_name_col, area_threshold)
+    get_multiple_intersect_cases(intersect_cases, remaining_locations, regions, id_col, region_name_col, area_threshold)
 
   # 4. Combine all results and return
   final_result <- bind_rows(fully_contained_cases, single_intersect_cases, multiple_intersect_cases)
