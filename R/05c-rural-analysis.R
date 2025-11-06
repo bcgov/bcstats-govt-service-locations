@@ -290,7 +290,7 @@ catchment_rural_summary_compare |>
 facilities <- drivetime_data |> st_drop_geometry() |> distinct(nearest_facility, coord_x, coord_y) |>
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
 
-urban_facilities <- is_in_region(facilities, popcenter_boundaries, "nearest_facility", "pcname") # OR
+urban_facilities <- is_in_region_optim(facilities, popcenter_boundaries, "nearest_facility", "pcname") # OR
 # urban_facilities <- resides_in_region(facilities, fsa, "nearest_facility", "cfsauid")
 
 facilities <- facilities |> left_join(urban_facilities, by = "nearest_facility") |>

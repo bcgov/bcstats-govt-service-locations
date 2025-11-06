@@ -17,7 +17,9 @@
 # Load libraries and settings ----
 # =========================================================================== #
 
+
 source("R/settings.R")
+source("R/fxns/rural-fxns.R")
 
 # =========================================================================== #
 # Read required data in ----
@@ -35,6 +37,15 @@ crosswalk <-
   ) |>
   clean_names()
 
+db_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
+   rename(geometry = geom) |>
+   st_transform(crs = 3005) |>
+   select(dbid, csdid, geometry)
+
+popcenter_boundaries <- 
+  st_read(glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"), layer = "popcenter_statscan") |>
+  rename(geometry = geom) |>
+  st_transform(crs = 3005)
 
 # Read in the full set of data provided by DSS.
 # Includes 2,052,805 records over 41,992 DB's and 526 CSD's
@@ -54,12 +65,12 @@ complete_assignments <-
   ) |>
   mutate(dbid = as.character(dbid))
 
-# 65 Service BC locations over 526 CSD's.  So, this file will contain 
-# multiple csd's for some service bc locations.  This comes from our drivetime data. 
+# 65 Service BC locations over 526 CSD's.  So, this file will contain
+# multiple csd's for some service bc locations.  This comes from our drivetime data.
 sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
   clean_names()
 
-# contains pre-processed population projections for 52387 DB's and 751 CSD's, 
+# contains pre-processed population projections for 52387 DB's and 751 CSD's,
 # the unincorporated municipalities are rolled up into 29 regions, so the count of
 # CSD's is actually 191.
 db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
@@ -86,39 +97,60 @@ drivetime_data_focused <- drivetime_data_full |>
   filter(nearest_facility %in% sbc_names | is.na(nearest_facility)) |>
   left_join(crosswalk, by = c("dbid", "daid"))
 
+## add the current year population estimate to the drivetime data for later use
+# as well as estimated household size for an address
+drivetime_data_focused <- drivetime_data_focused |> 
+  left_join(
+    db_projections_transformed |> 
+      filter(gender=="T", year==CURRENT_YEAR) |> 
+      group_by(dbid, year) |> 
+      summarize(population = sum(population)) |> 
+      ungroup() |> 
+      select(dbid, population),
+    by='dbid'
+  ) |> 
+  group_by(dbid) |> 
+  mutate(n_address = n()) |> 
+  ungroup() |> 
+  mutate(hh_size_estimate = population/n_address)
+
 #------------------------------------------------------------------------------
 # bin the data by driving distance
+# note: if you check the total pop from here to the estimated pop done below
+#       this is slightly lower - I think okay as estimated pop will include dbs 
+#       that had no addresses in our database, but we include for completeness
+#       in the assigned region 
 #------------------------------------------------------------------------------
 
 drive_distance_bins <- drivetime_data_focused |>
   summarize(
-    n_addresses_0_5_km = sum(drv_dist < 5.0, na.rm = TRUE),
-    n_addresses_5_10_km = sum(drv_dist >= 5.0 & drv_dist < 10.0, na.rm = TRUE),
-    n_addresses_10_15_km = sum(drv_dist >= 10.0 & drv_dist < 15.0, na.rm = TRUE),
-    n_addresses_15_30_km = sum(drv_dist >= 15.0 & drv_dist < 30.0, na.rm = TRUE),
-    n_addresses_30_45_km = sum(drv_dist >= 30.0 & drv_dist < 45.0, na.rm = TRUE),
-    n_addresses_45_60_km = sum(drv_dist >= 45.0 & drv_dist < 60.0, na.rm = TRUE),
-    n_addresses_60_90_km = sum(drv_dist >= 60.0 & drv_dist < 90.0, na.rm = TRUE),
-    n_addresses_90_135_km = sum(drv_dist >= 90.0 & drv_dist < 135.0, na.rm = TRUE),
-    n_addresses_135_180_km = sum(drv_dist >= 135.0 & drv_dist < 180.0, na.rm = TRUE),
-    n_addresses_180_plus_km = sum(drv_dist >= 180.0, na.rm = TRUE),
+    n_0_5_km = sum(hh_size_estimate[drv_dist < 5.0], na.rm = TRUE),
+    n_5_10_km = sum(hh_size_estimate[drv_dist >= 5.0 & drv_dist < 10.0], na.rm = TRUE),
+    n_10_15_km = sum(hh_size_estimate[drv_dist >= 10.0 & drv_dist < 15.0], na.rm = TRUE),
+    n_15_30_km = sum(hh_size_estimate[drv_dist >= 15.0 & drv_dist < 30.0], na.rm = TRUE),
+    n_30_45_km = sum(hh_size_estimate[drv_dist >= 30.0 & drv_dist < 45.0], na.rm = TRUE),
+    n_45_60_km = sum(hh_size_estimate[drv_dist >= 45.0 & drv_dist < 60.0], na.rm = TRUE),
+    n_60_90_km = sum(hh_size_estimate[drv_dist >= 60.0 & drv_dist < 90.0], na.rm = TRUE),
+    n_90_135_km = sum(hh_size_estimate[drv_dist >= 90.0 & drv_dist < 135.0], na.rm = TRUE),
+    n_135_180_km = sum(hh_size_estimate[drv_dist >= 135.0 & drv_dist < 180.0], na.rm = TRUE),
+    n_180_plus_km = sum(hh_size_estimate[drv_dist >= 180.0], na.rm = TRUE),
     .by = c(assigned)
   )
 
 drive_time_bins <- drivetime_data_focused |>
   mutate(drv_time_min = drv_time_sec / 60) |>
   summarize(
-    n_addresses_within_0_5_min = sum(drv_time_min < 5, na.rm = TRUE),
-    n_addresses_5_10_min = sum(drv_time_min >= 5 & drv_time_min < 10, na.rm = TRUE),
-    n_addresses_10_15_min = sum(drv_time_min >= 10 & drv_time_min < 15, na.rm = TRUE),
-    n_addresses_15_20_min = sum(drv_time_min >= 15 & drv_time_min < 20, na.rm = TRUE),
-    n_addresses_20_30_min = sum(drv_time_min >= 20 & drv_time_min < 30, na.rm = TRUE),
-    n_addresses_30_40_min = sum(drv_time_min >= 30 & drv_time_min < 40, na.rm = TRUE),
-    n_addresses_40_60_min = sum(drv_time_min >= 40 & drv_time_min < 60, na.rm = TRUE),
-    n_addresses_60_90_min = sum(drv_time_min >= 60 & drv_time_min < 90, na.rm = TRUE),
-    n_addresses_90_120_min = sum(drv_time_min >= 90 & drv_time_min < 120, na.rm = TRUE),
-    n_addresses_120_150_min = sum(drv_time_min >= 120 & drv_time_min < 150, na.rm = TRUE),
-    n_addresses_over_150_min = sum(drv_time_min >= 150, na.rm = TRUE),
+    n_within_0_5_min = sum(hh_size_estimate[drv_time_min < 5], na.rm = TRUE),
+    n_5_10_min = sum(hh_size_estimate[drv_time_min >= 5 & drv_time_min < 10], na.rm = TRUE),
+    n_10_15_min = sum(hh_size_estimate[drv_time_min >= 10 & drv_time_min < 15], na.rm = TRUE),
+    n_15_20_min = sum(hh_size_estimate[drv_time_min >= 15 & drv_time_min < 20], na.rm = TRUE),
+    n_20_30_min = sum(hh_size_estimate[drv_time_min >= 20 & drv_time_min < 30], na.rm = TRUE),
+    n_30_40_min = sum(hh_size_estimate[drv_time_min >= 30 & drv_time_min < 40], na.rm = TRUE),
+    n_40_60_min = sum(hh_size_estimate[drv_time_min >= 40 & drv_time_min < 60], na.rm = TRUE),
+    n_60_90_min = sum(hh_size_estimate[drv_time_min >= 60 & drv_time_min < 90], na.rm = TRUE),
+    n_90_120_min = sum(hh_size_estimate[drv_time_min >= 90 & drv_time_min < 120], na.rm = TRUE),
+    n_120_150_min = sum(hh_size_estimate[drv_time_min >= 120 & drv_time_min < 150], na.rm = TRUE),
+    n_over_150_min = sum(hh_size_estimate[drv_time_min >= 150], na.rm = TRUE),
     .by = c(assigned)
   )
 
@@ -193,17 +225,18 @@ median_population <- population_estimates_three_year_all |>
 # =========================================================================== #
 popcenter_population <- is_in_region_optim(db_shapefiles, popcenter_boundaries, "dbid", "pcname")
 
-db_population_estimates_one_year <- db_projections_transformed_raw |>
+db_population_estimates_one_year <- db_projections_transformed |>
+  filter(dbid %in% (crosswalk |> pull(dbid))) |>
   filter(gender == 'T', year == 2025) |>
   summarize(
-    population = sum(population, na.rm = TRUE), 
+    population = sum(population, na.rm = TRUE),
     .by = c("dbid", "csdid")
   )
 
 # add flags for urban rural and summarize by csdid
-rural_summary <- db_population_estimates_one_year |> 
+rural_summary <- db_population_estimates_one_year |>
   left_join(popcenter_population, by = "dbid") |>
-  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |> 
+  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |>
   left_join(complete_assignments, by = "dbid") |>
   summarise(
     n_rural_residents = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
@@ -214,19 +247,19 @@ rural_summary <- db_population_estimates_one_year |>
  ) |>
  select(assigned, p_rural_residents)
 
-rural_office <- sbc_locs |> 
+rural_office <- sbc_locs |>
   distinct(nearest_facility, coord_x, coord_y) |>
   st_as_sf(
-    coords = c("coord_x", "coord_y"), 
+    coords = c("coord_x", "coord_y"),
     crs = 3005
   ) |>
   is_in_region_optim(
-    regions = popcenter_boundaries, 
-    id_col = "nearest_facility", 
+    regions = popcenter_boundaries,
+    id_col = "nearest_facility",
     region_name_col = "pcname"
   ) |>
+  right_join(sbc_locs |> distinct(nearest_facility), by = "nearest_facility") |>
   mutate(rural_office = if_else(is.na(pcname), "Y", "N"))
-
 
 # =========================================================================== #
 # All together ----
@@ -243,14 +276,14 @@ combined_stats <- population_estimates_three_year |>
   left_join(rural_summary, by = c("assigned")) |>
   left_join(rural_office, by = c("assigned" = "nearest_facility")) |>
   relocate(n_addresses_served, n_csds_served, .after = assigned) |>
-  relocate(mean_driving_time, median_driving_time, .after = n_addresses_over_150_min) |>
+  relocate(mean_driving_time, median_driving_time, .after = n_over_150_min) |>
   rename(
     sbc_location = assigned,
     estimated_population_2025 = `2025`,
     `5_yr_projection_2030` = `2030`,
     `10_year_projection_2035` = `2035`
   )
-  
+
 # =========================================================================== #
 # Write output table to CSV ----
 # =========================================================================== #
@@ -261,8 +294,13 @@ if (!dir.exists(TABLES_OUT)) {
 }
 
 # Write combined statistics table
-write_csv(combined_stats, file.path(TABLES_OUT, "sbc-location-statistics-for-SBC.csv"))
+fn <- paste0("sbc-location-statistics-for-SBC-", format(Sys.Date(), "%Y-%m-%d"), ".csv")
+
+combined_stats |>
+  arrange(sbc_location) |>
+  mutate(across(where(is.double), ~ round(., 1))) |>
+  write_csv(file.path(TABLES_OUT, fn))
 
 # Print summary of what was written
-cat("SBC location statistics written to:", file.path(TABLES_OUT, "sbc-location-statistics.csv"), "\n")
+cat("SBC location statistics written to:", file.path(TABLES_OUT, fn), "\n")
 cat("Total SBC locations in statistics:", nrow(combined_stats), "\n")
