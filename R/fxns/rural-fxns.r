@@ -166,13 +166,8 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
     #slice_max(area_ratio, n = 1, with_ties = FALSE)
     mutate(multi_flag = if_else(n() > 1, 1, 0)) |>
     mutate(max_area_flag = if_else(area_ratio == max(area_ratio, na.rm = TRUE), 1, 0)) |>
-    filter(max_area_flag == 1)
+    filter(multi_flag == 1)
 
-
-
-
-  res |> filter(multi_flag == 0) |> select(-contains("geom")) |> 
-  arrange(dbid, desc(area_ratio)) |> View()
 
   # 3: Handle different types of intersection cases (single, multiple, none)
   # Single intersections - these occur when only the boundaries touch so we can accept directly
