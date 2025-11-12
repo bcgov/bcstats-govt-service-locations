@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-get_fully_contained_cases <- function(locations, regions, id_col, region_name_col) {
+get_fully_contained_cases <- function(
+  locations,
+  regions,
+  id_col,
+  region_name_col
+) {
   # Returns an empty, initialized dataframe if there are no fully contained locations.
   contains_matrix <- sf::st_contains(regions, locations, sparse = FALSE)
   contains_indices <- which(contains_matrix, arr.ind = TRUE)
@@ -68,69 +73,138 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
   # join region and locs geometries, add only the geometry columns.
   # relabel columns to avoid confusion
   res <- data |>
-    left_join(locs |>
+    left_join(
+      locs |>
         select(all_of(id_col), geometry) |>
         mutate(area_loc = st_area(geometry)) |>
-        rename(geom_loc = geometry)
-      , by = id_col) |>
-    left_join(regs |>
+        rename(geom_loc = geometry),
+      by = id_col
+    ) |>
+    left_join(
+      regs |>
         select(all_of(reg_col), geometry) |>
         mutate(area_reg = st_area(geometry)) |>
-        rename(geom_reg = geometry)
-      , by = reg_col)
+        rename(geom_reg = geometry),
+      by = reg_col
+    )
 
   # calculate intersection area between geoms (location and region) for each observation
   # calculate the 'rurality' of each location: that is, the proportion of area "found' in the region
   res <- res |>
     mutate(
-      area_int = map2_dbl(geom_loc, geom_reg, ~ as.numeric(st_area(st_intersection(.x, .y)))),
+      area_int = map2_dbl(
+        geom_loc,
+        geom_reg,
+        ~ as.numeric(st_area(st_intersection(.x, .y)))
+      ),
       area_ratio = area_int / area_loc
     )
 
   # return only the relevent columns. After testing this function, remove geometry cols for performance.
   res <- res |>
-    select(all_of(c(names(data), "geom_loc", "geom_reg", "area_loc", "area_reg", "area_int", "area_ratio")))
+    select(all_of(c(
+      names(data),
+      "geom_loc",
+      "geom_reg",
+      "area_loc",
+      "area_reg",
+      "area_int",
+      "area_ratio"
+    )))
 
   return(res)
 }
 
-is_in_region_optim <- function(locations, regions, id_col, region_name_col, area_threshold = 0.3) {
+is_in_region_optim <- function(
+  locations,
+  regions,
+  id_col,
+  region_name_col,
+  area_threshold = 0.3
+) {
   # Returns an empty, initialized dataframe if there are no contained or intersecting locations.
 
-  message(sprintf("Processing %d %s's against %d %s regions...",
-                  nrow(locations), id_col, nrow(regions), region_name_col))
+  message(sprintf(
+    "Processing %d %s's against %d %s regions...",
+    nrow(locations),
+    id_col,
+    nrow(regions),
+    region_name_col
+  ))
 
   # 1: Check for full containment first; done in a seperate step thus increasing efficiency substantially
-  fully_contained_cases <- get_fully_contained_cases(locations, regions, id_col, region_name_col)
+  fully_contained_cases <- get_fully_contained_cases(
+    locations,
+    regions,
+    id_col,
+    region_name_col
+  )
 
   # 2: Check intersections, but only for locations NOT fully contained
   # IDs of fully contained locations, or empty character string if none
   contained_ids <- unique(fully_contained_cases[[id_col]])
   remaining_locations <- locations[!locations[[id_col]] %in% contained_ids, ]
 
-  message(sprintf("%d locations fully contained. Checking intersections for remaining %d locations...",
-                  length(contained_ids), nrow(remaining_locations)))
+  message(sprintf(
+    "%d locations fully contained. Checking intersections for remaining %d locations...",
+    length(contained_ids),
+    nrow(remaining_locations)
+  ))
 
-  intersect_cases <- get_intersect_cases(remaining_locations, regions, id_col, region_name_col)
-  intersect_cases <- assign_area(intersect_cases, remaining_locations, regions, id_col, region_name_col)
+  intersect_cases <- get_intersect_cases(
+    remaining_locations,
+    regions,
+    id_col,
+    region_name_col
+  )
+  intersect_cases <- assign_area(
+    intersect_cases,
+    remaining_locations,
+    regions,
+    id_col,
+    region_name_col
+  )
   intersect_cases <- intersect_cases |>
     group_by(dbid) |>
     slice_max(area_ratio, n = 1, with_ties = FALSE) |>
     ungroup()
 
-  # 4. Combine all results and return
-  fully_contained_cases <- assign_area(fully_contained_cases, locations, regions, id_col, region_name_col)
+  # 4. Assign area ratio to the fully contained cases as well
+  fully_contained_cases <- assign_area(
+    fully_contained_cases,
+    locations,
+    regions,
+    id_col,
+    region_name_col
+  )
+
+  # 5. Create similar subset of DB's completely outside of the popcenter region
+
   final_result <- bind_rows(
     fully_contained_cases |> mutate(src = "fully_contained"),
-    intersect_cases |> mutate(src = "intersected"))
-  final_result <- mutate(final_result,
-                         rurality = ifelse(as.numeric(area_ratio) >= area_threshold, "RURAL", "URBAN"))
-  
+    intersect_cases |> mutate(src = "intersected")
+  )
+  final_result <- mutate(
+    final_result,
+    rurality = ifelse(
+      as.numeric(area_ratio) >= area_threshold,
+      "RURAL",
+      "URBAN"
+    )
+  )
 
-  message(sprintf("%d (%.1f%%) of %s's were matched to %s regions.",
-                 nrow(final_result), 100 * nrow(final_result) / nrow(locations), id_col, region_name_col))
+  message(sprintf(
+    "%d (%.1f%%) of %s's were matched to %s regions.",
+    nrow(final_result),
+    100 * nrow(final_result) / nrow(locations),
+    id_col,
+    region_name_col
+  ))
   message(sprintf("  - %d from full containment", nrow(fully_contained_cases)))
-  message(sprintf("  - %d from intersection analysis", nrow(final_result) - nrow(fully_contained_cases)))
+  message(sprintf(
+    "  - %d from intersection analysis",
+    nrow(final_result) - nrow(fully_contained_cases)
+  ))
 
   return(final_result)
 }
@@ -140,8 +214,20 @@ plot_urban_rural <- function(data, title = "Rural and Urban Areas - BC") {
   data |>
     ggplot2::ggplot() +
     ggplot2::geom_sf(aes(color = rural), size = 0.5, alpha = 0.1) +
-    ggplot2::scale_color_manual(values = c("URBAN" = "#074607", "RURAL" = "#8888f5"), name = "Rural") +
-    ggplot2::labs(title = title, subtitle = "Colored by Rural Flag and Method", x = "Longitude", y = "Latitude") +
-    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(shape = 15, size = 5, alpha = 1))) +
+    ggplot2::scale_color_manual(
+      values = c("URBAN" = "#074607", "RURAL" = "#8888f5"),
+      name = "Rural"
+    ) +
+    ggplot2::labs(
+      title = title,
+      subtitle = "Colored by Rural Flag and Method",
+      x = "Longitude",
+      y = "Latitude"
+    ) +
+    ggplot2::guides(
+      color = ggplot2::guide_legend(
+        override.aes = list(shape = 15, size = 5, alpha = 1)
+      )
+    ) +
     ggplot2::theme_minimal()
 }
