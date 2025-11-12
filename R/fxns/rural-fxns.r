@@ -87,7 +87,7 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
       area_ratio = area_int / area_loc
     )
 
-  # return only the relevent columns. After testing this function, we can remove geometry cols and optimize performance.
+  # return only the relevent columns. After testing this function, remove geometry cols for performance.
   res <- res |>
     select(all_of(c(names(data), "geom_loc", "geom_reg", "area_loc", "area_reg", "area_int", "area_ratio")))
 
@@ -115,12 +115,13 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
   intersect_cases <- assign_area(intersect_cases, remaining_locations, regions, id_col, region_name_col)
   intersect_cases <- intersect_cases |>
     group_by(dbid) |>
-    slice_max(area_ratio, n = 1, with_ties = FALSE) |>
-    ungroup() |>
-    select (region_name_col, id_col)
+    slice_max(area_ratio, n = 1, with_ties = FALSE)
 
   # 4. Combine all results and return
+  fully_contained_cases <- assign_area(fully_contained_cases, locations, regions, id_col, region_name_col)
   final_result <- bind_rows(fully_contained_cases, intersect_cases)
+
+  # TODO: do some visual checks here
 
   message(sprintf("%d (%.1f%%) of %s's were matched to %s regions.",
                  nrow(final_result), 100 * nrow(final_result) / nrow(locations), id_col, region_name_col))
