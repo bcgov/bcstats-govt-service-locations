@@ -115,13 +115,17 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
   intersect_cases <- assign_area(intersect_cases, remaining_locations, regions, id_col, region_name_col)
   intersect_cases <- intersect_cases |>
     group_by(dbid) |>
-    slice_max(area_ratio, n = 1, with_ties = FALSE)
+    slice_max(area_ratio, n = 1, with_ties = FALSE) |>
+    ungroup()
 
   # 4. Combine all results and return
-  intersect_cases <- assign_area(intersect_cases, locations, regions, id_col, region_name_col)
-  final_result <- bind_rows(fully_contained_cases, intersect_cases)
-
-  # TODO: do some visual checks here
+  fully_contained_cases <- assign_area(fully_contained_cases, locations, regions, id_col, region_name_col)
+  final_result <- bind_rows(
+    fully_contained_cases |> mutate(src = "fully_contained"),
+    intersect_cases |> mutate(src = "intersected"))
+  final_result <- mutate(final_result,
+                         rurality = ifelse(as.numeric(area_ratio) >= area_threshold, "RURAL", "URBAN"))
+  
 
   message(sprintf("%d (%.1f%%) of %s's were matched to %s regions.",
                  nrow(final_result), 100 * nrow(final_result) / nrow(locations), id_col, region_name_col))
