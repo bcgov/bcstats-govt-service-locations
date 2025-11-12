@@ -140,6 +140,14 @@ is_in_region_optim <- function(
     region_name_col
   )
 
+  fully_contained_cases <- assign_area(
+    fully_contained_cases,
+    locations,
+    regions,
+    id_col,
+    region_name_col
+  )
+
   # 2: Check intersections, but only for locations NOT fully contained
   # IDs of fully contained locations, or empty character string if none
   contained_ids <- unique(fully_contained_cases[[id_col]])
@@ -170,13 +178,6 @@ is_in_region_optim <- function(
     ungroup()
 
   # 4. Assign area ratio to the fully contained cases as well
-  fully_contained_cases <- assign_area(
-    fully_contained_cases,
-    locations,
-    regions,
-    id_col,
-    region_name_col
-  )
 
   # 5. Create similar subset of DB's completely outside of the popcenter region
 
