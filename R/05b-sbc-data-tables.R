@@ -111,7 +111,7 @@ drivetime_data_focused <- drivetime_data_focused |>
       summarize(population = sum(population)) |>
       ungroup() |>
       select(dbid, population),
-    by = 'dbid'
+    by = "dbid"
   ) |>
   group_by(dbid) |>
   mutate(n_address = n()) |>
@@ -297,7 +297,7 @@ popcenter_population <- is_in_region_optim(
 
 db_population_estimates_one_year <- db_projections_transformed |>
   filter(dbid %in% (crosswalk |> pull(dbid))) |>
-  filter(gender == 'T', year == 2025) |>
+  filter(gender == "T", year == 2025) |>
   summarize(
     population = sum(population, na.rm = TRUE),
     .by = c("dbid", "csdid")
