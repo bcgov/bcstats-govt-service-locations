@@ -118,7 +118,7 @@ is_in_region_optim <- function(locations, regions, id_col, region_name_col, area
     slice_max(area_ratio, n = 1, with_ties = FALSE)
 
   # 4. Combine all results and return
-  fully_contained_cases <- assign_area(fully_contained_cases, locations, regions, id_col, region_name_col)
+  intersect_cases <- assign_area(intersect_cases, locations, regions, id_col, region_name_col)
   final_result <- bind_rows(fully_contained_cases, intersect_cases)
 
   # TODO: do some visual checks here
