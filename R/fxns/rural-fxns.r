@@ -170,10 +170,22 @@ is_in_region_optim <- function(
 
   # 5. Create similar subset of DB's completely outside of the popcenter region (all the rest)
   intersect_ids <- unique(intersect_cases[[id_col]])
-  outside_cases <- locations |>
-    filter(!.data[[id_col]] %in% c(contained_ids, intersect_ids)) |>
-    rename("geom_loc" = "geometry") |>
-    select(geom_loc, all_of(c(id_col)))
+  unprocessed_locations <- locations |>
+    filter(!.data[[id_col]] %in% c(contained_ids, intersect_ids))
+
+  outside_cases <- unprocessed_locations |>
+    rename(geom_loc = "geometry") |>
+    st_join(regions, join = st_nearest_feature, left = FALSE) |>
+    select(all_of(c(id_col, region_name_col))) |>
+    st_drop_geometry()
+
+  outside_cases <- assign_area(
+    outside_cases,
+    unprocessed_locations,
+    regions,
+    id_col,
+    region_name_col
+  )
 
   final <- bind_rows(
     fully_contained_cases |> mutate(predicate = "fully_contained"),
