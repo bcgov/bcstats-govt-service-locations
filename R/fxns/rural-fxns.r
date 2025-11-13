@@ -12,37 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-get_fully_contained_cases <- function(
-  locations,
-  regions,
-  id_col,
-  region_name_col
-) {
-  # Returns an empty, initialized dataframe if there are no fully contained locations.
-  contains_matrix <- sf::st_contains(regions, locations, sparse = FALSE)
-  contains_indices <- which(contains_matrix, arr.ind = TRUE)
-
-  if (length(contains_indices) == 0) {
-    # No locations fully contained
-    res <- data.frame(
-      temp_id = character(0),
-      temp_region = character(0),
-      stringsAsFactors = FALSE
-    )
-  } else {
-    # Create data.frame with proper column names
-    res <- data.frame(
-      temp_id = locations[[id_col]][contains_indices[, 2]],
-      temp_region = regions[[region_name_col]][contains_indices[, 1]],
-      stringsAsFactors = FALSE
-    )
-  }
-  # Set correct column names
-  names(res) <- c(id_col, region_name_col)
-
-  return(res)
-}
-
 get_intersect_cases <- function(locations, regions, id_col, region_name_col) {
   # Returns an empty, initialized dataframe if there are no intersecting locations.
   intersects_matrix <- sf::st_intersects(regions, locations, sparse = FALSE)
@@ -124,15 +93,14 @@ is_in_region_optim <- function(
   region_name_col,
   area_threshold = 0.3
 ) {
-  # Returns an empty, initialized dataframe if there are no contained or intersecting locations
-
-  # Check for full containment first
-  fully_contained_cases <- get_fully_contained_cases(
-    locations,
+  fully_contained_cases <- st_join(
     regions,
-    id_col,
-    region_name_col
-  )
+    locations,
+    join = st_contains,
+    left = TRUE
+  ) |>
+    st_drop_geometry() |>
+    select(all_of(c(id_col, region_name_col)))
 
   # assign area stats to each location
   fully_contained_cases <- assign_area(
