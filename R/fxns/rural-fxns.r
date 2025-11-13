@@ -69,6 +69,7 @@ get_intersect_cases <- function(locations, regions, id_col, region_name_col) {
   return(res)
 }
 
+
 assign_area <- function(data, locs, regs, id_col, reg_col) {
   # join region and locs geometries, add only the geometry columns.
   # relabel columns to avoid confusion
@@ -115,6 +116,7 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
   return(res)
 }
 
+
 is_in_region_optim <- function(
   locations,
   regions,
@@ -122,17 +124,9 @@ is_in_region_optim <- function(
   region_name_col,
   area_threshold = 0.3
 ) {
-  # Returns an empty, initialized dataframe if there are no contained or intersecting locations.
+  # Returns an empty, initialized dataframe if there are no contained or intersecting locations
 
-  message(sprintf(
-    "Processing %d %s's against %d %s regions...",
-    nrow(locations),
-    id_col,
-    nrow(regions),
-    region_name_col
-  ))
-
-  # 1: Check for full containment first; done in a seperate step thus increasing efficiency substantially
+  # Check for full containment first
   fully_contained_cases <- get_fully_contained_cases(
     locations,
     regions,
@@ -140,6 +134,7 @@ is_in_region_optim <- function(
     region_name_col
   )
 
+  # assign area stats to each location
   fully_contained_cases <- assign_area(
     fully_contained_cases,
     locations,
@@ -147,67 +142,46 @@ is_in_region_optim <- function(
     id_col,
     region_name_col
   )
-
-  # 2: Check intersections, but only for locations NOT fully contained
-  # IDs of fully contained locations, or empty character string if none
+  # Check intersections, for those locations NOT fully contained
+  # get a list of ids that are in locations, but not contained_ids
   contained_ids <- unique(fully_contained_cases[[id_col]])
-  remaining_locations <- locations[!locations[[id_col]] %in% contained_ids, ]
-
-  message(sprintf(
-    "%d locations fully contained. Checking intersections for remaining %d locations...",
-    length(contained_ids),
-    nrow(remaining_locations)
-  ))
+  unprocessed_locations <- locations |>
+    filter(!.data[[id_col]] %in% c(contained_ids))
 
   intersect_cases <- get_intersect_cases(
-    remaining_locations,
+    unprocessed_locations,
     regions,
     id_col,
     region_name_col
   )
+
   intersect_cases <- assign_area(
     intersect_cases,
-    remaining_locations,
+    unprocessed_locations,
     regions,
     id_col,
     region_name_col
   )
+
   intersect_cases <- intersect_cases |>
     group_by(dbid) |>
     slice_max(area_ratio, n = 1, with_ties = FALSE) |>
     ungroup()
 
-  # 4. Assign area ratio to the fully contained cases as well
+  # 5. Create similar subset of DB's completely outside of the popcenter region (all the rest)
+  intersect_ids <- unique(intersect_cases[[id_col]])
+  outside_cases <- locations |>
+    filter(!.data[[id_col]] %in% c(contained_ids, intersect_ids)) |>
+    rename("geom_loc" = "geometry") |>
+    select(geom_loc, all_of(c(id_col)))
 
-  # 5. Create similar subset of DB's completely outside of the popcenter region
-
-  final_result <- bind_rows(
-    fully_contained_cases |> mutate(src = "fully_contained"),
-    intersect_cases |> mutate(src = "intersected")
-  )
-  final_result <- mutate(
-    final_result,
-    rurality = ifelse(
-      as.numeric(area_ratio) >= area_threshold,
-      "RURAL",
-      "URBAN"
-    )
+  final <- bind_rows(
+    fully_contained_cases |> mutate(predicate = "fully_contained"),
+    intersect_cases |> mutate(predicate = "intersects"),
+    outside_cases |> mutate(predicate = "exterior")
   )
 
-  message(sprintf(
-    "%d (%.1f%%) of %s's were matched to %s regions.",
-    nrow(final_result),
-    100 * nrow(final_result) / nrow(locations),
-    id_col,
-    region_name_col
-  ))
-  message(sprintf("  - %d from full containment", nrow(fully_contained_cases)))
-  message(sprintf(
-    "  - %d from intersection analysis",
-    nrow(final_result) - nrow(fully_contained_cases)
-  ))
-
-  return(final_result)
+  return(final)
 }
 
 # --- Create a reusable plotting function for urban/rural maps
