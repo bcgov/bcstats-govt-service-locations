@@ -12,33 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-get_intersect_cases <- function(locations, regions, id_col, region_name_col) {
-  # Returns an empty, initialized dataframe if there are no intersecting locations.
-  intersects_matrix <- sf::st_intersects(regions, locations, sparse = FALSE)
-  intersects_indices <- which(intersects_matrix, arr.ind = TRUE)
-
-  if (length(intersects_indices) == 0) {
-    # No intersections found
-    res <- data.frame(
-      temp_id = character(0),
-      temp_region = character(0),
-      stringsAsFactors = FALSE
-    )
-  } else {
-    # Create data.frame with proper column names
-    res <- data.frame(
-      temp_id = locations[[id_col]][intersects_indices[, 2]],
-      temp_region = regions[[region_name_col]][intersects_indices[, 1]],
-      stringsAsFactors = FALSE
-    )
-  }
-  # Set correct column names
-  names(res) <- c(id_col, region_name_col)
-
-  return(res)
-}
-
-
 assign_area <- function(data, locs, regs, id_col, reg_col) {
   # join region and locs geometries, add only the geometry columns.
   # relabel columns to avoid confusion
@@ -116,12 +89,13 @@ is_in_region_optim <- function(
   unprocessed_locations <- locations |>
     filter(!.data[[id_col]] %in% c(contained_ids))
 
-  intersect_cases <- get_intersect_cases(
-    unprocessed_locations,
+  intersect_cases <- st_join(
     regions,
-    id_col,
-    region_name_col
-  )
+    unprocessed_locations,
+    join = st_intersects
+  ) |>
+    st_drop_geometry() |>
+    select(all_of(c(id_col, region_name_col)))
 
   intersect_cases <- assign_area(
     intersect_cases,
