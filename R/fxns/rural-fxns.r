@@ -85,9 +85,8 @@ is_in_region_optim <- function(
   )
   # Check intersections, for those locations NOT fully contained
   # get a list of ids that are in locations, but not contained_ids
-  contained_ids <- unique(fully_contained_cases[[id_col]])
   unprocessed_locations <- locations |>
-    filter(!.data[[id_col]] %in% c(contained_ids))
+    anti_join(fully_contained_cases, by = id_col)
 
   intersect_cases <- st_join(
     regions,
@@ -111,9 +110,9 @@ is_in_region_optim <- function(
     ungroup()
 
   # 5. Create similar subset of DB's completely outside of the popcenter region (all the rest)
-  intersect_ids <- unique(intersect_cases[[id_col]])
   unprocessed_locations <- locations |>
-    filter(!.data[[id_col]] %in% c(contained_ids, intersect_ids))
+    anti_join(fully_contained_cases, by = id_col) |>
+    anti_join(intersect_cases, by = id_col)
 
   outside_cases <- unprocessed_locations |>
     rename(geom_loc = "geometry") |>

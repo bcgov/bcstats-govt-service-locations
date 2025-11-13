@@ -288,7 +288,7 @@ median_population <- population_estimates_three_year_all |>
 # =========================================================================== #
 # Add proportion rural for service bc location
 # =========================================================================== #
-popcenter_population <- is_in_region_optim(
+popcenter_population2 <- is_in_region_optim2(
   db_shapefiles,
   popcenter_boundaries,
   "dbid",
