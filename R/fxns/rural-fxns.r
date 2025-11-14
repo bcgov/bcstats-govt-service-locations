@@ -59,13 +59,18 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
 }
 
 
-is_in_region_optim3 <- function(
+assign_region <- function(
   locations,
   regions,
   id_col,
   region_name_col,
   area_threshold = 0.3
 ) {
+  cat(glue::glue(
+    "Analyzing geospatial relationship between {nrow(locations)} {id_col}'s and {nrow(regions)} {region_name_col}'s... "
+  ))
+  cat("\n")
+
   within_cases <- st_join(
     locations,
     regions,
@@ -74,6 +79,11 @@ is_in_region_optim3 <- function(
   ) |>
     st_drop_geometry() |>
     select(all_of(c(id_col, region_name_col)))
+
+  cat(glue::glue(
+    "Calculating area stats for {nrow(within_cases)} fully contained {id_col}'s..."
+  ))
+  cat("\n")
 
   # assign area stats to each location
   within_cases <- assign_area(
@@ -89,6 +99,9 @@ is_in_region_optim3 <- function(
   unprocessed <- locations |>
     anti_join(within_cases, by = id_col)
 
+  cat(glue::glue("Analyzing remaining {nrow(unprocessed)} {id_col}'s..."))
+  cat("\n")
+
   intersect_cases <- st_join(
     unprocessed,
     regions,
@@ -97,6 +110,14 @@ is_in_region_optim3 <- function(
   ) |>
     st_drop_geometry() |>
     select(all_of(c(id_col, region_name_col)))
+
+  cat("\t")
+  cat(glue::glue("...{nrow(intersect_cases)} intersections found."))
+  cat("\n")
+  cat(glue::glue(
+    "Calculating area stats and maximum overlaps..."
+  ))
+  cat("\n")
 
   intersect_cases <- assign_area(
     intersect_cases,
@@ -111,10 +132,26 @@ is_in_region_optim3 <- function(
     slice_max(area_ratio, n = 1, with_ties = FALSE) |>
     ungroup()
 
+  cat("\t")
+  cat(glue::glue(
+    "...intersections for {nrow(intersect_cases)} {id_col}'s assigned."
+  ))
+  cat("\n")
+
   # 5. Create similar subset of DB's completely outside of the popcenter region (all the rest)
   exterior_cases <- locations |>
     anti_join(within_cases, by = id_col) |>
     anti_join(intersect_cases, by = id_col)
+
+  cat(glue::glue("Analyzing remaining {nrow(exterior_cases)} {id_col}'s..."))
+  cat("\n")
+  cat("\t")
+  cat(glue::glue(
+    "...{nrow(exterior_cases)} {id_col}'s assumed exterior to any {region_name_col}'s."
+  ))
+  cat("\n")
+  cat(glue::glue("Calculating area stats for exterior {id_col}'s..."))
+  cat("\n")
 
   exterior_cases <- exterior_cases |>
     rename(geom_loc = "geometry") |>
@@ -135,6 +172,9 @@ is_in_region_optim3 <- function(
     intersect_cases |> mutate(predicate = "intersects"),
     exterior_cases |> mutate(predicate = "exterior")
   )
+
+  cat(glue::glue("Done...{nrow(final)} {id_col}'s processed."))
+  cat("\n")
 
   return(final)
 }

@@ -288,12 +288,22 @@ median_population <- population_estimates_three_year_all |>
 # =========================================================================== #
 # Add proportion rural for service bc location
 # =========================================================================== #
-popcenter_population <- is_in_region_optim(
+popcenter_population <- assign_region(
   db_shapefiles,
   popcenter_boundaries,
   "dbid",
   "pcname"
 )
+
+# add rural flag
+popcenter_population <- popcenter_population |>
+  mutate(
+    rurality = case_when(
+      is.na(area_ratio) ~ "RURAL",
+      as.numeric(area_ratio) < 0.3 ~ "RURAL",
+      TRUE ~ "URBAN"
+    )
+  )
 
 db_population_estimates_one_year <- db_projections_transformed |>
   filter(dbid %in% (crosswalk |> pull(dbid))) |>
