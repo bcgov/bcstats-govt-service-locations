@@ -334,13 +334,18 @@ rural_office <- sbc_locs |>
     coords = c("coord_x", "coord_y"),
     crs = 3005
   ) |>
-  is_in_region_optim(
+  assign_region(
     regions = popcenter_boundaries,
     id_col = "nearest_facility",
     region_name_col = "pcname"
   ) |>
-  right_join(sbc_locs |> distinct(nearest_facility), by = "nearest_facility") |>
-  mutate(rural_office = if_else(is.na(pcname), "Y", "N"))
+  right_join(
+    sbc_locs |> distinct(nearest_facility),
+    by = "nearest_facility"
+  ) |>
+  mutate(rural_office = if_else(predicate == "exterior", "Y", "N")) |>
+  select(nearest_facility, rural_office)
+
 
 # =========================================================================== #
 # All together ----
