@@ -288,7 +288,7 @@ median_population <- population_estimates_three_year_all |>
 # =========================================================================== #
 # Add proportion rural for service bc location
 # =========================================================================== #
-popcenter_population2 <- is_in_region_optim2(
+popcenter_population <- is_in_region_optim(
   db_shapefiles,
   popcenter_boundaries,
   "dbid",
@@ -306,7 +306,8 @@ db_population_estimates_one_year <- db_projections_transformed |>
 # add flags for urban rural and summarize by csdid
 rural_summary <- db_population_estimates_one_year |>
   left_join(popcenter_population, by = "dbid") |>
-  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |>
+  rename(urban_rural = "rurality") |>
+  #mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |>
   left_join(complete_assignments, by = "dbid") |>
   summarise(
     n_rural_residents = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
