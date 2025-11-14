@@ -59,79 +59,81 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
 }
 
 
-is_in_region_optim <- function(
+is_in_region_optim3 <- function(
   locations,
   regions,
   id_col,
   region_name_col,
   area_threshold = 0.3
 ) {
-  fully_contained_cases <- st_join(
-    regions,
+  within_cases <- st_join(
     locations,
-    join = st_contains,
-    left = TRUE
+    regions,
+    join = st_within,
+    left = FALSE
   ) |>
     st_drop_geometry() |>
     select(all_of(c(id_col, region_name_col)))
 
   # assign area stats to each location
-  fully_contained_cases <- assign_area(
-    fully_contained_cases,
+  within_cases <- assign_area(
+    within_cases,
     locations,
     regions,
     id_col,
     region_name_col
   )
+
   # Check intersections, for those locations NOT fully contained
   # get a list of ids that are in locations, but not contained_ids
-  unprocessed_locations <- locations |>
-    anti_join(fully_contained_cases, by = id_col)
+  unprocessed <- locations |>
+    anti_join(within_cases, by = id_col)
 
   intersect_cases <- st_join(
+    unprocessed,
     regions,
-    unprocessed_locations,
-    join = st_intersects
+    join = st_intersects,
+    left = FALSE
   ) |>
     st_drop_geometry() |>
     select(all_of(c(id_col, region_name_col)))
 
   intersect_cases <- assign_area(
     intersect_cases,
-    unprocessed_locations,
+    unprocessed,
     regions,
     id_col,
     region_name_col
   )
 
   intersect_cases <- intersect_cases |>
-    group_by(dbid) |>
+    group_by(across(all_of(id_col))) |>
     slice_max(area_ratio, n = 1, with_ties = FALSE) |>
     ungroup()
 
   # 5. Create similar subset of DB's completely outside of the popcenter region (all the rest)
-  unprocessed_locations <- locations |>
-    anti_join(fully_contained_cases, by = id_col) |>
+  exterior_cases <- locations |>
+    anti_join(within_cases, by = id_col) |>
     anti_join(intersect_cases, by = id_col)
 
-  outside_cases <- unprocessed_locations |>
+  exterior_cases <- exterior_cases |>
     rename(geom_loc = "geometry") |>
     st_join(regions, join = st_nearest_feature, left = FALSE) |>
     select(all_of(c(id_col, region_name_col))) |>
     st_drop_geometry()
 
-  outside_cases <- assign_area(
-    outside_cases,
-    unprocessed_locations,
+  exterior_cases <- assign_area(
+    exterior_cases,
+    unprocessed,
     regions,
     id_col,
     region_name_col
   )
 
   final <- bind_rows(
-    fully_contained_cases |> mutate(predicate = "fully_contained"),
+    within_cases |> mutate(predicate = "within"),
     intersect_cases |> mutate(predicate = "intersects"),
-    outside_cases |> mutate(predicate = "exterior")
+    exterior_cases |> mutate(predicate = "exterior")
   )
 
   return(final)
