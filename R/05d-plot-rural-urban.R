@@ -19,7 +19,7 @@ vis_pc <- function(data, ttl = NULL, ...) {
 
     p <- ggplot2::ggplot() +
         geom_sf(
-            data = sf_data |> slice(1), # plot boundary one time only
+            data = sf_data |> distinct(), # plot boundary one time only
             aes(geometry = pc_geom),
             fill = NA,
             color = "black",
@@ -81,7 +81,7 @@ data <- data |>
         names_prefix = "rurality."
     )
 
-grps_nest <- data |>
+grps_all <- data |>
     nest(.by = pcname) |>
     arrange(pcname) |>
     mutate(id = row_number()) |>
@@ -89,13 +89,11 @@ grps_nest <- data |>
 
 # -------------------------- CREATE PLOTS -----------------------------------
 
-debug(vis_pc)
-
 locs <- c("Fort St. James", "Ucluelet", "Merritt", "Sparwood", "Duncan")
-grps <- grps_nest[grps_nest$pcname %in% locs, ]
+grps <- grps_all[grps_all$pcname %in% locs, ]
 
-plts <- apply(grps_nest, 1, vis_pc)
-names(plts) <- grps_nest |> pull(pcname)
+plts <- apply(grps, 1, vis_pc)
+names(plts) <- grps |> pull(pcname)
 
 # sometimes I have to run this chunk twice
 for (i in seq_along(1:length(plts))) {
