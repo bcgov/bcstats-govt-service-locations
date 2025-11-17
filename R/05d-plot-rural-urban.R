@@ -17,6 +17,11 @@ vis_pc <- function(data, ttl = NULL, ...) {
         paste0(length(unique(data$data$dbid)))
     )
 
+    custom_labels <- c(
+        'new' = 'shared-boundary branch',
+        'old' = 'sbc-data-table-fixes branch'
+    )
+
     p <- ggplot2::ggplot() +
         geom_sf(
             data = sf_data |> distinct(), # plot boundary one time only
@@ -47,11 +52,9 @@ vis_pc <- function(data, ttl = NULL, ...) {
             legend.title = element_blank()
         ) +
         scale_color_manual(
-            #name = NULL, # Set to NULL to remove the legend title
-            values = c("population center" = "black"),
-            #labels = c("pc_boundary_key" = "population center")
+            values = c("population center" = "black")
         ) +
-        facet_wrap(~branch)
+        facet_wrap(~branch, labeller = as_labeller(custom_labels))
 
     # return the grob object
     ggplot2::ggplotGrob(p)
