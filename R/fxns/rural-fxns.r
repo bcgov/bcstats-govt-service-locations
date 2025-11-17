@@ -60,6 +60,19 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
 
 
 assign_region <- function(
+  #This function takes two spatial datasets, locations (the features to be assigned) and
+  # regions (the areas to assign them to), and assigns each location to a specific region
+  # based on its geospatial relationship (within, intersecting, or exterior/nearest).
+
+  # Location is categorized based on the first condition it satisfies:
+
+  # 1.  Direct Assignment: locations are completely contained within a single region.
+  # 2.  Intersection Assignment: Locations intersect with a region of maximum overlap
+  #     The area overlap must be above a specified threshold
+  # 3.  Nearest Assignment: Exterior locations are assigned to the closest region.
+  # The function returns a tibble with columns for the location ID,
+  # the assigned region name, the assignment predicate and the area ratio/
+
   locations,
   regions,
   id_col,
