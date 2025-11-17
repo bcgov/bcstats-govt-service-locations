@@ -276,7 +276,7 @@ drive_time_bins <- drivetime_data |>
 # =========================================================================== #
 # Add proportion rural for each CSD
 # =========================================================================== #
-popcenter_population <- is_in_region_optim(
+popcenter_population <- assign_region(
   db_shapefiles,
   popcenter_boundaries,
   "dbid",
@@ -309,7 +309,7 @@ rural_csdid <- db_population_estimates_one_year |>
 rural_csd <- csd_shapefiles |>
   st_drop_geometry() |>
   left_join(
-    is_in_region_optim(
+    assign_region(
       locations = csd_shapefiles,
       regions = popcenter_boundaries,
       id_col = "csdid",
