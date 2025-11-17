@@ -13,8 +13,10 @@
 # limitations under the License.
 
 assign_area <- function(data, locs, regs, id_col, reg_col) {
-  # join region and locs geometries, add only the geometry columns.
-  # relabel columns to avoid confusion
+  # Joins two simple features (SF) objects (`locs` and `regs`) to an initial dataset (`data`)
+  # calculates the geometric intersection area between the location and region geometries,
+  # and determines the area ratio (the proportion of the location's area that overlaps with the region).
+
   res <- data |>
     left_join(
       locs |>
