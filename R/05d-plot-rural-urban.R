@@ -1,4 +1,6 @@
 source("R/settings.R")
+library(grid)
+library(svglite)
 
 # -------------------------- DECLARE FUNCTION ----------------------------
 vis_pc <- function(data, ttl = NULL, ...) {
@@ -96,13 +98,17 @@ grps_all <- data |>
 
 # -------------------------- CREATE PLOTS -----------------------------------
 
-locs <- c("Fort St. James", "Ucluelet", "Merritt", "Sparwood", "Duncan")
+locs <- c("Fort St. James", "Ucluelet", "Duncan", "Victoria")
 grps <- grps_all[grps_all$pcname %in% locs, ]
 
 plts <- apply(grps, 1, vis_pc)
 names(plts) <- grps |> pull(pcname)
 
 # sometimes I have to run this chunk twice
-for (i in seq_along(1:length(plts))) {
-    gridExtra::grid.arrange(plts[[i]])
+for (i in seq_along(1:3)) {
+    #gridExtra::grid.arrange(plts[[i]])
+    fn <- glue("{FOR_SBC_OUT}/rural-method-misc/{names(plts)[i]}.svg")
+    svglite(file = fn, width = 8, height = 6)
+    grid.draw(plts[[i]])
+    dev.off()
 }
