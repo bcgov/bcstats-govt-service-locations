@@ -74,7 +74,7 @@ popcenter_boundaries <-
     rename(geometry = geom) |>
     st_transform(crs = 3005)
 
-data <- read_csv(glue("{FOR_SBC_OUT}/rurality-by-db.csv")) |>
+data <- read_csv(glue("{FOR_SBC_OUT}/rural-method-misc/rurality-by-db.csv")) |>
     select(dbid, pcname, rurality.old, rurality.new) |>
     mutate(dbid = as.character(dbid))
 
