@@ -4,25 +4,24 @@ source("R/settings.R")
 vis_pc <- function(data, ttl = NULL, ...) {
     # this function allows you to visualize an region (i.e. popcenter) and it's intersecting blocks (i.e. DB's)
 
-    cat(paste0("Processing: ", data$pclabel), "\n")
+    cat(paste0("Processing plot ", data$id, ": ", data$pcname), "\n")
     cat(paste0("\t", "Count of DB's: ", length(unique(data$data$dbid)), "\n"))
 
     sf_data <- st_as_sf(data$data, crs = 3005) |> arrange(dbid, branch)
     bbox <- st_bbox(sf_data$pc_geom) # use db_geom instead, to zoom out from popcenter
     title <- paste0(
         "Population Center: ",
-        paste0(data$pclabel, collapse = ", "),
+        paste0(data$pcname, collapse = ", "),
         "\n",
-        "DBID's (N): ",
+        "(N) DBID's: ",
         paste0(length(unique(data$data$dbid)))
     )
 
     p <- ggplot2::ggplot() +
         geom_sf(
             data = sf_data |> distinct(), # plot boundary one time only
-            aes(geometry = pc_geom),
+            aes(geometry = pc_geom, color = "population center"),
             fill = NA,
-            color = "black",
             linewidth = 0.7
         ) +
         geom_sf(
@@ -46,6 +45,11 @@ vis_pc <- function(data, ttl = NULL, ...) {
             axis.text = element_text(size = 10),
             plot.title = element_text(size = 12),
             legend.title = element_blank()
+        ) +
+        scale_color_manual(
+            #name = NULL, # Set to NULL to remove the legend title
+            values = c("population center" = "black"),
+            #labels = c("pc_boundary_key" = "population center")
         ) +
         facet_wrap(~branch)
 

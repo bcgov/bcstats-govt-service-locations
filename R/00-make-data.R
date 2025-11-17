@@ -23,12 +23,14 @@ source("R/settings.R")
 #------------------------------------------------------------------------------
 fn <- glue::glue("{DT_DATA_FOLDER}/final_result_no_errors.csv")
 full_processed_files <- read_csv(fn, col_types = cols(.default = "c")) %>%
-    clean_names() %>%
-    filter(tag == tag) %>%
-    rename(address_albers_x = site_albers_x,
-           address_albers_y = site_albers_y,
-           dbid = dissemination_block_id) %>%
-    mutate(daid = str_sub(dbid, 1, 8))
+  clean_names() %>%
+  filter(tag == tag) %>%
+  rename(
+    address_albers_x = site_albers_x,
+    address_albers_y = site_albers_y,
+    dbid = dissemination_block_id
+  ) %>%
+  mutate(daid = str_sub(dbid, 1, 8))
 
 #------------------------------------------------------------------------------
 # Make shapefiles for da-db-loc-csd
@@ -40,7 +42,9 @@ csd_shapefiles <- census_subdivision() %>%
     csdid = census_subdivision_id,
     csd_name = census_subdivision_name,
     csd_desc = census_subdivision_type_desc,
-    landarea = feature_area_sqm, geometry)
+    landarea = feature_area_sqm,
+    geometry
+  )
 
 # the metadata says 2016, but the data itself says its from census 2021, so use as crosswalk basis
 db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
@@ -50,7 +54,7 @@ db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
     dbid = dissemination_block_id,
     daid = dissemination_area_id,
     csdid = census_subdivision_id,
-    landarea = feature_area_sqm
+    landarea = feature_area_sqm,
   )
 
 #------------------------------------------------------------------------------
@@ -60,25 +64,32 @@ db_shapefiles <- bcdc_query_geodata('76909e49-8ba8-44b1-b69e-dba1fe9ecfba') %>%
 #------------------------------------------------------------------------------
 
 popcenter_statscan <-
-  read_sf(glue::glue("{SRC_DATA_FOLDER}/shapefiles/lpc_000b21a_e/lpc_000b21a_e.shp"),
-          query = "SELECT dguid AS popid, pcname, pcclass, pctype
+  read_sf(
+    glue::glue("{SRC_DATA_FOLDER}/shapefiles/lpc_000b21a_e/lpc_000b21a_e.shp"),
+    query = "SELECT dguid AS popid, pcname, pcclass, pctype
                    FROM \"lpc_000b21a_e\" 
                    WHERE pruid = '59'"
   ) |>
   clean_names() |> # I think we can even omit this
   st_transform(crs = 3005) |>
-  write_sf(glue::glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"),
-           layer = "popcenter_statscan")
+  write_sf(
+    glue::glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"),
+    layer = "popcenter_statscan"
+  )
 
-fsa_statscan  <-
-  read_sf(glue::glue("{SRC_DATA_FOLDER}/shapefiles/lfsa000b21a_e/lfsa000b21a_e.shp"),
-          query = "SELECT cfsauid, prname
+fsa_statscan <-
+  read_sf(
+    glue::glue("{SRC_DATA_FOLDER}/shapefiles/lfsa000b21a_e/lfsa000b21a_e.shp"),
+    query = "SELECT cfsauid, prname
                    FROM \"lfsa000b21a_e\" 
-                   WHERE pruid = '59'") |>
+                   WHERE pruid = '59'"
+  ) |>
   clean_names() |>
   st_transform(crs = 3005) |>
-  write_sf(glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg"),
-           layer = "fsa_statscan")
+  write_sf(
+    glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg"),
+    layer = "fsa_statscan"
+  )
 
 #------------------------------------------------------------------------------
 ## population projections ----
@@ -113,7 +124,10 @@ corresp <- db_shapefiles |>
   st_drop_geometry() |>
   select(-landarea) |>
   # get csd names from csd shapefile
-  left_join(csd_shapefiles |> st_drop_geometry() |> select(-landarea), by = "csdid")
+  left_join(
+    csd_shapefiles |> st_drop_geometry() |> select(-landarea),
+    by = "csdid"
+  )
 
 # Data checks - some db's are outside our csd's of interest.
 # Let's leave them in for now and come back to this later after looking at them on a map.
@@ -126,26 +140,26 @@ crosswalk <-
 # check these addresses out later, esp. bulkley-nechako as this region contains a small
 # cluster of homes near Smithers, I believe.
 extras <- full_processed_files %>%
-  inner_join(crosswalk) %>% 
+  inner_join(crosswalk) %>%
   filter(!csd_name %in% CSD_NAMES)
 
 #------------------------------------------------------------------------------
 # Make population data
 #------------------------------------------------------------------------------
 pop_db <- cancensus::get_census(
-    dataset = CANCENSUS_YEAR,
-    regions = list(PR = "59"), # grab only BC
-    level = 'DB' 
-  ) %>%
-  clean_names()  %>%
+  dataset = CANCENSUS_YEAR,
+  regions = list(PR = "59"), # grab only BC
+  level = 'DB'
+) %>%
+  clean_names() %>%
   select(c(all_of(POP_COLS), geo_uid)) %>%
   rename(dbid = geo_uid)
 
 pop_csd <- cancensus::get_census(
-    dataset = CANCENSUS_YEAR,
-    regions = list(PR = "59"), # grab only BC
-    level = 'CSD'
-  ) %>%
+  dataset = CANCENSUS_YEAR,
+  regions = list(PR = "59"), # grab only BC
+  level = 'CSD'
+) %>%
   clean_names() %>%
   select(c(all_of(POP_COLS), geo_uid)) %>%
   rename(csd_name = region_name, csdid = geo_uid)
@@ -154,7 +168,7 @@ pop_csd <- cancensus::get_census(
 # Service BC location data
 #------------------------------------------------------------------------------
 
-service_bc_locations <- full_processed_files %>% 
+service_bc_locations <- full_processed_files %>%
   left_join(crosswalk, by = join_by(dbid, daid)) %>%
   distinct(csd_name, csdid, nearest_facility, coord_x, coord_y)
 
@@ -191,9 +205,9 @@ get_clean_csd <- pop_db |>
 # now get pct of each 'clean' csd that is taken up by each DB
 prop_of_csd <- get_clean_csd |>
   group_by(csd_clean) |>
-  mutate(csd_population = sum(population, na.rm=TRUE)) |>
+  mutate(csd_population = sum(population, na.rm = TRUE)) |>
   ungroup() |>
-  mutate(pct_of_csd = if_else(population==0, 0, population / csd_population))
+  mutate(pct_of_csd = if_else(population == 0, 0, population / csd_population))
 
 # join back to projections to get yearly estimates
 # for each age, gender, year of interest
@@ -261,46 +275,73 @@ db_projections_transformed <- db_projections |>
 #------------------------------------------------------------------------------
 # Write output files
 #------------------------------------------------------------------------------
-write_csv(service_bc_locations, glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv"))
-write_csv(full_processed_files, glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"))
+write_csv(
+  service_bc_locations,
+  glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")
+)
+write_csv(
+  full_processed_files,
+  glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv")
+)
 
 write_csv(corresp, glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"))
-saveRDS(db_projections_transformed, glue("{SRC_DATA_FOLDER}/full_db_projections_transformed.rds"))
+saveRDS(
+  db_projections_transformed,
+  glue("{SRC_DATA_FOLDER}/full_db_projections_transformed.rds")
+)
 
 write_csv(pop_db, glue("{SRC_DATA_FOLDER}/full-population-db.csv"))
 write_csv(pop_csd, glue("{SRC_DATA_FOLDER}/full-population-csd.csv"))
 
-write_csv(pop_projections, glue("{SRC_DATA_FOLDER}/full-population-projections.csv"))
+write_csv(
+  pop_projections,
+  glue("{SRC_DATA_FOLDER}/full-population-projections.csv")
+)
 
-st_write(db_shapefiles, glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg"), append = FALSE)
-st_write(csd_shapefiles, glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg"), append = FALSE)
+st_write(
+  db_shapefiles,
+  glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg"),
+  append = FALSE
+)
+st_write(
+  csd_shapefiles,
+  glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg"),
+  append = FALSE
+)
 
 #------------------------------------------------------------------------------
 # Write output files, filtering on CSD's of interest
 #------------------------------------------------------------------------------
-service_bc_locations %>% 
+service_bc_locations %>%
   filter(csd_name %in% CSD_NAMES) %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"))
 
-full_processed_files %>% 
+full_processed_files %>%
   left_join(crosswalk, by = join_by(dbid, daid)) %>%
   filter(csd_name %in% CSD_NAMES) %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"))
 
 db_shapefiles %>%
-  inner_join(corresp  %>% filter(csdid %in% CSDIDS)) %>%
-  st_write(glue("{SHAPEFILE_OUT}/reduced-db-with-location.gpkg"), append = FALSE)
+  inner_join(corresp %>% filter(csdid %in% CSDIDS)) %>%
+  st_write(
+    glue("{SHAPEFILE_OUT}/reduced-db-with-location.gpkg"),
+    append = FALSE
+  )
 
 csd_shapefiles %>%
   filter(csdid %in% CSDIDS) %>%
-  st_write(glue("{SHAPEFILE_OUT}/reduced-csd-with-location.gpkg"), append = FALSE)
+  st_write(
+    glue("{SHAPEFILE_OUT}/reduced-csd-with-location.gpkg"),
+    append = FALSE
+  )
 
-pop_csd %>% 
+pop_csd %>%
   inner_join(
-    crosswalk %>% 
-    distinct(csdid) %>% 
-    filter(csdid %in% CSDIDS)
-  , by = join_by(csdid)) %>%
+    crosswalk %>%
+      distinct(csdid) %>%
+      filter(csdid %in% CSDIDS),
+    by = join_by(csdid)
+  ) %>%
   write_csv(glue("{SRC_DATA_FOLDER}/reduced-population-csd.csv"))
 
 pop_db %>%
