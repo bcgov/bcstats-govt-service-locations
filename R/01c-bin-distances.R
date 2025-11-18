@@ -44,10 +44,10 @@ binned_data <- drivetime_data %>%
       TRUE ~ "20+ km"
     )
   ) %>%
-  summarise(total_count = n(),  .by = c(csd_name, bin)) %>%
+  summarise(total_count = n(), .by = c(csd_name, bin)) %>%
   mutate(total_address = sum(total_count), .by = c(csd_name)) %>%
   ungroup() %>%
-  mutate( percent = total_count / total_address)
+  mutate(percent = total_count / total_address)
 
 
 #------------------------------------------------------------------------------

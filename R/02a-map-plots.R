@@ -16,7 +16,6 @@
 # municipality of interest in BC (loc). It produces maps at the dissemination block level
 # displaying quantitative information on basic descriptive statisics
 
-
 #------------------------------------------------------------------------------
 # Load Libraries and Settings
 #------------------------------------------------------------------------------
@@ -34,18 +33,32 @@ db_shapefile <-
   mutate(across(c(landarea), as.numeric))
 
 db_drivetime_data <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv")
-          , col_types = cols(.default = "c"))  %>%
+  read_csv(
+    glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv"),
+    col_types = cols(.default = "c")
+  ) %>%
   clean_names() %>%
-  mutate(across(c(starts_with("drv_"), n_address, area_sq_km, population, dwellings, households), as.numeric))
+  mutate(across(
+    c(
+      starts_with("drv_"),
+      n_address,
+      area_sq_km,
+      population,
+      dwellings,
+      households
+    ),
+    as.numeric
+  ))
 
 db_drivetime_map_data <- db_shapefile %>%
   inner_join(db_drivetime_data, by = join_by(dbid, csdid, csd_name))
 
 # service bc location data
 servicebc <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv")
-           , col_types = cols(.default = "c")) %>%
+  read_csv(
+    glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
+    col_types = cols(.default = "c")
+  ) %>%
   clean_names() %>%
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
 
@@ -55,16 +68,15 @@ servicebc <-
 #------------------------------------------------------------------------------
 
 region <- "Dissemination Block"
-map_data  <- db_drivetime_map_data
+map_data <- db_drivetime_map_data
 
 # user-defined map parameters
-var <- "drv_dist_mean"  # colnames(map_data) for other options
+var <- "drv_dist_mean" # colnames(map_data) for other options
 var_title <- "Mean Driving Distance"
 unit <- "km"
 
 # filter on desired csd here
-for (csd in CSD_NAMES){
-
+for (csd in CSD_NAMES) {
   plot_title <- glue("{var_title} to Nearest Service BC Office - {csd}")
 
   message(glue("Generating map for {csd} ..."))

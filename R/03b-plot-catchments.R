@@ -15,7 +15,7 @@
 # ------------------------------------------------------------------------
 # Script: 03b-plot-catchments.R
 
-# Description: This script creates maps of the Service BC facility catchment 
+# Description: This script creates maps of the Service BC facility catchment
 # areas, including both drive time based assignments and spatial assignments.
 # It reads the pre-computed assignment data rather than recalculating it.
 
@@ -29,7 +29,7 @@
 #   - Creates maps of catchment areas, saved to the MAP_OUT directory
 # ------------------------------------------------------------------------
 
-library(rmapshaper)    # simplify geometries
+library(rmapshaper) # simplify geometries
 
 source("R/settings.R")
 
@@ -42,42 +42,42 @@ bc_map <- bc_bound() |>
   st_transform(crs = 3005)
 
 # CSD level shapefiles for each locality
-csd_shapefile <- 
+csd_shapefile <-
   st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) %>%
-  mutate(across(c(csd_name), as.character),
-         across(c(landarea), as.numeric))
+  mutate(across(c(csd_name), as.character), across(c(landarea), as.numeric))
 
-# Locations of all Service BC locations 
+# Locations of all Service BC locations
 sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")) |>
   st_as_sf(
     coords = c('coord_x', 'coord_y'),
     crs = 3005
-  ) 
+  )
 
 # DB shapefiles
 db_shapefile <-
   st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) %>%
   mutate(across(c(landarea), as.numeric))
 
-# Read the pre-computed assignment data 
+# Read the pre-computed assignment data
 complete_assignments <- read_csv(
   glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
-  ) %>%
+) %>%
   mutate(
     across(
-      c(dbid, assigned, assignment_method), 
-      as.character)
-      )
+      c(dbid, assigned, assignment_method),
+      as.character
+    )
+  )
 
 # Get centroids for labels
-csd_centroids <- st_centroid(csd_shapefile) 
-csd_centroids_nudged <- csd_centroids |> 
+csd_centroids <- st_centroid(csd_shapefile)
+csd_centroids_nudged <- csd_centroids |>
   mutate(
-      geom = case_when(
-        csd_name == 'Dawson Creek' ~ geom + c(-170000, 50000),
-        csd_name == 'Langford' ~ geom + c(140000, 15000), # move east for langford
-        TRUE ~ geom + c(0, 70000)  # move label north to not overlap 
-      )
+    geom = case_when(
+      csd_name == 'Dawson Creek' ~ geom + c(-170000, 50000),
+      csd_name == 'Langford' ~ geom + c(140000, 15000), # move east for langford
+      TRUE ~ geom + c(0, 70000) # move label north to not overlap
+    )
   ) %>%
   st_set_crs(st_crs(csd_centroids))
 
@@ -91,7 +91,7 @@ csd_centroids_nudged <- csd_centroids_nudged |>
 pilot_sbc_locs <- sbc_locs |>
   filter(csd_name %in% CSD_NAMES)
 
-  # Save the maps to the outputs directory
+# Save the maps to the outputs directory
 maps_folder <- file.path(MAP_OUT, "complete_catchments")
 if (!dir.exists(maps_folder)) {
   dir.create(maps_folder, recursive = TRUE)
@@ -101,14 +101,14 @@ if (!dir.exists(maps_folder)) {
 # Map 1: Pilot regions overview
 # ----------------------------------------------------------------------------
 
-pilot_map <- ggplot() + 
+pilot_map <- ggplot() +
   geom_sf(
-    data = bc_map, 
-    fill = 'white', 
+    data = bc_map,
+    fill = 'white',
     color = 'black'
   ) +
   geom_sf(
-    data = csds, 
+    data = csds,
     aes(fill = as.factor(csd_name)),
     color = 'darkgrey',
     alpha = 1
@@ -123,8 +123,8 @@ pilot_map <- ggplot() +
   ) +
   geom_sf_text(
     data = csd_centroids_nudged,
-    aes(label = csd_name), 
-    size = 5, 
+    aes(label = csd_name),
+    size = 5,
     fontface = 'bold'
   ) +
   scale_fill_brewer(
@@ -137,12 +137,12 @@ pilot_map <- ggplot() +
   ) +
   MAP_THEME +
   theme(
-    legend.position = "None",  
+    legend.position = "None",
     plot.title = element_text(size = 20, face = "bold"),
-    axis.title = element_blank(),  # Remove axis titles
-    axis.text = element_blank(),   # Remove axis text
-    axis.ticks = element_blank(),  # Remove axis ticks
-    panel.grid = element_blank()   # Remove background grid lines
+    axis.title = element_blank(), # Remove axis titles
+    axis.text = element_blank(), # Remove axis text
+    axis.ticks = element_blank(), # Remove axis ticks
+    panel.grid = element_blank() # Remove background grid lines
   )
 
 pilot_map
@@ -164,9 +164,9 @@ ggsave(
 # Create original catchment areas (with unassigned areas)
 original_catchments <- db_shapefile |>
   left_join(complete_assignments, by = "dbid") |>
-  filter(assignment_method == 'drive_time') |>  
+  filter(assignment_method == 'drive_time') |>
   # Keep only facilities in our CSDs of interest
-  filter(assigned %in% pilot_sbc_locs$nearest_facility) |>  
+  filter(assigned %in% pilot_sbc_locs$nearest_facility) |>
   # Group by facility and merge geometries
   group_by(assigned) |>
   summarize(
@@ -182,7 +182,7 @@ unassigned_dbs <- db_shapefile |>
   left_join(complete_assignments, by = "dbid") |>
   filter(assignment_method == 'nearest_facility') |>
   # Keep only facilities in our CSDs of interest
-  filter(assigned %in% pilot_sbc_locs$nearest_facility) |>  
+  filter(assigned %in% pilot_sbc_locs$nearest_facility) |>
   # Group and merge geometries
   summarize(
     n_dbs = n(),
@@ -194,11 +194,11 @@ unassigned_dbs <- db_shapefile |>
   rmapshaper::ms_simplify(keep = 0.05, keep_shapes = TRUE)
 
 # Build map with original catchments
-original_map <- ggplot() + 
+original_map <- ggplot() +
   # Base BC map
   geom_sf(
-    data = bc_map, 
-    fill = 'white', 
+    data = bc_map,
+    fill = 'white',
     color = 'black'
   ) +
   # Unassigned areas
@@ -210,15 +210,15 @@ original_map <- ggplot() +
   ) +
   # Facility catchment areas
   geom_sf(
-    data = original_catchments, 
+    data = original_catchments,
     aes(fill = assigned),
     color = 'darkgrey',
     alpha = 0.7
   ) +
   # CSDs of interest as outlined areas
   geom_sf(
-    data = csds, 
-    fill = NA, 
+    data = csds,
+    fill = NA,
     color = 'black',
     linewidth = 1.2,
     alpha = 0.9
@@ -234,8 +234,8 @@ original_map <- ggplot() +
   ) +
   geom_sf_text(
     data = csd_centroids_nudged,
-    aes(label = csd_name), 
-    size = 4, 
+    aes(label = csd_name),
+    size = 4,
     fontface = 'bold'
   ) +
   # Colors for catchment areas
@@ -250,7 +250,7 @@ original_map <- ggplot() +
     subtitle = 'Areas showing which Service BC facility is closest based on drive time\nDark gray areas are not assigned to any facility (no drive data available)'
   ) +
   MAP_THEME +
-  theme(legend.position = "none")  # Remove legends
+  theme(legend.position = "none") # Remove legends
 
 original_map
 # Save the original catchments map
@@ -273,7 +273,7 @@ complete_catchments <- db_shapefile |>
   # Group by facility and merge geometries
   group_by(assigned, assignment_method) |>
   # Keep only facilities in our CSDs of interest
-  filter(assigned %in% pilot_sbc_locs$nearest_facility) |>  
+  filter(assigned %in% pilot_sbc_locs$nearest_facility) |>
   summarize(
     n_dbs = n(),
     .groups = "drop"
@@ -282,25 +282,25 @@ complete_catchments <- db_shapefile |>
   ms_simplify(keep = 0.05, keep_shapes = TRUE)
 
 # Map with complete catchments
-complete_map <- ggplot() + 
+complete_map <- ggplot() +
   # Base BC map
   geom_sf(
-    data = bc_map, 
-    fill = 'white', 
+    data = bc_map,
+    fill = 'white',
     color = 'black'
   ) +
   # All catchment areas (drive time + spatial assignments)
   geom_sf(
-    data = complete_catchments, 
+    data = complete_catchments,
     aes(fill = assigned, alpha = assignment_method),
     color = 'darkgrey'
   ) +
   # CSDs of interest as outlined areas
   geom_sf(
-    data = csd_shapefile, 
-    fill = NA, 
-    color = "darkgrey", 
-    size = 0.2, 
+    data = csd_shapefile,
+    fill = NA,
+    color = "darkgrey",
+    size = 0.2,
     alpha = 0.5
   ) +
   # Service BC locations
@@ -314,15 +314,15 @@ complete_map <- ggplot() +
   ) +
   geom_sf_text(
     data = csd_centroids_nudged,
-    aes(label = csd_name), 
-    size = 4, 
+    aes(label = csd_name),
+    size = 4,
     fontface = 'bold'
   ) +
   # Colors for catchment areas
   scale_fill_viridis_d(
     option = "turbo",
     name = 'Service BC Facility',
-    na.value = NA#"whitesmoke"
+    na.value = NA #"whitesmoke"
   ) +
   # Alpha for assignment method
   scale_alpha_manual(
@@ -337,11 +337,11 @@ complete_map <- ggplot() +
   ) +
   MAP_THEME +
   theme(
-    legend.position = "None",  
-    axis.title = element_blank(),  # Remove axis titles
-    axis.text = element_blank(),   # Remove axis text
-    axis.ticks = element_blank(),  # Remove axis ticks
-    panel.grid = element_blank()   # Remove background grid lines
+    legend.position = "None",
+    axis.title = element_blank(), # Remove axis titles
+    axis.text = element_blank(), # Remove axis text
+    axis.ticks = element_blank(), # Remove axis ticks
+    panel.grid = element_blank() # Remove background grid lines
   )
 complete_map
 # Save the complete catchments map
@@ -361,7 +361,7 @@ ggsave(
 # Create original catchment areas (with unassigned areas)
 province_original_catchments <- db_shapefile |>
   left_join(complete_assignments, by = "dbid") |>
-  filter(assignment_method == 'drive_time') |>  
+  filter(assignment_method == 'drive_time') |>
   # Group by facility and merge geometries
   group_by(assigned) |>
   summarize(
@@ -387,11 +387,11 @@ unassigned_dbs <- db_shapefile |>
   rmapshaper::ms_simplify(keep = 0.01, keep_shapes = TRUE)
 
 # Build map with original catchments
-province_original_map <- ggplot() + 
+province_original_map <- ggplot() +
   # Base BC map
   geom_sf(
-    data = bc_map, 
-    fill = 'white', 
+    data = bc_map,
+    fill = 'white',
     color = 'black'
   ) +
   # Unassigned areas
@@ -403,7 +403,7 @@ province_original_map <- ggplot() +
   ) +
   # Facility catchment areas
   geom_sf(
-    data = province_original_catchments, 
+    data = province_original_catchments,
     aes(fill = assigned),
     color = 'darkgrey',
     alpha = 0.7
@@ -429,7 +429,7 @@ province_original_map <- ggplot() +
     subtitle = 'Areas showing which Service BC facility is closest based on drive time\nDark gray areas are not assigned to any facility (no drive data available)'
   ) +
   MAP_THEME +
-  theme(legend.position = "none")  # Remove legends
+  theme(legend.position = "none") # Remove legends
 
 province_original_map
 # Save the original catchments map
@@ -459,16 +459,16 @@ province_complete_catchments <- db_shapefile |>
   ms_simplify(keep = 0.05, keep_shapes = TRUE)
 
 # Map with complete catchments
-province_complete_map <- ggplot() + 
+province_complete_map <- ggplot() +
   # Base BC map
   geom_sf(
-    data = bc_map, 
-    fill = 'white', 
+    data = bc_map,
+    fill = 'white',
     color = 'black'
   ) +
   # All catchment areas (drive time + spatial assignments)
   geom_sf(
-    data = province_complete_catchments, 
+    data = province_complete_catchments,
     aes(fill = assigned),
     color = 'darkgrey',
     alpha = 0.7
@@ -494,7 +494,7 @@ province_complete_map <- ggplot() +
     subtitle = 'Originally unassigned areas assigned based on proximity to facilities'
   ) +
   MAP_THEME +
-  theme(legend.position = "none")  # Remove legends
+  theme(legend.position = "none") # Remove legends
 
 province_complete_map
 
@@ -508,5 +508,5 @@ ggsave(
   dpi = 300
 )
 
-rm(list=ls())
+rm(list = ls())
 gc()

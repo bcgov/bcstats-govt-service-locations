@@ -32,7 +32,6 @@
 # https://www12.statcan.gc.ca/census-recensement/2021/as-sa/98-200-x/2021002/98-200-x2021002-eng.cfm
 # https://www150.statcan.gc.ca/n1/pub/71-607-x/71-607-x2024012-eng.htm
 
-
 # =========================================================================== #
 
 # =========================================================================== #
@@ -64,19 +63,25 @@ drivetime_data <-
 
 # --- FSA boundary shapefiles - Method 1
 fsa_boundaries <-
-  st_read(glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg"),
-          layer = "fsa_statscan") |>
+  st_read(
+    glue::glue("{SRC_DATA_FOLDER}/shapefiles/fsa-statscan.gpkg"),
+    layer = "fsa_statscan"
+  ) |>
   rename(geometry = geom) |>
   st_transform(crs = 3005)
 
 # --- Population center shapefiles - Method 2
 popcenter_boundaries <-
-  st_read(glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"),
-          layer = "popcenter_statscan") |>
+  st_read(
+    glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"),
+    layer = "popcenter_statscan"
+  ) |>
   rename(geometry = geom) |>
   st_transform(crs = 3005)
 
-catchments <- st_read(glue::glue("{FOR_SBC_OUT}/sbc-catchments/sbc-catchments.shp"))
+catchments <- st_read(glue::glue(
+  "{FOR_SBC_OUT}/sbc-catchments/sbc-catchments.shp"
+))
 
 complete_assignments <-
   read_csv(glue::glue("{FOR_SBC_OUT}/complete-db-assignments-for-SBC.csv")) |>
@@ -92,13 +97,12 @@ csd_db_crosswalk <-
 
 db_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
   rename(geometry = geom) |>
-  st_transform(crs = 3005) 
+  st_transform(crs = 3005)
 
-db_projections_transformed_agg <- 
+db_projections_transformed_agg <-
   readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds")) |>
   filter(gender == 'T', year == 2025) |>
-  summarize(population = sum(population, na.rm = TRUE),
-            .by = c("dbid"))
+  summarize(population = sum(population, na.rm = TRUE), .by = c("dbid"))
 
 # =========================================================================== #
 # Create (address-based) urban/rural flag using fsa and popcenter boundary files
@@ -107,7 +111,12 @@ addresses <- drivetime_data |> select(fid, geometry, nearest_facility, dbid)
 
 # generate a crosswalk that maps each address to a region, for each boundary (method).
 fsa_address <- is_in_region_optim(addresses, fsa_boundaries, "fid", "cfsauid")
-popcenter_address <- is_in_region_optim(addresses, popcenter_boundaries, "fid", "pcname")
+popcenter_address <- is_in_region_optim(
+  addresses,
+  popcenter_boundaries,
+  "fid",
+  "pcname"
+)
 
 # combine and add an urban/rural flag for each method
 addresses_region_crosswalk <- addresses |>
@@ -121,7 +130,7 @@ addresses_region_crosswalk <- addresses |>
       TRUE ~ "URBAN"
     ),
     urban_rural_popcenter = case_when(
-      is.na(pcname) ~ "RURAL",  # an area is rural if outside a population center
+      is.na(pcname) ~ "RURAL", # an area is rural if outside a population center
       TRUE ~ "URBAN"
     )
   )
@@ -135,13 +144,15 @@ addresses_region_crosswalk |>
     n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
     n_missing_fsa = sum(is.na(urban_rural_fsa), na.rm = TRUE),
     p_rural_fsa = 100 * sum(urban_rural_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n()
+    p_rural_popcenter = 100 *
+      sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) /
+      n()
   ) |>
   pivot_longer(
     cols = starts_with(c("n_", "p_")),
     names_to = "method",
     values_to = "count"
-)
+  )
 
 # --- Catchment-level summaries of classification methods
 # --- according to # of addresses assigned
@@ -154,7 +165,9 @@ catchment_rural_summary_addresses <- addresses_region_crosswalk |>
     n_rural_fsa = sum(urban_rural_fsa == "RURAL", na.rm = TRUE),
     n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
     p_rural_fsa = 100 * sum(urban_rural_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100 *
+      sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) /
+      n(),
     is_rural_fsa = if_else(p_rural_fsa > 50, "RURAL", "URBAN"),
     is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
     .groups = 'drop'
@@ -162,7 +175,7 @@ catchment_rural_summary_addresses <- addresses_region_crosswalk |>
 
 # note that due to an abundance of rural addresses, there are many more rural catchments than I might have expected
 # does this mean that using address is misleading, and we should use population? what would that look like?
-# or are they truly placed out in rural areas? 
+# or are they truly placed out in rural areas?
 catchment_rural_summary_addresses |>
   summarize(
     mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
@@ -181,15 +194,25 @@ catchment_rural_summary_addresses |>
 # =========================================================================== #
 
 # generate a crosswalk that maps each dbid to a population center, for each boundary (method).
-fsa_population <- is_in_region_optim(db_shapefiles, fsa_boundaries, "dbid", "cfsauid")
-popcenter_population <- is_in_region_optim(db_shapefiles, popcenter_boundaries, "dbid", "pcname")
+fsa_population <- is_in_region_optim(
+  db_shapefiles,
+  fsa_boundaries,
+  "dbid",
+  "cfsauid"
+)
+popcenter_population <- is_in_region_optim(
+  db_shapefiles,
+  popcenter_boundaries,
+  "dbid",
+  "pcname"
+)
 
-popcenter_population |> 
+popcenter_population |>
   rename(urban_dbid = dbid, in_popcenter = pcname) |>
   write_csv(glue("{FOR_SBC_OUT}/urban-dbid-popcenter-crosswalk.csv"))
 
 # add flags for urban rural
-population_region_crosswalk  <- db_projections_transformed_agg |> 
+population_region_crosswalk <- db_projections_transformed_agg |>
   st_drop_geometry() |>
   left_join(popcenter_population, by = "dbid") |>
   left_join(fsa_population, by = "dbid") |>
@@ -201,7 +224,7 @@ population_region_crosswalk  <- db_projections_transformed_agg |>
       TRUE ~ "URBAN"
     ),
     urban_rural_popcenter = case_when(
-      is.na(pcname) ~ "RURAL",  # an area is rural if outside a population center
+      is.na(pcname) ~ "RURAL", # an area is rural if outside a population center
       TRUE ~ "URBAN"
     )
   )
@@ -212,7 +235,10 @@ population_region_crosswalk |>
   summarise(
     n_population = sum(population, na.rm = TRUE),
     n_rural_fsa = sum(population[urban_rural_fsa == "RURAL"], na.rm = TRUE),
-    n_rural_popcenter = sum(population[urban_rural_popcenter == "RURAL"], na.rm = TRUE),
+    n_rural_popcenter = sum(
+      population[urban_rural_popcenter == "RURAL"],
+      na.rm = TRUE
+    ),
     n_missing_fsa = sum(population[is.na(urban_rural_fsa)], na.rm = TRUE),
     p_rural_fsa = 100 * n_rural_fsa / n_population,
     p_rural_popcenter = 100 * n_rural_popcenter / n_population
@@ -221,7 +247,7 @@ population_region_crosswalk |>
     cols = starts_with(c("n_", "p_")),
     names_to = "method",
     values_to = "count"
-)
+  )
 
 
 # --- Catchment-level summaries of classification methods (population-based)
@@ -230,7 +256,10 @@ catchment_rural_summary_population <- population_region_crosswalk |>
   summarise(
     n_dbids = n(),
     n_rural_fsa = sum(population[urban_rural_fsa == "RURAL"], na.rm = TRUE),
-    n_rural_popcenter = sum(population[urban_rural_popcenter == "RURAL"], na.rm = TRUE),
+    n_rural_popcenter = sum(
+      population[urban_rural_popcenter == "RURAL"],
+      na.rm = TRUE
+    ),
     est_population = sum(population, na.rm = TRUE),
     p_rural_fsa = 100 * n_rural_fsa / est_population,
     p_rural_popcenter = 100 * n_rural_popcenter / est_population,
@@ -241,7 +270,7 @@ catchment_rural_summary_population <- population_region_crosswalk |>
 
 catchment_rural_summary_population
 
-catchment_rural_summary_population |> 
+catchment_rural_summary_population |>
   summarize(
     mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
     median_rural_fsa = median(p_rural_fsa, na.rm = TRUE),
@@ -259,25 +288,35 @@ catchment_rural_summary_population |>
 # =========================================================================== #
 
 catchment_rural_summary_compare <- catchment_rural_summary_addresses |>
-  inner_join(catchment_rural_summary_population, by = "assigned", suffix = c("_address", "_population")) |> 
+  inner_join(
+    catchment_rural_summary_population,
+    by = "assigned",
+    suffix = c("_address", "_population")
+  ) |>
   relocate(est_population, .after = n_dbids)
 
-catchment_rural_summary_compare  |>
-  count(is_rural_fsa_address, is_rural_popcenter_address, is_rural_fsa_population, is_rural_popcenter_population) |>
-  rename_with(function (x) gsub("is_rural_", "", x)) |> # rename so all cols fit in output window
+catchment_rural_summary_compare |>
+  count(
+    is_rural_fsa_address,
+    is_rural_popcenter_address,
+    is_rural_fsa_population,
+    is_rural_popcenter_population
+  ) |>
+  rename_with(function(x) gsub("is_rural_", "", x)) |> # rename so all cols fit in output window
   arrange(desc(n))
 
-catchment_rural_summary_compare |> 
-  mutate(across(where(is.numeric), ~round(., 2))) |>
+catchment_rural_summary_compare |>
+  mutate(across(where(is.numeric), ~ round(., 2))) |>
   write_csv(glue("{FOR_SBC_OUT}/catchment_rural_methods_comparison.csv"))
 
 catchment_rural_summary_compare |>
-  filter(assigned %in% c("Service BC - Atlin")) |> View()
+  filter(assigned %in% c("Service BC - Atlin")) |>
+  View()
 
 catchment_rural_summary_compare |>
-  filter(!assigned %in% c("Service BC - Atlin")) |> 
-  ggplot(aes(x =  p_rural_popcenter_address, y = p_rural_popcenter_population)) +
-  geom_point(aes(color = est_population / n_addresses), size = 5) +  # I'm not sure about mixing these
+  filter(!assigned %in% c("Service BC - Atlin")) |>
+  ggplot(aes(x = p_rural_popcenter_address, y = p_rural_popcenter_population)) +
+  geom_point(aes(color = est_population / n_addresses), size = 5) + # I'm not sure about mixing these
   geom_smooth() +
   scale_color_viridis_c(trans = "reverse") +
   labs(
@@ -287,23 +326,31 @@ catchment_rural_summary_compare |>
   )
 
 # where are the offices themselves located, urban/rural?
-facilities <- drivetime_data |> st_drop_geometry() |> distinct(nearest_facility, coord_x, coord_y) |>
+facilities <- drivetime_data |>
+  st_drop_geometry() |>
+  distinct(nearest_facility, coord_x, coord_y) |>
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
 
-urban_facilities <- is_in_region_optim(facilities, popcenter_boundaries, "nearest_facility", "pcname") # OR
+urban_facilities <- is_in_region_optim(
+  facilities,
+  popcenter_boundaries,
+  "nearest_facility",
+  "pcname"
+) # OR
 # urban_facilities <- resides_in_region(facilities, fsa, "nearest_facility", "cfsauid")
 
-facilities <- facilities |> left_join(urban_facilities, by = "nearest_facility") |>
+facilities <- facilities |>
+  left_join(urban_facilities, by = "nearest_facility") |>
   mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN"))
 
-facilities |>  
-ggplot() +
+facilities |>
+  ggplot() +
   geom_sf(data = facilities, aes(color = urban_rural)) +
   scale_color_manual(values = c("RURAL" = "blue", "URBAN" = "red")) +
   labs(
     title = "Urban and Rural Facilities",
     fill = "Urban/Rural"
-)
+  )
 
 
 # =========================================================================== #
@@ -319,7 +366,9 @@ csd_rural_summary <- addresses_region_crosswalk |>
     n_rural_fsa = sum(urban_rural_fsa == "RURAL", na.rm = TRUE),
     n_rural_popcenter = sum(urban_rural_popcenter == "RURAL", na.rm = TRUE),
     p_rural_fsa = 100 * sum(urban_rural_fsa == "RURAL", na.rm = TRUE) / n(),
-    p_rural_popcenter = 100 * sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) / n(),
+    p_rural_popcenter = 100 *
+      sum(urban_rural_popcenter == "RURAL", na.rm = TRUE) /
+      n(),
     is_rural_fsa = if_else(p_rural_fsa > 50, "RURAL", "URBAN"),
     is_rural_popcenter = if_else(p_rural_popcenter > 50, "RURAL", "URBAN"),
     .groups = 'drop'
@@ -327,7 +376,7 @@ csd_rural_summary <- addresses_region_crosswalk |>
 
 csd_rural_summary
 
-csd_rural_summary |> 
+csd_rural_summary |>
   summarize(
     mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
     mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
@@ -346,7 +395,10 @@ csd_rural_summary_population <- population_region_crosswalk |>
   summarise(
     n_dbids = n(),
     n_rural_fsa = sum(population[urban_rural_fsa == "RURAL"], na.rm = TRUE),
-    n_rural_popcenter = sum(population[urban_rural_popcenter == "RURAL"], na.rm = TRUE),
+    n_rural_popcenter = sum(
+      population[urban_rural_popcenter == "RURAL"],
+      na.rm = TRUE
+    ),
     est_population = sum(population, na.rm = TRUE),
     p_rural_fsa = 100 * n_rural_fsa / est_population,
     p_rural_popcenter = 100 * n_rural_popcenter / est_population,
@@ -355,7 +407,7 @@ csd_rural_summary_population <- population_region_crosswalk |>
     .by = c("csdid", "csd_name", "csd_desc")
   )
 
-csd_rural_summary_population |> 
+csd_rural_summary_population |>
   summarize(
     mean_rural_fsa = mean(p_rural_fsa, na.rm = TRUE),
     mean_rural_popcenter = mean(p_rural_popcenter, na.rm = TRUE),
@@ -382,37 +434,45 @@ residence_region_long <- addresses_region_crosswalk |>
 
 # --- Plot urban/rural for each method
 p <- residence_region_long |>
-  plot_urban_rural(title = "Urban and Rural Areas - Population Centers") + 
-  facet_wrap(~ method, nrow = 2)
+  plot_urban_rural(title = "Urban and Rural Areas - Population Centers") +
+  facet_wrap(~method, nrow = 2)
 
 ggsave(
   glue("{MAP_OUT}/rural-analysis/all-data-urban-rural.png"),
   plot = p,
-  width = 10, height = 8
+  width = 10,
+  height = 8
 )
 
 # --- Plot urban/rural for select csd/office
-facility <- catchment_rural_summary |> arrange(p_rural_popcenter) |> slice(1) |> pull(assigned)
+facility <- catchment_rural_summary |>
+  arrange(p_rural_popcenter) |>
+  slice(1) |>
+  pull(assigned)
 
 p <- residence_region_long |>
   filter(nearest_facility %in% facility) |>
-  plot_urban_rural(title = glue::glue("{facility}")) + 
-  facet_wrap(~ method, nrow = 2)
+  plot_urban_rural(title = glue::glue("{facility}")) +
+  facet_wrap(~method, nrow = 2)
 
 ggsave(
-  glue("{MAP_OUT}/rural-analysis/{make_clean_names(facility, sep_out = '-')}-urban-rural.png"),
+  glue(
+    "{MAP_OUT}/rural-analysis/{make_clean_names(facility, sep_out = '-')}-urban-rural.png"
+  ),
   plot = p,
-  width = 10, height = 8
+  width = 10,
+  height = 8
 )
 
 # --- Plot urban/rural for each method
 p <- residence_region_long |>
   plot_urban_rural(title = "Urban and Rural Areas - Population Centers") +
   geom_sf(data = catchments, color = "black", alpha = 0) +
-  facet_wrap(~ method, nrow = 2)
+  facet_wrap(~method, nrow = 2)
 
 ggsave(
   glue("{MAP_OUT}/rural-analysis/catchment-urban-rural.png"),
   plot = p,
-  width = 10, height = 8
+  width = 10,
+  height = 8
 )

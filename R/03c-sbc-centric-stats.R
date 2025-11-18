@@ -60,12 +60,14 @@ sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
 ## Read the pre-computed assignment data ----
 ## from source folder
 complete_assignments <- read_csv(
-    glue("{SRC_DATA_FOLDER}/complete-db-assignments.csv")
-    ) %>% 
-    mutate(dbid = as.character(dbid))
+  glue("{SRC_DATA_FOLDER}/complete-db-assignments.csv")
+) %>%
+  mutate(dbid = as.character(dbid))
 
 ## population projections from catalogue
-pop_projections <- read_csv(glue("{SRC_DATA_FOLDER}/full-population-projections.csv")) %>%
+pop_projections <- read_csv(glue(
+  "{SRC_DATA_FOLDER}/full-population-projections.csv"
+)) %>%
   mutate(region = as.character(region))
 
 
@@ -94,7 +96,9 @@ crosswalk <-
 # DB population projections ----
 # this table has a pct of csd column that we can use
 # to multiply by any other population projections to get estimates
-db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
+db_projections_transformed <- readRDS(glue(
+  "{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"
+))
 
 # =========================================================================== #
 # Metrics for SBC locations of interest ----
@@ -105,33 +109,36 @@ db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projection
 # =========================================================================== #
 
 # Join with drivetime data
-drivetime_data_full <- complete_assignments |> 
+drivetime_data_full <- complete_assignments |>
   left_join(drivetime_data, by = "dbid")
 
-drivetime_data %>% 
-    # fix the daid column to have no NAs
-    mutate(daid = str_sub(dbid, 1, 8)) %>% 
-    left_join(crosswalk, by = c("dbid", "daid"))  %>% 
-    filter(csd_name == 'Kamloops') %>% 
-    summarize(max = max(drv_dist, na.rm = TRUE),
-    max2 = quantile(drv_dist, probs = 1.00, na.rm = TRUE))
+drivetime_data %>%
+  # fix the daid column to have no NAs
+  mutate(daid = str_sub(dbid, 1, 8)) %>%
+  left_join(crosswalk, by = c("dbid", "daid")) %>%
+  filter(csd_name == 'Kamloops') %>%
+  summarize(
+    max = max(drv_dist, na.rm = TRUE),
+    max2 = quantile(drv_dist, probs = 1.00, na.rm = TRUE)
+  )
 
-drivetime_data_reduced <- drivetime_data_full %>% 
-    # fix the daid column to have no NAs
-    mutate(daid = str_sub(dbid, 1, 8)) %>% 
-    filter(
+drivetime_data_reduced <- drivetime_data_full %>%
+  # fix the daid column to have no NAs
+  mutate(daid = str_sub(dbid, 1, 8)) %>%
+  filter(
     assigned %in%
       (sbc_locs |>
-         filter(csd_name %in% CSD_NAMES) |>
-         pull(nearest_facility))
-    ) |>
-    filter(
+        filter(csd_name %in% CSD_NAMES) |>
+        pull(nearest_facility))
+  ) |>
+  filter(
     nearest_facility %in%
-        (sbc_locs |>
-            filter(csd_name %in% CSD_NAMES) |>
-            pull(nearest_facility)) | is.na(nearest_facility)
-    ) |>
-    left_join(crosswalk, by = c("dbid", "daid"))
+      (sbc_locs |>
+        filter(csd_name %in% CSD_NAMES) |>
+        pull(nearest_facility)) |
+      is.na(nearest_facility)
+  ) |>
+  left_join(crosswalk, by = c("dbid", "daid"))
 
 ## SBC centric measures (table form) ----
 # drive measures
@@ -141,18 +148,18 @@ drive_measures <- drivetime_data_reduced |>
     n_addresses = n(),
     mean_drv_time = mean(drv_time_sec, na.rm = TRUE),
     sd_drv_time = sd(drv_time_sec, na.rm = TRUE),
-    var_drv_time = var(drv_time_sec, na.rm = TRUE),# or min(drv_time_sec, na.rm = TRUE)
-    qnt25_drv_time = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),  
+    var_drv_time = var(drv_time_sec, na.rm = TRUE), # or min(drv_time_sec, na.rm = TRUE)
+    qnt25_drv_time = quantile(drv_time_sec, probs = 0.25, na.rm = TRUE),
     qnt50_drv_time = quantile(drv_time_sec, probs = 0.50, na.rm = TRUE), # or median(drv_time_sec, na.rm = TRUE)
-    qnt75_drv_time = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),  
+    qnt75_drv_time = quantile(drv_time_sec, probs = 0.75, na.rm = TRUE),
     min_drv_time = min(drv_time_sec, na.rm = TRUE),
     max_drv_time = max(drv_time_sec, na.rm = TRUE),
     mean_drv_dist = mean(drv_dist, na.rm = TRUE),
     sd_drv_dist = sd(drv_dist, na.rm = TRUE),
-    var_drv_dist = var(drv_dist, na.rm = TRUE),# or min(drv_time_sec, na.rm = TRUE)
-    qnt25_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),  
+    var_drv_dist = var(drv_dist, na.rm = TRUE), # or min(drv_time_sec, na.rm = TRUE)
+    qnt25_drv_dist = quantile(drv_dist, probs = 0.25, na.rm = TRUE),
     qnt50_drv_dist = quantile(drv_dist, probs = 0.50, na.rm = TRUE), # or median(drv_time_sec, na.rm = TRUE)
-    qnt75_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),  
+    qnt75_drv_dist = quantile(drv_dist, probs = 0.75, na.rm = TRUE),
     min_drv_dist = min(drv_dist, na.rm = TRUE),
     max_drv_dist = max(drv_dist, na.rm = TRUE)
   ) |>
@@ -165,13 +172,13 @@ drive_measures
 csds_serviced <- drivetime_data_reduced |>
   distinct(assigned, csdid, csd_name, dbid) |>
   left_join(
-    db_projections_transformed  %>% distinct(dbid, pct_of_csd), 
+    db_projections_transformed %>% distinct(dbid, pct_of_csd),
     by = "dbid"
-    ) |>
+  ) |>
   filter(!is.na(csdid)) |>
   group_by(assigned, csdid, csd_name) |>
   summarize(
-    pct_of_csd = sum(pct_of_csd, na.rm=TRUE)
+    pct_of_csd = sum(pct_of_csd, na.rm = TRUE)
   ) |>
   ungroup() |>
   arrange(assigned, desc(pct_of_csd))
@@ -182,52 +189,62 @@ csds_serviced
 pop_measures <- drivetime_data_reduced |>
   distinct(assigned, assignment_method, csdid, dbid) |>
   # expand drivetime data to include all years of interest for each row
-    expand_grid(
-        tibble(year = rep(unique(db_projections_transformed$year)))
-    ) |>
+  expand_grid(
+    tibble(year = rep(unique(db_projections_transformed$year)))
+  ) |>
   left_join(
-    db_projections_transformed %>% 
-    filter(gender=='T') %>% 
-    select(dbid, year, age, population, total, area_sq_km), 
+    db_projections_transformed %>%
+      filter(gender == 'T') %>%
+      select(dbid, year, age, population, total, area_sq_km),
     by = c("dbid", 'year')
-    ) |> 
-  filter(!is.na(csdid)) %>% 
-  group_by(assigned, year) %>% 
+  ) |>
+  filter(!is.na(csdid)) %>%
+  group_by(assigned, year) %>%
   summarize(
     n = n(),
     n_dbs = n_distinct(dbid),
     n_dbs_from_drive_time = n_distinct(dbid[assignment_method == "drive_time"]),
-    n_dbs_from_spatial = n_distinct(dbid[assignment_method == "nearest_facility"]),
+    n_dbs_from_spatial = n_distinct(dbid[
+      assignment_method == "nearest_facility"
+    ]),
     pct_from_drive_time = n_dbs_from_drive_time / n_dbs,
     n_csds = n_distinct(csdid),
-    est_pop = sum(population, na.rm=TRUE),
+    est_pop = sum(population, na.rm = TRUE),
     # don't double count areas as there are multiple ages for each DB
-    est_area = sum(if_else(age==0, area_sq_km, 0), na.rm=TRUE),
-    avg_age = weighted.mean(age, population, na.rm=TRUE),
+    est_area = sum(if_else(age == 0, area_sq_km, 0), na.rm = TRUE),
+    avg_age = weighted.mean(age, population, na.rm = TRUE),
     # because of mismatch in number of dbids between pop and shapefile
     # need to make sure that the age/population columns are populated here
     median_age = median(
-        rep(
-            if_else(is.na(age), 0 , age),
-            times = round(
-                if_else(is.na(population), 0, population)
-                )
-                )
-                ), 
+      rep(
+        if_else(is.na(age), 0, age),
+        times = round(
+          if_else(is.na(population), 0, population)
+        )
+      )
+    ),
     .groups = "drop"
-  )  %>% 
+  ) %>%
   left_join(
-    csds_serviced  %>% 
-    filter(pct_of_csd > 0.5)  %>% 
-    group_by(assigned) %>% 
-    summarize(n_majority_csds = n()),
+    csds_serviced %>%
+      filter(pct_of_csd > 0.5) %>%
+      group_by(assigned) %>%
+      summarize(n_majority_csds = n()),
     by = "assigned"
-  ) %>% 
+  ) %>%
   select(
-    assigned, year,
-    n_dbs, n_dbs_from_drive_time, n_dbs_from_spatial, pct_from_drive_time,
-    n_csds, n_majority_csds, 
-    est_pop, est_area, avg_age, median_age
+    assigned,
+    year,
+    n_dbs,
+    n_dbs_from_drive_time,
+    n_dbs_from_spatial,
+    pct_from_drive_time,
+    n_csds,
+    n_majority_csds,
+    est_pop,
+    est_area,
+    avg_age,
+    median_age
   )
 
 pop_measures
@@ -242,40 +259,42 @@ drivetime_data_full |>
 crosswalk |>
   left_join(drivetime_data_full, by = c("dbid", "daid")) |>
   filter(csd_name == "Esquimalt") |>
-  filter(is.na(nearest_facility)) %>% 
+  filter(is.na(nearest_facility)) %>%
   pull(dbid)
 
-db_shapefile  %>% filter(dbid=='59170315002')
+db_shapefile %>% filter(dbid == '59170315002')
 
 # there is a mismatch between the population data number of DBs and the
 # shapefile number of DBs
-db_shapefile  %>% distinct(dbid)  %>% nrow() # 52423
-pop_db  %>% distinct(dbid)  %>% nrow() # 52387
+db_shapefile %>% distinct(dbid) %>% nrow() # 52423
+pop_db %>% distinct(dbid) %>% nrow() # 52387
 
 # SAVE ALL TABLES ----
 write_csv(
-  drive_measures, 
+  drive_measures,
   glue("{TABLES_OUT}/service_bc_centered_drive_metrics.csv")
 )
 
 write_csv(
-  csds_serviced, 
+  csds_serviced,
   glue("{TABLES_OUT}/service_bc_centered_csd_counts.csv")
 )
 
 write_csv(
-  pop_measures, 
+  pop_measures,
   glue("{TABLES_OUT}/service_bc_centered_population_metrics.csv")
 )
 
 # also save csd populations for reference
 write_csv(
-  pop_projections  %>% filter(region_name %in% CSD_NAMES)  %>% filter(year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)),
+  pop_projections %>%
+    filter(region_name %in% CSD_NAMES) %>%
+    filter(year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)),
   glue("{TABLES_OUT}/csd_populations.csv")
 )
 
 # plots ----
-# Create individual histograms for each facility 
+# Create individual histograms for each facility
 # Create a folder specifically for the histograms
 plot_folder <- file.path(MAP_OUT, "sbc_drive_distance_plots")
 if (!dir.exists(plot_folder)) {
@@ -286,11 +305,11 @@ if (!dir.exists(plot_folder)) {
 facilities <- unique(drivetime_data_reduced$assigned)
 for (facility in facilities) {
   p <- create_drive_distance_histogram(
-    data = drivetime_data_reduced, 
-    facility_name = facility, 
+    data = drivetime_data_reduced,
+    facility_name = facility,
     facet = FALSE
   )
-  
+
   # Save the individual plot
   ggsave(
     filename = glue("{plot_folder}/{facility}_drive_distance.png"),
@@ -324,9 +343,9 @@ ggsave(
 
 # create a box plot for all facilities
 box_plot <- build_boxplot(
-  data = drivetime_data_reduced %>% 
-          group_by(dbid, assigned) %>% 
-          summarize(drv_dist = mean(drv_dist, na.rm = TRUE)),
+  data = drivetime_data_reduced %>%
+    group_by(dbid, assigned) %>%
+    summarize(drv_dist = mean(drv_dist, na.rm = TRUE)),
   x_var = 'assigned',
   y_var = 'drv_dist',
   plot_title = 'Distribution of Driving Distances',
@@ -339,11 +358,11 @@ box_plot <- build_boxplot(
 
 box_plot
 ggsave(
-    filename = glue("{plot_folder}/drive_distance_box_plot.png"),
-    plot = box_plot,
-    width = 15,
-    height = 8,
-    dpi = 300
+  filename = glue("{plot_folder}/drive_distance_box_plot.png"),
+  plot = box_plot,
+  width = 15,
+  height = 8,
+  dpi = 300
 )
 
 # step 2: map of all closest DBs/average drive distances
@@ -367,20 +386,20 @@ for (loc_id in unique(map_data$assigned)) {
   loc_col <- "assigned"
   plot_title <- glue("Driving Distances for {loc_id}")
   var_title <- "Driving Distance (km)"
-  
+
   map_plot <- build_map(
     data = map_data,
     servicebc_data = sbc_locs,
     varname = var,
     csd_name = loc_id,
     csd_col = loc_col,
-    sbc_col = "nearest_facility",  # Add the column name to use for filtering
+    sbc_col = "nearest_facility", # Add the column name to use for filtering
     map_theme = MAP_THEME,
     fill_scale = FILL_THEME,
     plot_title = plot_title,
     legend_title = var_title
   )
-  
+
   # Save the map
   ggsave(
     filename = glue("{map_folder}/{loc_id}_drive_distance_map.png"),
@@ -404,7 +423,7 @@ example_map <- build_map(
   varname = var,
   csd_name = loc_id,
   csd_col = loc_col,
-  sbc_col = "nearest_facility",  # Specify the column to use in sbc_locs
+  sbc_col = "nearest_facility", # Specify the column to use in sbc_locs
   map_theme = MAP_THEME,
   fill_scale = FILL_THEME,
   plot_title = plot_title,
@@ -424,12 +443,13 @@ pyramid_data <- complete_assignments |>
     db_projections_transformed |>
       filter(year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)),
     by = "dbid"
-  )  %>% 
+  ) %>%
   filter(
-    assigned %in% (
-        sbc_locs |>
-            filter(csd_name %in% CSD_NAMES) |>
-            pull(nearest_facility)))
+    assigned %in%
+      (sbc_locs |>
+        filter(csd_name %in% CSD_NAMES) |>
+        pull(nearest_facility))
+  )
 
 # Get unique facility names to generate pyramids for
 facilities <- unique(pyramid_data$assigned)
@@ -471,7 +491,7 @@ if (length(facilities) > 1) {
     plotlist = population_pyramids[seq_len(min(4, length(facilities)))],
     ncol = 2
   )
-  
+
   ggsave(
     filename = glue("{pyramid_folder}/combined_population_pyramids.png"),
     plot = combined_pyramids,
@@ -483,5 +503,5 @@ if (length(facilities) > 1) {
 
 combined_pyramids
 
-rm(list=ls())
+rm(list = ls())
 gc()
