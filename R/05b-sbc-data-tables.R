@@ -375,8 +375,8 @@ combined_stats <- population_estimates_three_year |>
 # =========================================================================== #
 
 # Create output directory if it doesn't exist
-if (!dir.exists(TABLES_OUT)) {
-  dir.create(TABLES_OUT, recursive = TRUE)
+if (!dir.exists(FOR_SBC_OUT)) {
+  dir.create(FOR_SBC_OUT, recursive = TRUE)
 }
 
 # Write combined statistics table
@@ -389,8 +389,8 @@ fn <- paste0(
 combined_stats |>
   arrange(sbc_location) |>
   mutate(across(where(is.double), ~ round(., 1))) |>
-  write_csv(file.path(TABLES_OUT, fn))
+  write_csv(file.path(FOR_SBC_OUT, fn))
 
 # Print summary of what was written
-cat("SBC location statistics written to:", file.path(TABLES_OUT, fn), "\n")
+cat("SBC location statistics written to:", file.path(FOR_SBC_OUT, fn), "\n")
 cat("Total SBC locations in statistics:", nrow(combined_stats), "\n")
