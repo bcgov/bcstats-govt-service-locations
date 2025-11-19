@@ -343,7 +343,7 @@ rural_office <- sbc_locs |>
     sbc_locs |> distinct(nearest_facility),
     by = "nearest_facility"
   ) |>
-  mutate(rural_office = if_else(predicate == "exterior", "Y", "N")) |>
+  mutate(rural_office = if_else(area_ratio == 1, "Y", "N")) |>
   select(nearest_facility, rural_office)
 
 

@@ -171,12 +171,8 @@ assign_region <- function(
   exterior_cases <- exterior_cases |>
     mutate(area_ratio = 0)
 
-  final <- bind_rows(
-    within_cases |> mutate(predicate = "within"),
-    intersect_cases |> mutate(predicate = "intersects"),
-    exterior_cases |> mutate(predicate = "exterior")
-  ) |>
-    select(all_of(c(id_col, region_name_col, "predicate", "area_ratio")))
+  final <- bind_rows(within_cases, intersect_cases, exterior_cases) |>
+    select(all_of(c(id_col, region_name_col, "area_ratio")))
 
   cat(glue::glue("Done...{nrow(final)} {id_col}'s processed."))
   cat("\n")
