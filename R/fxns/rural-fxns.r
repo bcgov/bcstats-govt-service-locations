@@ -42,7 +42,7 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
         geom_reg,
         ~ as.numeric(st_area(st_intersection(.x, .y)))
       ),
-      area_ratio = area_int / area_loc
+      area_ratio = as.numeric(area_int / area_loc)
     )
 
   # return only the relevent columns. After testing this function, remove geometry cols for performance.
@@ -89,19 +89,9 @@ assign_region <- function(
     st_drop_geometry() |>
     select(all_of(c(id_col, region_name_col)))
 
-  cat(glue::glue(
-    "Calculating area stats for {nrow(within_cases)} fully contained {id_col}'s..."
-  ))
-  cat("\n")
-
   # assign area stats to each location
-  within_cases <- assign_area(
-    within_cases,
-    locations,
-    regions,
-    id_col,
-    region_name_col
-  )
+  within_cases <- within_cases |>
+    mutate(area_ratio = 1)
 
   # Check intersections, for those locations NOT fully contained
   # get a list of ids that are in locations, but not contained_ids
@@ -158,9 +148,6 @@ assign_region <- function(
   cat(glue::glue(
     "...{nrow(exterior_cases)} {id_col}'s assumed exterior to any {region_name_col}'s."
   ))
-  cat("\n")
-  cat(glue::glue("Calculating area stats for exterior {id_col}'s..."))
-  cat("\n")
 
   exterior_cases <- exterior_cases |>
     rename(geom_loc = "geometry") |>
@@ -168,13 +155,8 @@ assign_region <- function(
     select(all_of(c(id_col, region_name_col))) |>
     st_drop_geometry()
 
-  exterior_cases <- assign_area(
-    exterior_cases,
-    unprocessed,
-    regions,
-    id_col,
-    region_name_col
-  )
+  exterior_cases <- exterior_cases |>
+    mutate(area_ratio = 0)
 
   final <- bind_rows(
     within_cases |> mutate(predicate = "within"),
