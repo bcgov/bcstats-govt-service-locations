@@ -124,13 +124,19 @@ assign_region <- function(
   ))
   cat("\n")
 
-  intersect_cases <- assign_area(
-    intersect_cases,
-    unprocessed,
-    regions,
-    id_col,
-    region_name_col
-  )
+  # handle intersections for point geometries separately
+  if (unique(st_geometry_type(locations$geometry)) == "POINT") {
+    intersect_cases <- intersect_cases |>
+      mutate(area_ratio = 1)
+  } else {
+    intersect_cases <- assign_area(
+      intersect_cases,
+      unprocessed,
+      regions,
+      id_col,
+      region_name_col
+    )
+  }
 
   intersect_cases <- intersect_cases |>
     group_by(across(all_of(id_col))) |>
@@ -154,6 +160,7 @@ assign_region <- function(
   cat(glue::glue(
     "...{nrow(exterior_cases)} {id_col}'s assumed exterior to any {region_name_col}'s."
   ))
+  cat("\n")
 
   exterior_cases <- exterior_cases |>
     rename(geom_loc = "geometry") |>
