@@ -90,10 +90,9 @@ plts <- apply(grps, 1, vis_pc)
 names(plts) <- grps |> pull(pcname)
 
 grid::current.viewport() # workaround for: https://github.com/tidyverse/ggplot2/issues/2514
-for (i in seq_along(1:length(plts))) {
-  # fn <- glue("{FOR_SBC_OUT}/rural-method-misc/{names(plts)[i]}.svg")
-  # svglite::svglite(file = fn, width = 8, height = 6)
-  # grid::grid.draw(plts[[i]])
-  gridExtra::grid.arrange(plts[[i]])
+for (i in seq_along(plts)) {
+  fn <- glue("{FOR_SBC_OUT}/rural-method-misc/{names(plts)[i]}.svg")
+  svglite::svglite(file = fn, width = 8, height = 6)
+  grid::grid.draw(plts[[i]])
 }
 dev.off()
