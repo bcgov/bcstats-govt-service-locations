@@ -16,6 +16,7 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
   # Joins two simple features (SF) objects (`locs` and `regs`) to an initial dataset (`data`)
   # calculates the geometric intersection area between the location and region geometries,
   # and determines the area ratio (the proportion of the location's area that overlaps with the region).
+  # units values are converted to common scale (i/e/ km^2 to m^2) before calculations as an added precaution.
 
   res <- data |>
     left_join(
@@ -28,9 +29,11 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
     left_join(
       regs |>
         select(all_of(reg_col), geometry) |>
-        mutate(area_reg = st_area(geometry)) |>
         rename(geom_reg = geometry),
       by = reg_col
+    ) |>
+    mutate(
+      area_loc = units::set_units(area_loc, "m^2")
     )
 
   # calculate intersection area between geoms (location and region) for each observation
@@ -40,9 +43,12 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
       area_int = map2_dbl(
         geom_loc,
         geom_reg,
-        ~ as.numeric(st_area(st_intersection(.x, .y)))
+        ~ st_area(st_intersection(.x, .y))
       ),
-      area_ratio = as.numeric(area_int / area_loc)
+    ) |>
+    mutate(
+      area_int = units::set_units(area_int, "m^2"),
+      area_ratio = round(as.numeric(area_int / area_loc), 3)
     )
 
   # return only the relevent columns. After testing this function, remove geometry cols for performance.
@@ -68,7 +74,7 @@ assign_region <- function(
   #     The area overlap must be above a specified threshold
   # 3.  Nearest Assignment: Exterior locations are assigned to the closest region.
   # The function returns a tibble with columns for the location ID,
-  # the assigned region name, the assignment predicate and the area ratio/
+  # the assigned region name, the assignment predicate and the area ratio
 
   locations,
   regions,
