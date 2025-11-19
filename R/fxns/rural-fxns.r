@@ -49,11 +49,6 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
   res <- res |>
     select(all_of(c(
       names(data),
-      "geom_loc",
-      "geom_reg",
-      "area_loc",
-      "area_reg",
-      "area_int",
       "area_ratio"
     )))
 
@@ -78,8 +73,7 @@ assign_region <- function(
   locations,
   regions,
   id_col,
-  region_name_col,
-  area_threshold = 0.3
+  region_name_col
 ) {
   cat(glue::glue(
     "Analyzing geospatial relationship between {nrow(locations)} {id_col}'s and {nrow(regions)} {region_name_col}'s... "
