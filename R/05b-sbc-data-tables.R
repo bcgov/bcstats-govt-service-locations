@@ -293,17 +293,23 @@ popcenter_population <- assign_region(
   popcenter_boundaries,
   "dbid",
   "pcname"
-)
+) |>
+  rename("p_area_coverage" = area_ratio)
 
 # add rural flag
 popcenter_population <- popcenter_population |>
   mutate(
-    rurality = case_when(
-      is.na(area_ratio) ~ "RURAL",
-      as.numeric(area_ratio) < 0.3 ~ "RURAL",
+    urban_rural = case_when(
+      is.na(p_area_coverage) ~ "RURAL",
+      as.numeric(p_area_coverage) <= 0.3 ~ "RURAL",
       TRUE ~ "URBAN"
     )
   )
+
+popcenter_population |>
+  write_csv(glue(
+    "{FOR_SBC_OUT}/rural-method-misc/rurality-by-db-{Sys.Date()}.csv"
+  ))
 
 db_population_estimates_one_year <- db_projections_transformed |>
   filter(dbid %in% (crosswalk |> pull(dbid))) |>
@@ -316,8 +322,6 @@ db_population_estimates_one_year <- db_projections_transformed |>
 # add flags for urban rural and summarize by csdid
 rural_summary <- db_population_estimates_one_year |>
   left_join(popcenter_population, by = "dbid") |>
-  rename(urban_rural = "rurality") |>
-  #mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |>
   left_join(complete_assignments, by = "dbid") |>
   summarise(
     n_rural_residents = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
@@ -326,7 +330,12 @@ rural_summary <- db_population_estimates_one_year |>
     is_rural = if_else(p_rural_residents > 50, "RURAL", "URBAN"),
     .by = assigned
   ) |>
-  select(assigned, p_rural_residents)
+  select(assigned, p_rural_residents, is_rural)
+
+rural_summary |>
+  write_csv(glue(
+    "{FOR_SBC_OUT}/rural-method-misc/rural-residence-summary-{Sys.Date()}.csv"
+  ))
 
 rural_office <- sbc_locs |>
   distinct(nearest_facility, coord_x, coord_y) |>
@@ -339,13 +348,18 @@ rural_office <- sbc_locs |>
     id_col = "nearest_facility",
     region_name_col = "pcname"
   ) |>
+  rename("p_area_coverage" = area_ratio) |>
   right_join(
     sbc_locs |> distinct(nearest_facility),
     by = "nearest_facility"
   ) |>
-  mutate(rural_office = if_else(predicate == "exterior", "Y", "N")) |>
+  mutate(rural_office = if_else(p_area_coverage == 1, "Y", "N")) |>
   select(nearest_facility, rural_office)
 
+rural_office |>
+  write_csv(glue(
+    "{FOR_SBC_OUT}/rural-method-misc/rural-office-{Sys.Date()}.csv"
+  ))
 
 # =========================================================================== #
 # All together ----
@@ -375,8 +389,8 @@ combined_stats <- population_estimates_three_year |>
 # =========================================================================== #
 
 # Create output directory if it doesn't exist
-if (!dir.exists(TABLES_OUT)) {
-  dir.create(TABLES_OUT, recursive = TRUE)
+if (!dir.exists(FOR_SBC_OUT)) {
+  dir.create(FOR_SBC_OUT, recursive = TRUE)
 }
 
 # Write combined statistics table
@@ -389,8 +403,8 @@ fn <- paste0(
 combined_stats |>
   arrange(sbc_location) |>
   mutate(across(where(is.double), ~ round(., 1))) |>
-  write_csv(file.path(TABLES_OUT, fn))
+  write_csv(file.path(FOR_SBC_OUT, fn))
 
 # Print summary of what was written
-cat("SBC location statistics written to:", file.path(TABLES_OUT, fn), "\n")
+cat("SBC location statistics written to:", file.path(FOR_SBC_OUT, fn), "\n")
 cat("Total SBC locations in statistics:", nrow(combined_stats), "\n")

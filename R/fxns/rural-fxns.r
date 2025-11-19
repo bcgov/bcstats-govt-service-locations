@@ -16,6 +16,7 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
   # Joins two simple features (SF) objects (`locs` and `regs`) to an initial dataset (`data`)
   # calculates the geometric intersection area between the location and region geometries,
   # and determines the area ratio (the proportion of the location's area that overlaps with the region).
+  # units values are converted to common scale (i/e/ km^2 to m^2) before calculations as an added precaution.
 
   res <- data |>
     left_join(
@@ -28,9 +29,11 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
     left_join(
       regs |>
         select(all_of(reg_col), geometry) |>
-        mutate(area_reg = st_area(geometry)) |>
         rename(geom_reg = geometry),
       by = reg_col
+    ) |>
+    mutate(
+      area_loc = units::set_units(area_loc, "m^2")
     )
 
   # calculate intersection area between geoms (location and region) for each observation
@@ -40,20 +43,18 @@ assign_area <- function(data, locs, regs, id_col, reg_col) {
       area_int = map2_dbl(
         geom_loc,
         geom_reg,
-        ~ as.numeric(st_area(st_intersection(.x, .y)))
+        ~ st_area(st_intersection(.x, .y))
       ),
-      area_ratio = area_int / area_loc
+    ) |>
+    mutate(
+      area_int = units::set_units(area_int, "m^2"),
+      area_ratio = round(as.numeric(area_int / area_loc), 3)
     )
 
   # return only the relevent columns. After testing this function, remove geometry cols for performance.
   res <- res |>
     select(all_of(c(
       names(data),
-      "geom_loc",
-      "geom_reg",
-      "area_loc",
-      "area_reg",
-      "area_int",
       "area_ratio"
     )))
 
@@ -73,13 +74,12 @@ assign_region <- function(
   #     The area overlap must be above a specified threshold
   # 3.  Nearest Assignment: Exterior locations are assigned to the closest region.
   # The function returns a tibble with columns for the location ID,
-  # the assigned region name, the assignment predicate and the area ratio/
+  # the assigned region name, the assignment predicate and the area ratio
 
   locations,
   regions,
   id_col,
-  region_name_col,
-  area_threshold = 0.3
+  region_name_col
 ) {
   cat(glue::glue(
     "Analyzing geospatial relationship between {nrow(locations)} {id_col}'s and {nrow(regions)} {region_name_col}'s... "
@@ -95,19 +95,9 @@ assign_region <- function(
     st_drop_geometry() |>
     select(all_of(c(id_col, region_name_col)))
 
-  cat(glue::glue(
-    "Calculating area stats for {nrow(within_cases)} fully contained {id_col}'s..."
-  ))
-  cat("\n")
-
   # assign area stats to each location
-  within_cases <- assign_area(
-    within_cases,
-    locations,
-    regions,
-    id_col,
-    region_name_col
-  )
+  within_cases <- within_cases |>
+    mutate(area_ratio = 1)
 
   # Check intersections, for those locations NOT fully contained
   # get a list of ids that are in locations, but not contained_ids
@@ -134,13 +124,19 @@ assign_region <- function(
   ))
   cat("\n")
 
-  intersect_cases <- assign_area(
-    intersect_cases,
-    unprocessed,
-    regions,
-    id_col,
-    region_name_col
-  )
+  # handle intersections for point geometries separately
+  if (unique(st_geometry_type(locations$geometry)) == "POINT") {
+    intersect_cases <- intersect_cases |>
+      mutate(area_ratio = 1)
+  } else {
+    intersect_cases <- assign_area(
+      intersect_cases,
+      unprocessed,
+      regions,
+      id_col,
+      region_name_col
+    )
+  }
 
   intersect_cases <- intersect_cases |>
     group_by(across(all_of(id_col))) |>
@@ -165,8 +161,6 @@ assign_region <- function(
     "...{nrow(exterior_cases)} {id_col}'s assumed exterior to any {region_name_col}'s."
   ))
   cat("\n")
-  cat(glue::glue("Calculating area stats for exterior {id_col}'s..."))
-  cat("\n")
 
   exterior_cases <- exterior_cases |>
     rename(geom_loc = "geometry") |>
@@ -174,20 +168,11 @@ assign_region <- function(
     select(all_of(c(id_col, region_name_col))) |>
     st_drop_geometry()
 
-  exterior_cases <- assign_area(
-    exterior_cases,
-    unprocessed,
-    regions,
-    id_col,
-    region_name_col
-  )
+  exterior_cases <- exterior_cases |>
+    mutate(area_ratio = 0)
 
-  final <- bind_rows(
-    within_cases |> mutate(predicate = "within"),
-    intersect_cases |> mutate(predicate = "intersects"),
-    exterior_cases |> mutate(predicate = "exterior")
-  ) |>
-    select(all_of(c(id_col, region_name_col, "predicate", "area_ratio")))
+  final <- bind_rows(within_cases, intersect_cases, exterior_cases) |>
+    select(all_of(c(id_col, region_name_col, "area_ratio")))
 
   cat(glue::glue("Done...{nrow(final)} {id_col}'s processed."))
   cat("\n")
