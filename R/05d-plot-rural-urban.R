@@ -67,7 +67,7 @@ popcenter_boundaries <-
   st_transform(crs = 3005)
 
 data <- read_csv(glue("{FOR_SBC_OUT}/rural-method-misc/rurality-by-db.csv")) |>
-  select(dbid, pcname, rurality.old, rurality.new) |>
+  select(dbid, pcname, rurality) |>
   mutate(dbid = as.character(dbid))
 
 # -------------------------- PREPARE DATA -----------------------------------
