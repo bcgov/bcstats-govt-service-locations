@@ -84,6 +84,7 @@ SHAPEFILE_OUT <- glue("{SRC_DATA_FOLDER}/shapefiles/")
 MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
 VISUALS_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
 TABLES_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/tables")
+FOR_SBC_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/for-sbc")
 
 # File patterns
 INPUT_ADDR_DA_PATTERN <- "address_with_da.*"
