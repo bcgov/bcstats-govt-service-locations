@@ -50,21 +50,21 @@ drivetime_data <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
     col_types = cols(.default = "c")
-  ) %>%
-  clean_names() %>%
+  ) |>
+  clean_names() |>
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 # Census dissemination block population data
 pop_db <- read_csv(
   glue("{SRC_DATA_FOLDER}/full-population-db.csv"),
   col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
+) |>
+  clean_names() |>
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
 # DB shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
   mutate(across(c(landarea), as.numeric))
 
 
@@ -152,10 +152,10 @@ db_shapefile |>
 
 # QA the unassigned DBs
 # save the list of unassigned dbs, together with their 2021 census pops
-db_check <- complete_assignments %>%
-  left_join(pop_db, by = 'dbid') %>%
-  left_join(db_no_route, by = 'dbid') %>%
-  select(dbid, assigned, assignment_method, population, no_route) %>%
+db_check <- complete_assignments |>
+  left_join(pop_db, by = 'dbid') |>
+  left_join(db_no_route, by = 'dbid') |>
+  select(dbid, assigned, assignment_method, population, no_route) |>
   mutate(no_route = if_else(is.na(no_route), FALSE, no_route))
 
 # look at populations of unassigned dbs
@@ -164,8 +164,8 @@ db_check <- complete_assignments %>%
 # drive_time / no_route = TRUE - those dbs with some address errors
 # nearest_facility / no_route = FALSE - those dbs that had no addresses at all
 # nearest_facility / no_route = TRUE - those dbs that had addresses but they all errored
-db_qa_summary <- db_check %>%
-  group_by(assignment_method, no_route) %>%
+db_qa_summary <- db_check |>
+  group_by(assignment_method, no_route) |>
   summarize(
     n = n_distinct(dbid),
     average_pop = mean(population, na.rm = TRUE),
@@ -180,13 +180,13 @@ db_qa_summary <- db_check %>%
 db_qa_summary
 
 # and the summary stats
-db_qa_summary %>%
+db_qa_summary |>
   write_csv(glue("{TABLES_OUT}/unassigned_dbs_summary.csv"))
 
 
 # save the list of dbs that do/don't have assignees for further investigation
-db_check %>%
-  arrange(assignment_method, desc(population)) %>%
+db_check |>
+  arrange(assignment_method, desc(population)) |>
   write_csv(glue("{TABLES_OUT}/unassigned_dbs.csv"))
 
 rm(list = ls())

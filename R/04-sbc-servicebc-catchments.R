@@ -24,18 +24,18 @@ source("R/settings.R")
 
 # Get BC boundary as base map
 message("Loading BC boundary...")
-bc_outline <- bc_bound() %>%
+bc_outline <- bc_bound() |>
   st_transform(crs = 3005) # Transform to BC Albers projection
 
 # Get BC Census Subdivision boundaries
 message("Loading CSD boundaries...")
-csd_boundaries <- census_subdivision() %>%
-  clean_names() %>%
+csd_boundaries <- census_subdivision() |>
+  clean_names() |>
   st_transform(crs = 3005) # Ensure consistent CRS
 
 # CSD level shapefiles for each locality
 csd_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) |>
   mutate(across(c(csd_name), as.character), across(c(landarea), as.numeric))
 
 # Get centroids for labels
@@ -47,7 +47,7 @@ csd_centroids_nudged <- csd_centroids |>
       csd_name == 'Langford' ~ geom + c(130000, 10000), # move east for langford
       TRUE ~ geom + c(0, 70000) # move label north to not overlap
     )
-  ) %>%
+  ) |>
   st_set_crs(st_crs(csd_centroids))
 
 csd_centroids_nudged <- csd_centroids_nudged |>
@@ -58,8 +58,8 @@ message("Loading Service BC locations...")
 servicebc <- read_csv(
   glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
   col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
+) |>
+  clean_names() |>
   st_as_sf(coords = c("coord_x", "coord_y"), remove = FALSE, crs = 3005)
 
 # Define CSDs assigned to each facility according to centroid mapping
@@ -68,14 +68,14 @@ csd_facility_assignments <- read_excel(
     "{RAW_DATA_FOLDER}/from_service_bc/Municipality(CSD)toSBCofficeMappying_updated (1).xlsx"
   ),
   sheet = "CSDtoSBC"
-) %>%
-  mutate(CSD_ID = as.character(CSD_ID)) %>%
+) |>
+  mutate(CSD_ID = as.character(CSD_ID)) |>
   filter(
     Nearest_office %in% c("Dawson Creek", "Victoria", "Smithers", "Kamloops")
   )
 
 # Join the assignment data to the CSD boundaries
-csd_boundaries <- csd_boundaries %>%
+csd_boundaries <- csd_boundaries |>
   left_join(
     csd_facility_assignments,
     by = c("census_subdivision_id" = "CSD_ID")

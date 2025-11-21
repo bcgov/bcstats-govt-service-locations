@@ -58,13 +58,13 @@ if (!dir_exists(output_path)) {
 pop_db <- read_csv(
   glue("{SRC_DATA_FOLDER}/full-population-db.csv"),
   col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
+) |>
+  clean_names() |>
   mutate(across(
     c(area_sq_km, population, dwellings, households),
     as.numeric
-  )) %>%
-  mutate(people_per_household = population / dwellings) %>%
+  )) |>
+  mutate(people_per_household = population / dwellings) |>
   select(-c(region_name, dwellings, households, area_sq_km, population))
 
 # --- Drive time data containing columns for address coordinates (address_albers_x, address_albers_y)
@@ -72,10 +72,10 @@ drivetime_data <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
     col_types = cols(.default = "c")
-  ) %>%
-  clean_names() %>%
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric)) %>%
-  mutate(drv_time_min = drv_time_sec / 60) %>% # Calculate drive times in minutes for plotting
+  ) |>
+  clean_names() |>
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric)) |>
+  mutate(drv_time_min = drv_time_sec / 60) |> # Calculate drive times in minutes for plotting
   st_as_sf(
     coords = c("address_albers_x", "address_albers_y"),
     remove = TRUE,
@@ -83,7 +83,7 @@ drivetime_data <-
   )
 
 # add population information to the drive time data
-drivetime_data <- drivetime_data %>%
+drivetime_data <- drivetime_data |>
   left_join(pop_db, by = join_by(dbid))
 
 # --- Service BC location data
@@ -91,25 +91,25 @@ servicebc <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv"),
     col_types = cols(.default = "c")
-  ) %>%
-  clean_names() %>%
+  ) |>
+  clean_names() |>
   st_as_sf(coords = c("coord_x", "coord_y"), remove = TRUE, crs = 3005)
 
 # --- DB shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) |>
   mutate(across(c(landarea), as.numeric))
 
 # --- CSD shapefiles
 csd_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) %>%
-  clean_names() %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) |>
+  clean_names() |>
   mutate(across(c(landarea), as.numeric))
 
 # --- Read the complete assignments data (catchment information)
 complete_assignments <- read_csv(
   glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
-) %>%
+) |>
   mutate(
     across(
       c(dbid, assigned, assignment_method),
@@ -118,7 +118,7 @@ complete_assignments <- read_csv(
   )
 
 # Join drive time data with catchment assignments
-drivetime_data <- drivetime_data %>%
+drivetime_data <- drivetime_data |>
   left_join(complete_assignments, by = "dbid")
 
 # -----------------------------------------------------------------------------------------------------
@@ -145,18 +145,18 @@ if (common_scale == TRUE) {
 # Filter CSDs to just those in the pilot areas
 pilot_csds <- csd_shapefile
 if (exists("CSD_NAMES")) {
-  pilot_csds <- csd_shapefile %>%
+  pilot_csds <- csd_shapefile |>
     filter(csd_name %in% CSD_NAMES)
 }
 
 # --- Loop over each CSD of interest and create maps for their facilities
 for (csd_name in unique(pilot_csds$csd_name)) {
   # Get the CSD shape
-  csd_shape <- pilot_csds %>%
+  csd_shape <- pilot_csds |>
     filter(csd_name == !!csd_name)
 
   # Find the facility in this CSD
-  csd_facility <- servicebc %>%
+  csd_facility <- servicebc |>
     filter(csd_name == !!csd_name)
 
   # Skip if no facility found for this CSD
@@ -171,7 +171,7 @@ for (csd_name in unique(pilot_csds$csd_name)) {
   facility_id <- csd_facility$nearest_facility[1]
 
   # Get the Service BC location for this facility
-  facility_location <- servicebc %>%
+  facility_location <- servicebc |>
     filter(nearest_facility == facility_id)
 
   # Skip if we couldn't find this facility
@@ -183,7 +183,7 @@ for (csd_name in unique(pilot_csds$csd_name)) {
   }
 
   # Get the catchment boundary for this facility
-  catchment_dbs <- complete_assignments %>%
+  catchment_dbs <- complete_assignments |>
     filter(assigned == facility_id)
 
   # Skip if we couldn't find this catchment
@@ -194,29 +194,29 @@ for (csd_name in unique(pilot_csds$csd_name)) {
     next
   }
   # Join with DB shapefile to get geometries
-  catchment_shape <- db_shapefile %>%
-    inner_join(catchment_dbs, by = "dbid") %>%
+  catchment_shape <- db_shapefile |>
+    inner_join(catchment_dbs, by = "dbid") |>
     # Dissolve to create a single polygon representing the catchment
-    group_by(assigned) %>%
+    group_by(assigned) |>
     summarize(
       n_dbs = n(),
       .groups = "drop"
     )
 
   # Identify DBs with no drive data (those assigned by proximity)
-  no_drive_data_dbs <- db_shapefile %>%
+  no_drive_data_dbs <- db_shapefile |>
     inner_join(
-      catchment_dbs %>%
+      catchment_dbs |>
         filter(assignment_method == "nearest_facility"),
       by = "dbid"
     )
   # Get the points for this catchment
-  points <- drivetime_data %>%
-    filter(assigned == facility_id) %>%
+  points <- drivetime_data |>
+    filter(assigned == facility_id) |>
     filter(assigned == nearest_facility)
 
   # Ensure all points fall within the catchment shape boundary (spatial filter)
-  points <- points %>%
+  points <- points |>
     st_filter(catchment_shape, .predicate = st_within)
 
   # Check if there are any points in this catchment
@@ -255,7 +255,7 @@ for (csd_name in unique(pilot_csds$csd_name)) {
   }
 
   # Convert back to sf so it's compatible with ggplot2::geom_sf()
-  smooth_stats_sf <- st_as_sf(smooth_stats_stars) %>%
+  smooth_stats_sf <- st_as_sf(smooth_stats_stars) |>
     st_set_crs(3005)
 
   # Build map

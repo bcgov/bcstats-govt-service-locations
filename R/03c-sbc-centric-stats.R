@@ -47,8 +47,8 @@ drivetime_data <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
     col_types = cols(.default = "c")
-  ) %>%
-  clean_names() %>%
+  ) |>
+  clean_names() |>
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 ## SBC locations to include ----
@@ -61,13 +61,13 @@ sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
 ## from source folder
 complete_assignments <- read_csv(
   glue("{SRC_DATA_FOLDER}/complete-db-assignments.csv")
-) %>%
+) |>
   mutate(dbid = as.character(dbid))
 
 ## population projections from catalogue
 pop_projections <- read_csv(glue(
   "{SRC_DATA_FOLDER}/full-population-projections.csv"
-)) %>%
+)) |>
   mutate(region = as.character(region))
 
 
@@ -76,13 +76,13 @@ pop_projections <- read_csv(glue(
 pop_db <- read_csv(
   glue("{SRC_DATA_FOLDER}/full-population-db.csv"),
   col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
+) |>
+  clean_names() |>
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
 ## db shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) |>
   mutate(across(c(landarea), as.numeric))
 
 ## crosswalk (entire province, not filtered)
@@ -90,7 +90,7 @@ crosswalk <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"),
     col_types = cols(.default = "c")
-  ) %>%
+  ) |>
   clean_names()
 
 # DB population projections ----
@@ -112,19 +112,19 @@ db_projections_transformed <- readRDS(glue(
 drivetime_data_full <- complete_assignments |>
   left_join(drivetime_data, by = "dbid")
 
-drivetime_data %>%
+drivetime_data |>
   # fix the daid column to have no NAs
-  mutate(daid = str_sub(dbid, 1, 8)) %>%
-  left_join(crosswalk, by = c("dbid", "daid")) %>%
-  filter(csd_name == 'Kamloops') %>%
+  mutate(daid = str_sub(dbid, 1, 8)) |>
+  left_join(crosswalk, by = c("dbid", "daid")) |>
+  filter(csd_name == 'Kamloops') |>
   summarize(
     max = max(drv_dist, na.rm = TRUE),
     max2 = quantile(drv_dist, probs = 1.00, na.rm = TRUE)
   )
 
-drivetime_data_reduced <- drivetime_data_full %>%
+drivetime_data_reduced <- drivetime_data_full |>
   # fix the daid column to have no NAs
-  mutate(daid = str_sub(dbid, 1, 8)) %>%
+  mutate(daid = str_sub(dbid, 1, 8)) |>
   filter(
     assigned %in%
       (sbc_locs |>
@@ -172,7 +172,7 @@ drive_measures
 csds_serviced <- drivetime_data_reduced |>
   distinct(assigned, csdid, csd_name, dbid) |>
   left_join(
-    db_projections_transformed %>% distinct(dbid, pct_of_csd),
+    db_projections_transformed |> distinct(dbid, pct_of_csd),
     by = "dbid"
   ) |>
   filter(!is.na(csdid)) |>
@@ -193,13 +193,13 @@ pop_measures <- drivetime_data_reduced |>
     tibble(year = rep(unique(db_projections_transformed$year)))
   ) |>
   left_join(
-    db_projections_transformed %>%
-      filter(gender == 'T') %>%
+    db_projections_transformed |>
+      filter(gender == 'T') |>
       select(dbid, year, age, population, total, area_sq_km),
     by = c("dbid", 'year')
   ) |>
-  filter(!is.na(csdid)) %>%
-  group_by(assigned, year) %>%
+  filter(!is.na(csdid)) |>
+  group_by(assigned, year) |>
   summarize(
     n = n(),
     n_dbs = n_distinct(dbid),
@@ -224,14 +224,14 @@ pop_measures <- drivetime_data_reduced |>
       )
     ),
     .groups = "drop"
-  ) %>%
+  ) |>
   left_join(
-    csds_serviced %>%
-      filter(pct_of_csd > 0.5) %>%
-      group_by(assigned) %>%
+    csds_serviced |>
+      filter(pct_of_csd > 0.5) |>
+      group_by(assigned) |>
       summarize(n_majority_csds = n()),
     by = "assigned"
-  ) %>%
+  ) |>
   select(
     assigned,
     year,
@@ -259,15 +259,15 @@ drivetime_data_full |>
 crosswalk |>
   left_join(drivetime_data_full, by = c("dbid", "daid")) |>
   filter(csd_name == "Esquimalt") |>
-  filter(is.na(nearest_facility)) %>%
+  filter(is.na(nearest_facility)) |>
   pull(dbid)
 
-db_shapefile %>% filter(dbid == '59170315002')
+db_shapefile |> filter(dbid == '59170315002')
 
 # there is a mismatch between the population data number of DBs and the
 # shapefile number of DBs
-db_shapefile %>% distinct(dbid) %>% nrow() # 52423
-pop_db %>% distinct(dbid) %>% nrow() # 52387
+db_shapefile |> distinct(dbid) |> nrow() # 52423
+pop_db |> distinct(dbid) |> nrow() # 52387
 
 # SAVE ALL TABLES ----
 write_csv(
@@ -287,8 +287,8 @@ write_csv(
 
 # also save csd populations for reference
 write_csv(
-  pop_projections %>%
-    filter(region_name %in% CSD_NAMES) %>%
+  pop_projections |>
+    filter(region_name %in% CSD_NAMES) |>
     filter(year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)),
   glue("{TABLES_OUT}/csd_populations.csv")
 )
@@ -343,8 +343,8 @@ ggsave(
 
 # create a box plot for all facilities
 box_plot <- build_boxplot(
-  data = drivetime_data_reduced %>%
-    group_by(dbid, assigned) %>%
+  data = drivetime_data_reduced |>
+    group_by(dbid, assigned) |>
     summarize(drv_dist = mean(drv_dist, na.rm = TRUE)),
   x_var = 'assigned',
   y_var = 'drv_dist',
@@ -443,7 +443,7 @@ pyramid_data <- complete_assignments |>
     db_projections_transformed |>
       filter(year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)),
     by = "dbid"
-  ) %>%
+  ) |>
   filter(
     assigned %in%
       (sbc_locs |>

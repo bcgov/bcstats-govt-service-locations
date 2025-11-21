@@ -43,7 +43,7 @@ bc_map <- bc_bound() |>
 
 # CSD level shapefiles for each locality
 csd_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) |>
   mutate(across(c(csd_name), as.character), across(c(landarea), as.numeric))
 
 # Locations of all Service BC locations
@@ -55,13 +55,13 @@ sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")) |>
 
 # DB shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) |>
   mutate(across(c(landarea), as.numeric))
 
 # Read the pre-computed assignment data
 complete_assignments <- read_csv(
   glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
-) %>%
+) |>
   mutate(
     across(
       c(dbid, assigned, assignment_method),
@@ -78,7 +78,7 @@ csd_centroids_nudged <- csd_centroids |>
       csd_name == 'Langford' ~ geom + c(140000, 15000), # move east for langford
       TRUE ~ geom + c(0, 70000) # move label north to not overlap
     )
-  ) %>%
+  ) |>
   st_set_crs(st_crs(csd_centroids))
 
 # Filter to relevant datasets for the maps
