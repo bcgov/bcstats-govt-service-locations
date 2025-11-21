@@ -12,152 +12,193 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-get_fully_contained_cases <- function(locations, regions, id_col, region_name_col) {
-  # Returns an empty, initialized dataframe if there are no fully contained locations.
-  contains_matrix <- sf::st_contains(regions, locations, sparse = FALSE)
-  contains_indices <- which(contains_matrix, arr.ind = TRUE)
+assign_area <- function(data, locs, regs, id_col, reg_col) {
+  # Joins two simple features (SF) objects (`locs` and `regs`) to an initial dataset (`data`)
+  # calculates the geometric intersection area between the location and region geometries,
+  # and determines the area ratio (the proportion of the location's area that overlaps with the region).
+  # units values are converted to common scale (i/e/ km^2 to m^2) before calculations as an added precaution.
 
-  if (length(contains_indices) == 0) {
-    # No locations fully contained
-    res <- data.frame(
-      temp_id = character(0),
-      temp_region = character(0),
-      stringsAsFactors = FALSE
-    )
-  } else {
-    # Create data.frame with proper column names
-    res <- data.frame(
-      temp_id = locations[[id_col]][contains_indices[, 2]],
-      temp_region = regions[[region_name_col]][contains_indices[, 1]],
-      stringsAsFactors = FALSE
-    )
-  }
-  # Set correct column names
-  names(res) <- c(id_col, region_name_col)
-
-  return(res)
-}
-
-get_intersect_cases <- function(locations, regions, id_col, region_name_col) {
-  # Returns an empty, initialized dataframe if there are no intersecting locations.
-  intersects_matrix <- sf::st_intersects(regions, locations, sparse = FALSE)
-  intersects_indices <- which(intersects_matrix, arr.ind = TRUE)
-
-  if (length(intersects_indices) == 0) {
-    # No intersections found
-    res <- data.frame(
-      temp_id = character(0),
-      temp_region = character(0),
-      stringsAsFactors = FALSE
-    )
-  } else {
-    # Create data.frame with proper column names
-    res <- data.frame(
-      temp_id = locations[[id_col]][intersects_indices[, 2]],
-      temp_region = regions[[region_name_col]][intersects_indices[, 1]],
-      stringsAsFactors = FALSE
-    )
-  }
-  # Set correct column names
-  names(res) <- c(id_col, region_name_col)
-
-  return(res)
-}
-
-get_single_intersect_cases <- function(cases, id_col) {
-  # Returns an empty, initialized dataframe if there are no single intersecting locations.
-
-  counts <- table(cases[[id_col]])
-  singles <- names(counts)[counts == 1]
-  res <- cases[cases[[id_col]] %in% singles, ]
-
-  return(res)
-}
-
-get_multiple_intersect_cases <- function(cases, remaining_locations, regions, id_col, region_name_col, area_threshold) {
-  # Returns an empty, initialized dataframe if there are no multiple intersecting locations.
-
-  intersection_counts <- table(cases[[id_col]])
-  multiple_intersections <- names(intersection_counts)[intersection_counts > 1]
-
-  # Do we need to handle the case in which there are no multiple intersections?
-  #if (length(multiple_intersections) > 0) {
-  multiple_candidates <- cases[cases[[id_col]] %in% multiple_intersections, ]
-
-  # Get geometries only for locations/regions involved in multiple intersections
-  multi_loc_ids <- unique(multiple_candidates[[id_col]])
-  multi_region_names <- unique(multiple_candidates[[region_name_col]])
-
-  loc_geoms <- remaining_locations[remaining_locations[[id_col]] %in% multi_loc_ids, ] |>
-    select(all_of(id_col), geometry) |>
-    mutate(loc_area = st_area(geometry))
-
-  reg_geoms <- regions[regions[[region_name_col]] %in% multi_region_names, ] |>
-    select(all_of(region_name_col), geometry)
-
-  # Calculate intersection areas and select best match
-  res <- multiple_candidates |>
-    left_join(loc_geoms, by = id_col, suffix = c("", "_loc")) |>
-    left_join(reg_geoms, by = region_name_col, suffix = c("", "_reg")) |>
-    mutate(
-      int_area = map2_dbl(geometry, geometry_reg,
-                           ~ st_area(st_intersection(.x, .y))),
-      area_ratio = as.numeric(int_area) / as.numeric(loc_area)
+  res <- data |>
+    left_join(
+      locs |>
+        select(all_of(id_col), geometry) |>
+        mutate(area_loc = st_area(geometry)) |>
+        rename(geom_loc = geometry),
+      by = id_col
     ) |>
-    filter(area_ratio > area_threshold) |>
-    slice_max(int_area, n = 1, with_ties = FALSE, by = all_of(id_col)) |>
-    select(all_of(c(id_col, region_name_col)))
-  #}
+    left_join(
+      regs |>
+        select(all_of(reg_col), geometry) |>
+        rename(geom_reg = geometry),
+      by = reg_col
+    ) |>
+    mutate(
+      area_loc = units::set_units(area_loc, "m^2")
+    )
+
+  # calculate intersection area between geoms (location and region) for each observation
+  # calculate the 'rurality' of each location: that is, the proportion of area "found' in the region
+  res <- res |>
+    mutate(
+      area_int = map2_dbl(
+        geom_loc,
+        geom_reg,
+        ~ st_area(st_intersection(.x, .y))
+      ),
+    ) |>
+    mutate(
+      area_int = units::set_units(area_int, "m^2"),
+      area_ratio = round(as.numeric(area_int / area_loc), 3)
+    )
+
+  # return only the relevent columns. After testing this function, remove geometry cols for performance.
+  res <- res |>
+    select(all_of(c(
+      names(data),
+      "area_ratio"
+    )))
 
   return(res)
 }
 
-is_in_region_optim <- function(locations, regions, id_col, region_name_col, area_threshold = 0.3) {
-  # Returns an empty, initialized dataframe if there are no contained or intersecting locations.
 
-  message(sprintf("Processing %d %s's against %d %s regions...",
-                  nrow(locations), id_col, nrow(regions), region_name_col))
+assign_region <- function(
+  #This function takes two spatial datasets, locations (the features to be assigned) and
+  # regions (the areas to assign them to), and assigns each location to a specific region
+  # based on its geospatial relationship (within, intersecting, or exterior/nearest).
 
-  # 1: Check for full containment first
-  fully_contained_cases <- get_fully_contained_cases(locations, regions, id_col, region_name_col)
+  # Location is categorized based on the first condition it satisfies:
 
-  # 2: Check intersections, but only for locations NOT fully contained)
-  #IDs of fully contained locations, or empty character string if none
-  contained_ids <- unique(fully_contained_cases[[id_col]]) 
-  remaining_locations <- locations[!locations[[id_col]] %in% contained_ids, ]
+  # 1.  Direct Assignment: locations are completely contained within a single region.
+  # 2.  Intersection Assignment: Locations intersect with a region of maximum overlap
+  #     The area overlap must be above a specified threshold
+  # 3.  Nearest Assignment: Exterior locations are assigned to the closest region.
+  # The function returns a tibble with columns for the location ID,
+  # the assigned region name, the assignment predicate and the area ratio
 
-  message(sprintf("%d locations fully contained. Checking intersections for remaining %d locations...",
-                  length(contained_ids), nrow(remaining_locations)))
+  locations,
+  regions,
+  id_col,
+  region_name_col
+) {
+  cat(glue::glue(
+    "Analyzing geospatial relationship between {nrow(locations)} {id_col}'s and {nrow(regions)} {region_name_col}'s... "
+  ))
+  cat("\n")
 
-  all_intersect_cases <- get_intersect_cases(remaining_locations, regions, id_col, region_name_col)
+  within_cases <- st_join(
+    locations,
+    regions,
+    join = st_within,
+    left = FALSE
+  ) |>
+    st_drop_geometry() |>
+    select(all_of(c(id_col, region_name_col)))
 
-  # 3: Handle different types of intersection cases (single, multiple, none)
-  # Single intersections - these occur when only the boundaries touch so we can accept directly
-  single_intersect_cases <- get_single_intersect_cases(all_intersect_cases, id_col)
+  # assign area stats to each location
+  within_cases <- within_cases |>
+    mutate(area_ratio = 1)
 
-  # Multiple intersections - utilizes area calculations
-  multiple_intersect_cases <-
-    get_multiple_intersect_cases(all_intersect_cases, remaining_locations, regions, id_col, region_name_col, area_threshold)
+  # Check intersections, for those locations NOT fully contained
+  # get a list of ids that are in locations, but not contained_ids
+  unprocessed <- locations |>
+    anti_join(within_cases, by = id_col)
 
-  # 4. Combine all results and return
-  final_result <- bind_rows(fully_contained_cases, single_intersect_cases, multiple_intersect_cases)
+  cat(glue::glue("Analyzing remaining {nrow(unprocessed)} {id_col}'s..."))
+  cat("\n")
 
-  message(sprintf("%d (%.1f%%) of %s's were matched to %s regions.",
-                 nrow(final_result), 100 * nrow(final_result) / nrow(locations), id_col, region_name_col))
-  message(sprintf("  - %d from full containment", nrow(fully_contained_cases)))
-  message(sprintf("  - %d from intersection analysis", nrow(final_result) - nrow(fully_contained_cases)))
+  intersect_cases <- st_join(
+    unprocessed,
+    regions,
+    join = st_intersects,
+    left = FALSE
+  ) |>
+    st_drop_geometry() |>
+    select(all_of(c(id_col, region_name_col)))
 
-  return(final_result)
+  cat("\t")
+  cat(glue::glue("...{nrow(intersect_cases)} intersections found."))
+  cat("\n")
+  cat(glue::glue(
+    "Calculating area stats and maximum overlaps..."
+  ))
+  cat("\n")
+
+  # handle intersections for point geometries separately
+  if (unique(st_geometry_type(locations$geometry)) == "POINT") {
+    intersect_cases <- intersect_cases |>
+      mutate(area_ratio = 1)
+  } else {
+    intersect_cases <- assign_area(
+      intersect_cases,
+      unprocessed,
+      regions,
+      id_col,
+      region_name_col
+    )
+  }
+
+  intersect_cases <- intersect_cases |>
+    group_by(across(all_of(id_col))) |>
+    slice_max(area_ratio, n = 1, with_ties = FALSE) |>
+    ungroup()
+
+  cat("\t")
+  cat(glue::glue(
+    "...intersections for {nrow(intersect_cases)} {id_col}'s assigned."
+  ))
+  cat("\n")
+
+  # 5. Create similar subset of DB's completely outside of the popcenter region (all the rest)
+  exterior_cases <- locations |>
+    anti_join(within_cases, by = id_col) |>
+    anti_join(intersect_cases, by = id_col)
+
+  cat(glue::glue("Analyzing remaining {nrow(exterior_cases)} {id_col}'s..."))
+  cat("\n")
+  cat("\t")
+  cat(glue::glue(
+    "...{nrow(exterior_cases)} {id_col}'s assumed exterior to any {region_name_col}'s."
+  ))
+  cat("\n")
+
+  exterior_cases <- exterior_cases |>
+    rename(geom_loc = "geometry") |>
+    st_join(regions, join = st_nearest_feature, left = FALSE) |>
+    select(all_of(c(id_col, region_name_col))) |>
+    st_drop_geometry()
+
+  exterior_cases <- exterior_cases |>
+    mutate(area_ratio = 0)
+
+  final <- bind_rows(within_cases, intersect_cases, exterior_cases) |>
+    select(all_of(c(id_col, region_name_col, "area_ratio")))
+
+  cat(glue::glue("Done...{nrow(final)} {id_col}'s processed."))
+  cat("\n")
+
+  return(final)
 }
 
 # --- Create a reusable plotting function for urban/rural maps
 plot_urban_rural <- function(data, title = "Rural and Urban Areas - BC") {
-
   data |>
     ggplot2::ggplot() +
     ggplot2::geom_sf(aes(color = rural), size = 0.5, alpha = 0.1) +
-    ggplot2::scale_color_manual(values = c("URBAN" = "#074607", "RURAL" = "#8888f5"), name = "Rural") +
-    ggplot2::labs(title = title, subtitle = "Colored by Rural Flag and Method", x = "Longitude", y = "Latitude") +
-    ggplot2::guides(color = ggplot2::guide_legend(override.aes = list(shape = 15, size = 5, alpha = 1))) +
+    ggplot2::scale_color_manual(
+      values = c("URBAN" = "#074607", "RURAL" = "#8888f5"),
+      name = "Rural"
+    ) +
+    ggplot2::labs(
+      title = title,
+      subtitle = "Colored by Rural Flag and Method",
+      x = "Longitude",
+      y = "Latitude"
+    ) +
+    ggplot2::guides(
+      color = ggplot2::guide_legend(
+        override.aes = list(shape = 15, size = 5, alpha = 1)
+      )
+    ) +
     ggplot2::theme_minimal()
 }
