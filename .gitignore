@@ -8,5 +8,4 @@ README.html
 *.csv
 *.rds
 *.lintr
-*.toml
-*.json
+tasks.json
