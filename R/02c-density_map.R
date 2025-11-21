@@ -60,13 +60,13 @@ if (!dir_exists(output_path)) {
 pop_db <- read_csv(
   glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"),
   col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
+) |>
+  clean_names() |>
   mutate(across(
     c(area_sq_km, population, dwellings, households),
     as.numeric
-  )) %>%
-  mutate(people_per_household = population / dwellings) %>%
+  )) |>
+  mutate(people_per_household = population / dwellings) |>
   select(-c(region_name, dwellings, households, area_sq_km, population))
 
 # --- Drive time data containing columns for address coordinates (address_albers_x, address_albers_y)
@@ -75,19 +75,19 @@ drivetime_data <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"),
     col_types = cols(.default = "c")
-  ) %>%
-  clean_names() %>%
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric)) %>%
-  mutate(drv_time_min = drv_time_sec / 60) %>% # Calculate drive times in minutes for plotting
+  ) |>
+  clean_names() |>
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric)) |>
+  mutate(drv_time_min = drv_time_sec / 60) |> # Calculate drive times in minutes for plotting
   st_as_sf(
     coords = c("address_albers_x", "address_albers_y"),
     remove = TRUE,
     crs = 3005
-  ) %>%
+  ) |>
   select(-c(coord_x, coord_y)) # remove the Service BC location coordinates
 
 # add population information to the drive time data
-drivetime_data <- drivetime_data %>%
+drivetime_data <- drivetime_data |>
   left_join(pop_db, by = join_by(dbid))
 
 # --- Service BC location data containing columns for address coordinates (coord_x, coord_x)
@@ -95,13 +95,13 @@ servicebc <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
     col_types = cols(.default = "c")
-  ) %>%
-  clean_names() %>%
+  ) |>
+  clean_names() |>
   st_as_sf(coords = c("coord_x", "coord_y"), remove = TRUE, crs = 3005)
 
 # --- CSD shapefiles
 shp_csd_all <-
-  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) |>
   select(census_subdivision_name = csd_name, census_subdivision_id = csdid)
 
 # Check if we have any matching CSDs
@@ -134,14 +134,14 @@ if (common_scale == TRUE) {
 # -----------------------------------------------------------------------------------------------------
 
 # --- Loop over each census subdivision (CSD) to create maps
-for (id in servicebc %>% pull(csdid)) {
-  sbclocation <- servicebc %>%
+for (id in servicebc |> pull(csdid)) {
+  sbclocation <- servicebc |>
     filter(csdid == id)
 
-  shp_csd <- shp_csd_all %>%
+  shp_csd <- shp_csd_all |>
     filter(census_subdivision_id == id)
 
-  points <- drivetime_data %>%
+  points <- drivetime_data |>
     st_intersection(shp_csd)
 
   csd <- sbclocation$csd_name
@@ -180,7 +180,7 @@ for (id in servicebc %>% pull(csdid)) {
   }
 
   # Convert back to sf so it's compatible with ggplot2::geom_sf()
-  smooth_stats_sf <- st_as_sf(smooth_stats_stars) %>%
+  smooth_stats_sf <- st_as_sf(smooth_stats_stars) |>
     st_set_crs(3005)
 
   # build map

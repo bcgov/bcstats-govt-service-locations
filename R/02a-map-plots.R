@@ -29,15 +29,15 @@ source("R/fxns/csd-plots.R")
 
 # db drivetime and shapefile data
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/reduced-db-with-location.gpkg")) %>%
+  st_read(glue("{SHAPEFILE_OUT}/reduced-db-with-location.gpkg")) |>
   mutate(across(c(landarea), as.numeric))
 
 db_drivetime_data <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv"),
     col_types = cols(.default = "c")
-  ) %>%
-  clean_names() %>%
+  ) |>
+  clean_names() |>
   mutate(across(
     c(
       starts_with("drv_"),
@@ -50,7 +50,7 @@ db_drivetime_data <-
     as.numeric
   ))
 
-db_drivetime_map_data <- db_shapefile %>%
+db_drivetime_map_data <- db_shapefile |>
   inner_join(db_drivetime_data, by = join_by(dbid, csdid, csd_name))
 
 # service bc location data
@@ -58,8 +58,8 @@ servicebc <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
     col_types = cols(.default = "c")
-  ) %>%
-  clean_names() %>%
+  ) |>
+  clean_names() |>
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005)
 
 

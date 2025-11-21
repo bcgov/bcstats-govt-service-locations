@@ -35,15 +35,15 @@ sbc_locs <- read_csv(
 ## population projections from catalogue
 pop_projections <- read_csv(glue(
   "{SRC_DATA_FOLDER}/full-population-projections.csv"
-)) %>%
+)) |>
   mutate(region = as.character(region))
 
 ## census populations
 pop_db <- read_csv(
   glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"),
   col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
+) |>
+  clean_names() |>
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
 ## crosswalk (entire province, not filtered)
@@ -51,7 +51,7 @@ crosswalk <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"),
     col_types = cols(.default = "c")
-  ) %>%
+  ) |>
   clean_names()
 
 # =========================================================================== #
@@ -62,7 +62,7 @@ crosswalk <-
 db_projections_transformed <- readRDS(glue(
   "{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"
 ))
-db_projections_transformed <- db_projections_transformed %>%
+db_projections_transformed <- db_projections_transformed |>
   filter(csdid %in% CSDIDS)
 
 # =========================================================================== #

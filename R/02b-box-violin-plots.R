@@ -49,8 +49,8 @@ numeric_cols <- names(db_stats_raw)[str_detect(
   numeric_cols_pattern
 )]
 
-db_stats_raw <- db_stats_raw %>%
-  mutate(across(all_of(numeric_cols), as.numeric)) %>%
+db_stats_raw <- db_stats_raw |>
+  mutate(across(all_of(numeric_cols), as.numeric)) |>
   mutate(municipality = as.factor(csd_name))
 
 #------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ db_stats_raw <- db_stats_raw %>%
 #------------------------------------------------------------------------------
 
 region <- "Dissemination Block"
-plot_data <- db_stats_raw %>%
+plot_data <- db_stats_raw |>
   filter(csd_name %in% CSD_NAMES)
 
 # user-defined plot parameters

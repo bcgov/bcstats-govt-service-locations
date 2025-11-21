@@ -27,15 +27,15 @@ drivetime_data <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv"),
     col_types = cols(.default = "c")
-  ) %>%
-  clean_names() %>%
+  ) |>
+  clean_names() |>
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 pop_db <- read_csv(
   glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"),
   col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
+) |>
+  clean_names() |>
   mutate(across(
     c(area_sq_km, population, dwellings, households),
     as.numeric
@@ -44,8 +44,8 @@ pop_db <- read_csv(
 pop_csd <- read_csv(
   glue("{SRC_DATA_FOLDER}/reduced-population-csd.csv"),
   col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
+) |>
+  clean_names() |>
   mutate(across(
     c(area_sq_km, population, dwellings, households),
     as.numeric
@@ -66,10 +66,10 @@ drivetime_stats_csd <- calculate_drivetime_stats(
 
 # FLAG TODO: in the case of reduced data, we can use the same csd name.  Double check this
 # as csd name from cansensus may not match the csd name in the drivetime data
-drivetime_stats_db <- drivetime_stats_db %>%
+drivetime_stats_db <- drivetime_stats_db |>
   left_join(pop_db, by = c("dbid", "csdid", "csd_name"))
 
-drivetime_stats_csd <- drivetime_stats_csd %>%
+drivetime_stats_csd <- drivetime_stats_csd |>
   left_join(pop_csd, by = c("csdid"))
 
 #------------------------------------------------------------------------------
@@ -84,8 +84,8 @@ message(glue(
   "({scales::percent(low_counts_prop)}) of DB regions have fewer than 5 observations"
 ))
 
-low_counts <- drivetime_stats_db %>%
-  group_by(csd_name, csdid) %>%
+low_counts <- drivetime_stats_db |>
+  group_by(csd_name, csdid) |>
   summarise(
     n_db_blocks = n(),
     n_under_5_addresses = sum(n_address < 5, na.rm = TRUE),
@@ -94,19 +94,19 @@ low_counts <- drivetime_stats_db %>%
       accuracy = 0.1,
       trim = TRUE
     )
-  ) %>%
+  ) |>
   ungroup()
 
 # calculate the number of service BC locations in each CSD
-servicebc_counts <- drivetime_data %>%
-  distinct(csd_name, csdid, nearest_facility, coord_x, coord_y) %>% # keep the coords to guard against multiple locations per label
-  group_by(csd_name, csdid, nearest_facility, coord_x, coord_y) %>%
-  summarise(n_service_bc = n()) %>%
-  ungroup() %>%
+servicebc_counts <- drivetime_data |>
+  distinct(csd_name, csdid, nearest_facility, coord_x, coord_y) |> # keep the coords to guard against multiple locations per label
+  group_by(csd_name, csdid, nearest_facility, coord_x, coord_y) |>
+  summarise(n_service_bc = n()) |>
+  ungroup() |>
   select(-c(coord_x, coord_y))
 
-drivetime_stats_csd <- drivetime_stats_csd %>%
-  left_join(low_counts, by = c("csd_name", "csdid")) %>%
+drivetime_stats_csd <- drivetime_stats_csd |>
+  left_join(low_counts, by = c("csd_name", "csdid")) |>
   left_join(servicebc_counts, by = c("csd_name", "csdid"))
 
 #------------------------------------------------------------------------------
