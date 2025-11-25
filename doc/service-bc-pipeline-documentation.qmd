@@ -354,9 +354,17 @@ Analyzes urban and rural accessibility patterns by classifying addresses using m
 - **Processing**: Dissemination block (DB)-level urban/rural classifications are joined with population projections and catchment assignments. For each catchment area, the total population and the proportion of rural residents are calculated. Catchments are classified as rural if more than 50% of their population resides in rural DBs.
 :::
 
-#### Key Outputs
-
 ::: {.callout-note collapse="true" icon="false"}
+## 3. SBC Office Urban/Rural Classification
+
+- **Input**: Service BC facility locations, and Statistics Canada population center boundaries.
+- **Logic**: Each Service BC office is classified as urban or rural based on its geographic relationship with population center boundaries:
+  1. **Direct Assignment**: Offices located entirely within a population center boundary are classified as urban.
+  2. **Rural Classification**: Offices outside population center boundaries or on the boundary are classified as rural.
+- **Processing**:
+  - Facility coordinates are spatially joined with population center boundaries. 
+  - Facilities within population centers are classified as urban; all others are classified as rural.
+:::
 
 ### Service BC Facility Tables
 
