@@ -2,9 +2,9 @@
 # ------------------------------------------------------------------------
 # Script: 02c-box-violin-plots.R
 
-# Description: Creates statistical visualizations (box plots and violin plots) 
-# showing the distribution of drive times to Service BC offices across different 
-# regions of British Columbia. Compares access metrics between census subdivisions 
+# Description: Creates statistical visualizations (box plots and violin plots)
+# showing the distribution of drive times to Service BC offices across different
+# regions of British Columbia. Compares access metrics between census subdivisions
 # and demographic groups.
 
 # Requirements:
@@ -37,15 +37,20 @@ output_dir <- file.path(VISUALS_OUT, "csd-drive-distance-plots")
 #------------------------------------------------------------------------------
 
 db_stats_raw <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv")
-               , col_types = cols(.default = "c"))
+  read_csv(
+    glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv"),
+    col_types = cols(.default = "c")
+  )
 
 # Identify columns expected to be numeric based on naming convention
 numeric_cols_pattern <- "(dist|time|area|households|n_address|population|dwellings)" # Adjust if needed
-numeric_cols <- names(db_stats_raw)[str_detect(names(db_stats_raw), numeric_cols_pattern)]
+numeric_cols <- names(db_stats_raw)[str_detect(
+  names(db_stats_raw),
+  numeric_cols_pattern
+)]
 
-db_stats_raw <- db_stats_raw %>%
-  mutate(across(all_of(numeric_cols), as.numeric)) %>%
+db_stats_raw <- db_stats_raw |>
+  mutate(across(all_of(numeric_cols), as.numeric)) |>
   mutate(municipality = as.factor(csd_name))
 
 #------------------------------------------------------------------------------
@@ -53,11 +58,11 @@ db_stats_raw <- db_stats_raw %>%
 #------------------------------------------------------------------------------
 
 region <- "Dissemination Block"
-plot_data <- db_stats_raw %>%
+plot_data <- db_stats_raw |>
   filter(csd_name %in% CSD_NAMES)
 
 # user-defined plot parameters
-y_var <- "drv_dist_mean"  # colnames(plot_data) for other options
+y_var <- "drv_dist_mean" # colnames(plot_data) for other options
 x_var <- "municipality"
 
 y_title <- "Mean Driving Distance (km)"
