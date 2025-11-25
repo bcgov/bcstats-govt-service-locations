@@ -395,25 +395,30 @@ This step utilizes intermediate datasets created by earlier pipeline processes (
 
 **Population Metrics by Facility:**
 
-- `estimated_population_2025`, `5_yr_projection_2030`, `10_year_projection_2035` - Population served by each facility aggregated from assigned DBs
-- `est_population_under_19_yrs` - Ages 0-18 population served (2025)
-- `est_population_19_to_64_yrs` - Working age population served (2025)  
-- `est_population_over_64_yrs` - Ages 65+ population served (2025)
-- `median_age` - Population-weighted median age of facility catchment area
+- `estimated_population_2025`, `5_yr_projection_2030`, `10_year_projection_2035` - Population projections aggregated from assigned DBs.
+- `est_population_0_to_14_yrs` - Ages 0–14 population served (2025).
+- `est_population_15_to_24_yrs` - Ages 15–24 population served (2025).
+- `est_population_25_to_64_yrs` - Ages 25–64 population served (2025).
+- `est_population_over_64_yrs` - Ages 65+ population served (2025).
+- `median_age`, `mean_age` - Median and mean ages of the catchment area population.
 
 **Service Performance Metrics:**
 
 - `n_addresses_served` - Total address count served by each facility
 - `n_csds_served` - Count of distinct CSDs within each facility's catchment
-- `avg_driving_distance` - Mean driving distance to facility from served addresses
-- `addresses_under_5_km` - Address count with high accessibility (under 5km)
-- `addresses_5_to_20_km` - Address count with moderate accessibility (5-20km)
-- `addresses_20_plus_km` - Address count with low accessibility (20km+)
+- `mean_driving_distance`, `median_driving_distance` - Mean and median driving distances to the facility.
+- `mean_driving_time`, `median_driving_time` - Mean and median driving times to the facility.
 
-**Placeholder Fields:**
+**Time and Distance Bins:**
 
-- `rural_office` - 'Y/N' indicator for rural office classification (for future analysis)
-- `rural_residents` - Numeric field initialized to 0 for rural population metrics
+- `n_x_y_km`, `n_180_plus_km` - Number of residents within each distance bin.
+- `n_within_x_y_min`,`n_over_150_min` - Number of residents within each drivetime bin.
+
+**Urban/Rural Classification Metrics:**
+
+- `p_rural_residents` - Proportion of the catchment area's population classified as rural.
+- `is_rural` - Binary classification (`RURAL` or `URBAN`) for each catchment area.
+- `rural_office` - Binary indicator (`Y/N`) for whether the Service BC office is classified as rural.
 :::
 
 ::: {.callout-note collapse="true" icon="false"}
