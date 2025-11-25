@@ -436,16 +436,22 @@ Calculated metrics are aggregated by assigned Service BC facility (`sbc_location
 ## Dependencies and Environment Requirements
 
 ### R Package Dependencies
-- **Core Data Processing**: `tidyverse`, `glue`, `janitor`
-- **Spatial Analysis**: `sf`, `bcdata`, `bcmaps`, `rmapshaper`
-- **Census Data**: `cancensus` (requires API key setup)
-- **File Management**: `safepaths`, `fs`
+
+The following R packages are required for the Service BC data pipeline:
+
+- **Core Data Processing**: `tidyverse`, `glue`, `janitor`, `snakecase`.
+- **Spatial Analysis**: `sf`, `bcdata`, `bcmaps`, `rmapshaper`, `tigris`, `spatstat`, `stars`, `terra`.
+- **Visualization**: `ggplot2`, `scales`, `ggnewscale`.
+- **Statistical Calculations**: `e1071`.
+- **File Management**: `safepaths`, `fs`.
+
+These packages are used for data cleaning, spatial analysis, visualization, and statistical calculations throughout the pipeline.
 
 ### System Requirements
 - **Network Access**: BC Data Catalogue, CensusMapper API
 - **Storage**: Large shapefile processing requires substantial disk space
 - **Memory**: Province-wide spatial operations require significant RAM
-- **External Data**: Statistics Canada population center and FSA boundary files for urban/rural analysis
+- **External Data**: Statistics Canada population center
 
 ### Authentication Setup
 ```r
