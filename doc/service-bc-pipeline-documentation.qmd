@@ -330,10 +330,33 @@ Analyzes urban and rural accessibility patterns by classifying addresses using m
 
 #### Methodology Overview
 
-**1. **
+::: {.callout-note collapse="true" icon="false"}
+
+## 1. Population Center- DB Classification
+
+- **Input**: Dissemination block (DB) shapefiles and Statistics Canada population center boundary files.
+- **Logic**: Each DB is classified as urban or rural based on its geospatial relationship with population center boundaries. The classification follows a hierarchical approach:
+  1. **Direct Assignment**: DBs that are fully contained within a population center boundary are classified as urban.
+  2. **Intersection Assignment**: For DBs that intersect multiple population center boundaries, the population center with the largest area overlap is selected. If the overlap proportion is below a predefined threshold (e.g., 30%), the DB is classified as rural.
+  3. **Nearest Assignment**: DBs that do not intersect any population center are assigned to the nearest population center. These DBs are classified as rural if their area overlap is negligible.
+- **Processing**:
+  - Geospatial relationships are analyzed using the `sf` package in R.
+  - Area overlaps are calculated using geometric intersection methods (`st_intersection`).
+  - DBs are assigned to population centers based on the highest area overlap or nearest proximity.
+
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 2. Catchment Area Urban/Rural Classification
+
+- **Input**: Dissemination block (DB) urban/rural classifications, population projections, and Service BC facility catchment assignments.
+- **Logic**: Each Service BC facility catchment area is classified as urban or rural based on the proportion of its population residing in rural dissemination blocks:
+- **Processing**: Dissemination block (DB)-level urban/rural classifications are joined with population projections and catchment assignments. For each catchment area, the total population and the proportion of rural residents are calculated. Catchments are classified as rural if more than 50% of their population resides in rural DBs.
+:::
 
 #### Key Outputs
 
+::: {.callout-note collapse="true" icon="false"}
 
 ### Service BC Facility Tables
 
@@ -356,6 +379,7 @@ This step utilizes intermediate datasets created by earlier pipeline processes (
 - **Population Projections**: `full-db-projections-transformed.rds` - DB-level projections for demographic analysis
 
 **Data Integration**: Combines catchment assignments with drivetime data to create facility-focused datasets, with population projections linked through DB assignments.
+
 :::
 
 ::: {.callout-note collapse="true" icon="false"}
