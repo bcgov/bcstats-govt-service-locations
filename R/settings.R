@@ -58,7 +58,7 @@ library(terra)
 library(fs)
 library(ggnewscale)
 library(bcmaps)
-library(rmapshaper)    # simplify geometries
+library(rmapshaper) # simplify geometries
 
 # for statistical calculations
 library(e1071)
@@ -74,25 +74,52 @@ CURRENT_YEAR <- 2025
 
 # File paths
 LAN_FOLDER <- use_network_path()
-SRC_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/source/")
-RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/")
-DT_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/nearest-facility-BC")
+SRC_DATA_FOLDER <- glue(
+  "{LAN_FOLDER}/2025 Government Service Locations/data/source/"
+)
+RAW_DATA_FOLDER <- glue(
+  "{LAN_FOLDER}/2025 Government Service Locations/data/raw/"
+)
+DT_DATA_FOLDER <- glue(
+  "{LAN_FOLDER}/2025 Government Service Locations/data/raw/nearest-facility-BC"
+)
 SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")
 
 # Output filenames
 SHAPEFILE_OUT <- glue("{SRC_DATA_FOLDER}/shapefiles/")
-MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
-VISUALS_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
-TABLES_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/tables")
-FOR_SBC_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/for-sbc")
+MAP_OUT <- glue(
+  "{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals"
+)
+VISUALS_OUT <- glue(
+  "{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals"
+)
+TABLES_OUT <- glue(
+  "{LAN_FOLDER}/2025 Government Service Locations/outputs/tables"
+)
+FOR_SBC_OUT <- glue(
+  "{LAN_FOLDER}/2025 Government Service Locations/outputs/for-sbc"
+)
 
 # File patterns
 INPUT_ADDR_DA_PATTERN <- "address_with_da.*"
 NO_ERRS_FILE_PATTERN <- "no_errors.csv"
 
 # Columns
-REQUIRED_COLS <- c("site_albers_x", "site_albers_y", "dissemination_block_id", "drv_time_sec", "drv_dist", "tag")
-POP_COLS <- c("region_name", "area_sq_km", "population", "dwellings", "households")
+REQUIRED_COLS <- c(
+  "site_albers_x",
+  "site_albers_y",
+  "dissemination_block_id",
+  "drv_time_sec",
+  "drv_dist",
+  "tag"
+)
+POP_COLS <- c(
+  "region_name",
+  "area_sq_km",
+  "population",
+  "dwellings",
+  "households"
+)
 FACILITY_TAG <- "servicebc"
 
 # Constants for visualizations
@@ -109,7 +136,8 @@ MAP_THEME <- theme_minimal() +
     axis.title = element_text(size = 15),
     legend.position = "bottom",
     legend.box = "horizontal",
-    legend.title.position = "top")
+    legend.title.position = "top"
+  )
 
 
 BOX_PLOT_THEME <- theme_minimal() +
@@ -127,7 +155,7 @@ BOX_PLOT_THEME <- theme_minimal() +
     axis.text.x = element_text(hjust = 0.5)
   )
 
-  VIOLIN_PLOT_THEME <- theme_minimal() +
+VIOLIN_PLOT_THEME <- theme_minimal() +
   theme(
     panel.grid.major.x = element_blank(),
     plot.title = element_text(size = 14, face = "bold"),
@@ -145,6 +173,10 @@ BOX_PLOT_THEME <- theme_minimal() +
 SCATTER_PLOT_THEME <- BOX_PLOT_THEME +
   theme(axis.text.x = element_text(angle = 0, hjust = 1))
 
-FILL_THEME <- scale_fill_viridis_c(option = "mako", alpha = 0.6, na.value = "red") # add limits = c(0, NA) to start scaling at 0.
+FILL_THEME <- scale_fill_viridis_c(
+  option = "mako",
+  alpha = 0.6,
+  na.value = "red"
+) # add limits = c(0, NA) to start scaling at 0.
 FILL_THEME_D <- scale_fill_viridis_d(option = "mako", alpha = 0.6)
 COLOR_THEME_D <- scale_color_viridis_d(option = "mako", alpha = 0.6)

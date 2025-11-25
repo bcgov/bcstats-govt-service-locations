@@ -24,23 +24,26 @@ source("R/fxns/csd-plots.R")
 # =============================================== #
 
 ## SBC locations to include from source folder
-sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
-     col_types = cols(.default = "c")
-  ) |>
+sbc_locs <- read_csv(
+  glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
+  col_types = cols(.default = "c")
+) |>
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005) |>
   filter(csd_name %in% CSD_NAMES)
 
 
 ## population projections from catalogue
-pop_projections <- read_csv(glue("{SRC_DATA_FOLDER}/full-population-projections.csv")) %>%
+pop_projections <- read_csv(glue(
+  "{SRC_DATA_FOLDER}/full-population-projections.csv"
+)) |>
   mutate(region = as.character(region))
 
 ## census populations
 pop_db <- read_csv(
   glue("{SRC_DATA_FOLDER}/reduced-population-db.csv"),
   col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
+) |>
+  clean_names() |>
   mutate(across(c(area_sq_km, population, dwellings, households), as.numeric))
 
 ## crosswalk (entire province, not filtered)
@@ -48,7 +51,7 @@ crosswalk <-
   read_csv(
     glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"),
     col_types = cols(.default = "c")
-  ) %>%
+  ) |>
   clean_names()
 
 # =========================================================================== #
@@ -56,23 +59,29 @@ crosswalk <-
 # filtering on CSDIDS pulls in db's that are not in our data
 # =========================================================================== #
 
-db_projections_transformed <- readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"))
-db_projections_transformed <- db_projections_transformed %>% 
-    filter(csdid %in% CSDIDS)
+db_projections_transformed <- readRDS(glue(
+  "{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"
+))
+db_projections_transformed <- db_projections_transformed |>
+  filter(csdid %in% CSDIDS)
 
 # =========================================================================== #
 # Population estimates
 # =========================================================================== #
 
-summary_stats <- db_projections_transformed |> 
+summary_stats <- db_projections_transformed |>
   filter(year == 2025, gender == 'T') |>
   summarise(population = sum(population), .by = c(age, region_name)) |>
-    group_by(region_name) |>
-    summarise(
-      est_population = sum(population, na.rm = TRUE),
-      median_age = median(rep(age, population)))
+  group_by(region_name) |>
+  summarise(
+    est_population = sum(population, na.rm = TRUE),
+    median_age = median(rep(age, population))
+  )
 
-write_csv(summary_stats, glue("{TABLES_OUT}/reduced-csd_population_metrics.csv"))
+write_csv(
+  summary_stats,
+  glue("{TABLES_OUT}/reduced-csd_population_metrics.csv")
+)
 
 # =========================================================================== #
 # Population Pyramid Creation ----
@@ -88,7 +97,7 @@ pyramid_data <- db_projections_transformed |>
       st_drop_geometry() |>
       filter(csdid %in% CSDIDS) |>
       select(csdid, nearest_facility, csd_name),
-    by = c("csdid","csd_name")
+    by = c("csdid", "csd_name")
   ) |>
   # Rename to match existing code structure
   rename(assigned = csd_name)
@@ -133,7 +142,7 @@ if (length(regions) > 1) {
     plotlist = population_pyramids[seq_len(min(4, length(regions)))],
     ncol = 2
   )
-  
+
   ggsave(
     filename = glue("{pyramid_folder}/combined_population_pyramids.png"),
     plot = combined_pyramids,
@@ -142,7 +151,6 @@ if (length(regions) > 1) {
     dpi = 300
   )
 }
-
 
 
 combined_pyramids
