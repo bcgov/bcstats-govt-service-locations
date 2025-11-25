@@ -92,69 +92,44 @@ All data is stored in a hierarchical network folder structure accessed via `safe
 
 ## Global Constants and Configuration
 
+Global constants and configuration settings used throughout the Service BC data pipeline are centralized in a `settings.R` file. This file defines key parameters, file paths, and data validation requirements, ensuring consistency and maintainability across all pipeline components. Below is a summary of the most critical settings; for a complete list, refer to the `settings.R` file.
+
 ### Core Analysis Parameters
 
-The following constants from `settings.R` are essential for the Service BC output table production pipeline:
+The following constants and parameters are essential for the Service BC data pipeline:
 
 ::: {.callout-note collapse="true" icon="false"}
 ## Temporal Parameters
 
-```r
-CENSUS_BASIS <- 2021
-CANCENSUS_YEAR <- "CA21"  # Derived from CENSUS_BASIS
-CURRENT_YEAR <- 2025
-```
-- **Purpose**: Establish consistent temporal reference points
-- **Usage**: Census data retrieval and projection calculations
+  - `CENSUS_BASIS`: 2021 - Reference year for Census data.
+  - `CURRENT_YEAR`: 2025 - Current year for projections and analysis.
 :::
 
 ::: {.callout-note collapse="true" icon="false"}
 ## Data Classification
 
-```r
-FACILITY_TAG <- "servicebc"
-REQUIRED_COLS <- c("site_albers_x", "site_albers_y", "dissemination_block_id", 
-                   "drv_time_sec", "drv_dist", "tag")
-POP_COLS <- c("region_name", "area_sq_km", "population", "dwellings", "households")
-```
-- **Purpose**: Standardize data filtering and validation requirements
-- **Usage**: Quality control and data processing consistency
+  - `FACILITY_TAG`: "servicebc" - Tag used to identify Service BC facilities.
+  - `REQUIRED_COLS`: Columns required for data validation:
+    - `site_albers_x`, `site_albers_y`, `dissemination_block_id`, `drv_time_sec`, `drv_dist`, `tag`.
+  - `POP_COLS`: Columns related to population data:
+    - `region_name`, `area_sq_km`, `population`, `dwellings`, `households`.
+  
 :::
-
-### File Path Configuration
 
 ::: {.callout-note collapse="true" icon="false"}
-## Input and Output Data Paths
+## File Path Configuration
 
-```r
-LAN_FOLDER <- use_network_path()
-SRC_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/source/")
-RAW_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/")
-DT_DATA_FOLDER <- glue("{LAN_FOLDER}/2025 Government Service Locations/data/raw/nearest_facility_BC")
-SBCLOC_FILEPATH <- glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")
-```
-
-```r
-SHAPEFILE_OUT <- glue("{SRC_DATA_FOLDER}/shapefiles/")
-TABLES_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/tables")
-VISUALS_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
-MAP_OUT <- glue("{LAN_FOLDER}/2025 Government Service Locations/outputs/visuals")
-```
-- **Purpose**: Standardize where all inputs and outputs are stored, using safe LAN pathing.
-- **Usage**: Automated file loading/saving
+  - `LAN_FOLDER`: Base folder for network storage.
+  - `SRC_DATA_FOLDER`: Directory for source data files.
+  - `RAW_DATA_FOLDER`: Directory for raw input data.
+  - `DT_DATA_FOLDER`: Directory for drivetime data.
+  - `SBCLOC_FILEPATH`: Filepath for Service BC location data.
+  - `SHAPEFILE_OUT`: Directory for shapefile outputs.
+  - `TABLES_OUT`: Directory for output tables.
+  - `VISUALS_OUT`: Directory for visualizations.
+  - `FOR_SBC_OUT`: Directory for Service BC-specific outputs.
 :::
 
-
-::: {.callout-note collapse="true" icon="false"}
-## File Pattern Recognition
-
-```r
-INPUT_ADDR_DA_PATTERN <- "address_with_da.*"
-NO_ERRS_FILE_PATTERN <- "no_errors.csv"
-```
-- **Purpose**: Systematic identification of data files with specific characteristics
-- **Usage**: Automated file processing and quality control workflows
-:::
 
 ## Core Pipeline Scripts Methodology
 
