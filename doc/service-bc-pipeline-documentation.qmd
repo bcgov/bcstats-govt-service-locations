@@ -321,6 +321,20 @@ Calculated metrics are combined into a single comprehensive dataset by Census Su
 
 --->
 
+### Urban/Rural Classification
+
+*Source: `05c-fsa.R`*
+
+#### Purpose
+Analyzes urban and rural accessibility patterns by classifying addresses using multiple methodological approaches. This script provides geographic context for service accessibility and supports rural service delivery policy development.
+
+#### Methodology Overview
+
+**1. **
+
+#### Key Outputs
+
+
 ### Service BC Facility Tables
 
 *Source: `05b-sbc-data-tables.R`*
@@ -381,19 +395,6 @@ Calculated metrics are aggregated by assigned Service BC facility (`sbc_location
 **Primary Output**: `sbc-location-statistics-for-SBC.csv` - Comprehensive facility-level table written to `{TABLES_OUT}` directory containing all calculated metrics above organized by Service BC location
 
 **Coverage**: Complete dataset covering all 65 Service BC facilities with their respective catchment populations, service metrics, and accessibility measures
-
-### Urban/Rural Classification
-
-*Source: `05c-fsa.R`*
-
-#### Purpose
-Analyzes urban and rural accessibility patterns by classifying addresses using multiple methodological approaches. This script provides geographic context for service accessibility and supports rural service delivery policy development.
-
-#### Methodology Overview
-
-**1. **
-
-#### Key Outputs
 
 ## Dependencies and Environment Requirements
 
