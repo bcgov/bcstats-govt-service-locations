@@ -257,7 +257,7 @@ Assigns every dissemination block in British Columbia to a Service BC facility c
 - **Quality Control**: `unassigned-dbs-summary.csv` - Assignment method statistics
 - **Diagnostics**: `unassigned-dbs.csv` - Detailed list of problematic areas
 
-
+<!--
 ### CSD-Level Output Tables
 
 *Source: `05a-csd-data-tables.R`*
@@ -319,6 +319,7 @@ Calculated metrics are combined into a single comprehensive dataset by Census Su
 
 **Coverage**: Complete provincial dataset with 751 CSDs, including both urban centers with full service metrics and rural/remote areas with population projections only
 
+--->
 
 ### Service BC Facility Tables
 
