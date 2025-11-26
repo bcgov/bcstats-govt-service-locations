@@ -13,11 +13,11 @@ format:
 
 ## Overview
 
-This document provides technical documentation for the Service BC data pipeline, focusing on the core scripts that process raw data through to final output tables. The pipeline analyzes accessibility to Service BC offices across British Columbia.
+This document is a technical reference for the Service BC data pipeline, focusing on the core steps and methodologies from processing and handling of raw data through to aggregated output tables. The pipeline analyzes accessibility to Service BC offices across British Columbia.
 
 ## Data Sources and Acquisition
 
-### Primary External Data Sources
+### External Data Sources
 
 ::: {.callout-note collapse="true" icon="false"}
 ## Census Data (Statistics Canada)
@@ -32,7 +32,7 @@ This document provides technical documentation for the Service BC data pipeline,
 :::
 
 ::: {.callout-note collapse="true" icon="false"}
-## Geographic Boundary Data
+## Census Subdivisions and Dissemination Blocks Boundary Files
 
 **Source**: BC Data Catalogue via BC Government's open data portal  
 **Access Method**: Direct API queries using `bcdata` and `bcmaps` R packages
@@ -43,7 +43,7 @@ This document provides technical documentation for the Service BC data pipeline,
 **Description**: Spatial boundary files for administrative and statistical geographies
 
   - **Coordinate System**: Standardized to BC Albers projection (EPSG:3005)
-  - **Hierarchical Structure**: Contains geographic identifiers linking DB → DA → CSD
+  - **Hierarchical Structure**: Contains geographic identifiers linking DB → CSD
 :::
 
 ::: {.callout-note collapse="true" icon="false"}
@@ -60,6 +60,23 @@ This document provides technical documentation for the Service BC data pipeline,
   - **Temporal Coverage**: Future population estimates for planning scenarios
   - **Geographic Level**: Census Subdivision aggregations
 :::
+
+::: {.callout-note collapse="true" icon="false"}
+## Population Center Boundary Files
+
+**Source**: Statistics Canada  
+**Access Method**: Direct file download from Statistics Canada
+
+  - Geographic files and documentation: `92-166-X`
+  - Issue number: `2021001`
+
+**Description**: Spatial boundary files for census geographies
+
+  - **Coordinate System**: latitude and longitude coordinates based on North American Datum of 1983 (NAD83)
+  - **Hierarchical Structure**: Contains geographic identifiers linking DB → CSD
+
+:::
+
 
 ### Internal/Processed Data Sources
 
@@ -82,9 +99,9 @@ All data is stored in a hierarchical network folder structure accessed via `safe
 ```
 {LAN_FOLDER}/2025 Government Service Locations/
 ├── data/
-│   ├── source/          # Processed intermediate files
-│   ├── raw/             # Raw input data
-│   └── raw/nearest_facility_BC/  # Drive time analysis results
+    ├── source/          # Processed intermediate files
+    └── raw/             # Raw input data
+        └── nearest_facility_BC/  # Drive time analysis results
 └── outputs/
     ├── tables/          # Final output tables  
     └── visuals/         # Maps and visualizations
@@ -92,22 +109,17 @@ All data is stored in a hierarchical network folder structure accessed via `safe
 
 ## Global Constants and Configuration
 
-Global constants and configuration settings used throughout the Service BC data pipeline are centralized in a `settings.R` file. This file defines key parameters, file paths, and data validation requirements, ensuring consistency and maintainability across all pipeline components. Below is a summary of the most critical settings; for a complete list, refer to the `settings.R` file.
+Global constants and configuration settings used throughout the Service BC data pipeline are centralized in a `settings.R` file. This file defines key parameters, file paths, and data validation requirements and is required to run the pipeline scripts. Below is a summary of the most critical settings; for a complete list, refer to the `settings.R` file in the project [Github Repository](https://github.com/bcgov/bcstats-govt-service-locations/tree/main)
 
 ### Core Analysis Parameters
 
 The following constants and parameters are essential for the Service BC data pipeline:
 
 ::: {.callout-note collapse="true" icon="false"}
-## Temporal Parameters
+## Data Processing and Filtering
 
   - `CENSUS_BASIS`: 2021 - Reference year for Census data.
   - `CURRENT_YEAR`: 2025 - Current year for projections and analysis.
-:::
-
-::: {.callout-note collapse="true" icon="false"}
-## Data Classification
-
   - `FACILITY_TAG`: "servicebc" - Tag used to identify Service BC facilities.
   - `REQUIRED_COLS`: Columns required for data validation:
     - `site_albers_x`, `site_albers_y`, `dissemination_block_id`, `drv_time_sec`, `drv_dist`, `tag`.
@@ -180,7 +192,7 @@ Transform raw external data sources into standardized intermediate files for ana
 :::
 
 ::: {.callout-note collapse="true" icon="false"}
-## 6. Dissemination Block Population Projections
+## 6. Population Projections
 
 - **Input**: Population projections from BC Stats, Census Dissemination Block populations from 2021
 - **Processing**: Proportional allocation method to disaggregate CSD-level projections to DB-level estimates
@@ -337,13 +349,15 @@ Generate final output tables aggregated at the Service BC facility catchment lev
 ::: {.callout-note collapse="true" icon="false"}
 ## 1. Data Sources and Processing
 
-This step utilizes intermediate datasets created by earlier pipeline processes (see [Data Preparation](#data-preparation) and [Catchment Assignment](#catchment-assignment) sections):
+This step utilizes intermediate datasets created by earlier pipeline processes (see [Data Preparation](#data-preparation) and [Catchment Assignment](#catchment-assignment) sections).  Dissemination Block (DB) and Population Center (POPCTR) geograpahic boundary files area also required.
 
 - **Geographic Crosswalk**: `csd-da-db-loc-correspondance.csv` - Links DB → DA → CSD geographies
 - **Drivetime Data**: `full-processed-drivetime-data.csv` - Processed from DSS raw data
 - **Catchment Assignments**: `complete-db-assignments.csv` - Assigns 52,424 DBs across 65 Service BC locations
 - **Service BC Locations**: `full-service-bc-locs.csv` - Facility location data covering 65 Service BC locations across 526 CSDs
 - **Population Projections**: `full-db-projections-transformed.rds` - DB-level projections for demographic analysis
+- **Population Center Boundary Files**: `popcenter-statscan.gpkg` - Population Center boundaries from Statistics Canada
+- **Dissemination Block Boundary Files**: `full-db-with-location.gpkg` - Dissemination Block boundaries from cancensus API
 
 **Data Integration**: Combines catchment assignments with drivetime data to create facility-focused datasets, with population projections linked through DB assignments.
 
@@ -388,17 +402,20 @@ Calculated metrics are aggregated by assigned Service BC facility (`sbc_location
 
 ## Key Outputs
 
-The following outputs are generated by the Service BC data pipeline:
+The Service BC data pipeline generates many interim outputs; key outputs are listed below. 
 
 1. **Dissemination Block Urban/Rural Classification**:
-   - **File**: `rurality-by-db-{date}.csv`
+   - **File**: `rurality-by-db.csv`
    - **Description**: Contains urban/rural classifications for each dissemination block, including area overlap proportions with population center boundaries.
 
 2. **Service BC Facility Statistics**:
-   - **File**: `sbc-location-statistics-for-SBC-{date}.csv`
+   - **File**: `sbc-location-statistics-for-SBC.csv`
    - **Description**: Comprehensive dataset for each Service BC facility, including population projections, age group breakdowns, drivetime metrics, distance bins, and time bins, and urban/rural classifications.
   
-3. **
+3. **Service BC Catchment Shapefiles**:  
+  - **File**: `sbc-catchments/sbc-catchments.shp`  
+  - **Description**: Geospatial shapefiles representing the catchment areas for each Service BC facility. These shapefiles are created by aggregating dissemination blocks (DBs) assigned to each facility and simplifying the geometries for efficient use in mapping and analysis.
+
 
 ## Dependencies and Environment Requirements
 
