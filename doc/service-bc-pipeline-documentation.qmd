@@ -1,0 +1,446 @@
+---
+title: "Service BC Data Pipeline Technical Documentation"
+format:
+  html:
+    toc: true
+    toc-location: right
+    toc-depth: 3
+    number-sections: true
+    theme: cerulean
+    code-fold: true
+    fig-caption: true
+---
+
+## Overview
+
+This document is a technical reference for the Service BC data pipeline, focusing on the core steps and methodologies from processing and handling of raw data through to aggregated output tables. The pipeline analyzes accessibility to Service BC offices across British Columbia.
+
+## Data Sources and Acquisition
+
+### External Data Sources
+
+::: {.callout-note collapse="true" icon="false"}
+## Census Data (Statistics Canada)
+
+**Source**: Statistics Canada  
+**Access Method**: API-based retrieval using CensusMapper service via the [`cancensus`](https://mountainmath.github.io/cancensus/) R package
+
+  - Requires free API key from [CensusMapper](https://censusmapper.ca/)
+  - Function calls: `cancensus::get_census()` with `dataset = "CA21"`
+  
+**Description**: Census 2021 population, dwelling, and household counts at the dissemination block and census subdivision levels.
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## Census Subdivisions and Dissemination Blocks Boundary Files
+
+**Source**: BC Data Catalogue via BC Government's open data portal  
+**Access Method**: Direct API queries using `bcdata` and `bcmaps` R packages
+
+  - Census Subdivisions: `bcmaps::census_subdivision()` function
+  - Dissemination Blocks: `bcdc_query_geodata()` with dataset ID `76909e49-8ba8-44b1-b69e-dba1fe9ecfba`
+  
+**Description**: Spatial boundary files for administrative and statistical geographies
+
+  - **Coordinate System**: Standardized to BC Albers projection (EPSG:3005)
+  - **Hierarchical Structure**: Contains geographic identifiers linking DB → CSD
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## Population Projections
+
+**Source**: BC Stats via BC Data Catalogue  
+**Access Method**: `bcdata::bcdc_get_data()` function with specific resource identifiers
+
+  - Dataset ID: `86839277-986a-4a29-9f70-fa9b1166f6cb`
+  - Resource ID: `0e15d04d-127c-457a-b999-20800c929927`
+  
+**Description**: Sub-provincial population projections by Census Subdivision
+
+  - **Temporal Coverage**: Future population estimates for planning scenarios
+  - **Geographic Level**: Census Subdivision aggregations
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## Population Center Boundary Files
+
+**Source**: Statistics Canada  
+**Access Method**: Direct file download from Statistics Canada
+
+  - Geographic files and documentation: `92-166-X`
+  - Issue number: `2021001`
+
+**Description**: Spatial boundary files for census geographies
+
+  - **Coordinate System**: latitude and longitude coordinates based on North American Datum of 1983 (NAD83)
+  - **Hierarchical Structure**: Contains geographic identifiers linking DB → CSD
+
+:::
+
+
+### Internal/Processed Data Sources
+
+::: {.callout-note collapse="true" icon="false"}
+## Drive Time Analysis Results
+
+**Source**: Processed internally by Data Systems and Services and provided to BC Stats.  
+**Access Method**: Direct file read from secure BC Stats LAN network storage
+
+  - File location: `{DT_DATA_FOLDER}/final_result_no_errors.csv`
+  - Processing methodology: [Available on GitHub](https://github.com/BK01/proximity-by-road)
+  
+**Description**: Address-level drive times and distances to nearest Service BC office for each available BC address.
+:::
+
+### Data Storage Structure
+
+All data is stored in a hierarchical network folder structure accessed via `safepaths::use_network_path()`:
+
+```
+{LAN_FOLDER}/2025 Government Service Locations/
+├── data/
+    ├── source/          # Processed intermediate files
+    └── raw/             # Raw input data
+        └── nearest_facility_BC/  # Drive time analysis results
+└── outputs/
+    ├── tables/          # Final output tables  
+    └── visuals/         # Maps and visualizations
+```
+
+## Global Constants and Configuration
+
+Global constants and configuration settings used throughout the Service BC data pipeline are centralized in a `settings.R` file. This file defines key parameters, file paths, and data validation requirements and is required to run the pipeline scripts. Below is a summary of the most critical settings; for a complete list, refer to the `settings.R` file in the project [Github Repository](https://github.com/bcgov/bcstats-govt-service-locations/tree/main)
+
+### Core Analysis Parameters
+
+The following constants and parameters are essential for the Service BC data pipeline:
+
+::: {.callout-note collapse="true" icon="false"}
+## Data Processing and Filtering
+
+  - `CENSUS_BASIS`: 2021 - Reference year for Census data.
+  - `CURRENT_YEAR`: 2025 - Current year for projections and analysis.
+  - `FACILITY_TAG`: "servicebc" - Tag used to identify Service BC facilities.
+  - `REQUIRED_COLS`: Columns required for data validation:
+    - `site_albers_x`, `site_albers_y`, `dissemination_block_id`, `drv_time_sec`, `drv_dist`, `tag`.
+  - `POP_COLS`: Columns related to population data:
+    - `region_name`, `area_sq_km`, `population`, `dwellings`, `households`.
+  
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## File Path Configuration
+
+  - `LAN_FOLDER`: Base folder for network storage.
+  - `SRC_DATA_FOLDER`: Directory for source data files.
+  - `RAW_DATA_FOLDER`: Directory for raw input data.
+  - `DT_DATA_FOLDER`: Directory for drivetime data.
+  - `SBCLOC_FILEPATH`: Filepath for Service BC location data.
+  - `SHAPEFILE_OUT`: Directory for shapefile outputs.
+  - `TABLES_OUT`: Directory for output tables.
+  - `VISUALS_OUT`: Directory for visualizations.
+  - `FOR_SBC_OUT`: Directory for Service BC-specific outputs.
+:::
+
+
+## Core Pipeline Scripts Methodology
+
+### Data Preparation
+
+Transform raw external data sources into standardized intermediate files for analysis. This is the foundation layer, creating all necessary data artifacts for downstream processing.
+
+#### Methodology Overview
+
+::: {.callout-note collapse="true" icon="false"}
+## 1. Drive Time Data Processing
+
+- **Input**: Raw CSV from DSS containing address level drive time results
+- **Processing**: Column standardization, geographic identifier derivation
+- **Output**: `full-processed-drivetime-data.csv` 
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 2. Geographic Boundary Creation
+
+- **Input**: Shapefiles acquired from the BC Data Catalogue using `bcmaps` and `bcdata` at the CSD and DB level
+- **Processing**: Coordinate system standardization (BC Albers EPSG:3005)
+- **Outputs**: `full-db-with-location.gpkg`, `full-csd-with-location.gpkg`
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 3. Population Data Acquisition
+
+- **Input**: Statistics Canada Census population counts (via `cansensus`) and BC Stats Population projections (via `bcdata`)
+- **Processing**: Geographic linkage validation, numeric type conversion
+- **Outputs**: Population files at DB and CSD geographic levels, population projections at CSD level
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 4. Crosswalk Generation
+
+- **Input**: DB, CSD level shapefiles
+- **Processing**: DB → DA → CSD linkages with descriptive names
+- **Output**: `csd-da-db-loc-correspondance.csv`
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 5. Service BC Locations
+
+- **Input**: Drivetime data, crosswalk information
+- **Processing**: Create CSD level list of Service BC Locations
+- **Output**: `full-service-bc-locs.csv`
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 6. Population Projections
+
+- **Input**: Population projections from BC Stats, Census Dissemination Block populations from 2021
+- **Processing**: Proportional allocation method to disaggregate CSD-level projections to DB-level estimates
+  - **Step 1**: Create clean CSD identifiers to match projection data (some CSDs are rolled up using '999' suffix)
+  - **Step 2**: Calculate each DB's proportional share of its parent CSD's population using 2021 census data
+  - **Step 3**: Apply proportional shares to future CSD projections to estimate DB-level demographics
+  - **Assumption**: Each DB maintains its relative population share within the CSD over time
+  - **Age/Gender Breakdown**: Transform projections from wide format (age columns) to long format with age groups
+- **Output**: `full-db-projections-transformed.rds`
+:::
+
+#### Critical Dependencies
+- **API Keys**: CensusMapper API key required for first-time users
+- **Network Access**: BC Data Catalogue and external data sources
+- **Disk Space**: Large shapefiles require significant storage
+
+### Catchment Assignment
+
+Assign every dissemination block in British Columbia to a Service BC facility catchment area using a hybrid methodology combining drive time optimization with spatial proximity fallback. These dissemination block based catchments then provide the basis for further aggregations, such as population projections and drive time estimates within each region. Output is crosswalk of DB -> SBC facility assignments as well as an aggregated catchment geographic shape file that can be used in further analysis and to display the catchments visually. 
+
+#### Methodology Overview
+
+::: {.callout-note collapse="true" icon="false"}
+## 1. Primary Assignment: Drive Time Method
+
+- **Logic**: Each DB assigned to facility with minimum drive time for majority of addresses in the DB.
+- **Data Source**: Cleaned drivetime data from DSS
+- **Coverage**: Limited to addresses with successful routing solutions
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 2. Secondary Assignment: Spatial Proximity Method
+
+- **Trigger**: Applied only to DBs without drive time assignments
+- **Logic**: Assigns each DB to a facility based on shortest Euclidean distance from DB centroid to facility coordinates
+- **Data Source**: DB level geography file, previously assigned list of DBs
+- **Purpose**: Ensure complete provincial coverage
+:::
+
+
+
+<!--
+### CSD-Level Output Tables
+
+*Source: `05a-csd-data-tables.R`*
+
+#### Purpose
+Generates final output tables aggregated at the Census Subdivision (municipal) level, incorporating drive time statistics, population data, and demographic projections for strategic planning and Service BC operational analysis. Produces standardized CSV output for Service BC stakeholders.
+
+#### Methodology Overview
+
+::: {.callout-note collapse="true" icon="false"}
+## 1. Data Sources and Processing
+
+This step utilizes intermediate datasets created earlier in the [Data Preparation](#data-preparation) and [Catchment Assignment](#catchment-assignment) processes.
+
+- **Geographic Crosswalk**: `csd-da-db-loc-correspondance.csv` - Links DB → DA → CSD geographies covering 751 CSDs
+- **Population Projections**: `full-db-projections-transformed.rds` - Contains DB-level projections filtered for total gender ('T') and years 2025, 2030, 2035
+- **Drivetime Data**: `full-processed-drivetime-data.csv` - Processed from DSS raw data, containing 2,052,803 address records across 41,991 DBs and 525 CSDs
+- **Catchment Assignments**: DB-to-facility assignments that inform the service accessibility calculations
+
+**Data Coverage Notes**: 
+  - Census data contains 52,387 DBs vs 52,423 in BC Geographic Warehouse (36 missing DBs around Vancouver Island/Lower Mainland)
+  - Drive data covers 525 of 751 CSDs, missing data primarily for Indigenous Reserve Lands (220/423), Regional District Areas (3/160), and Special Economic areas (3/3)
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 2. Calculated Metrics
+
+**Population Metrics:**
+
+- `estimated_population_2025`, `5_yr_projection_2030`, `10_year_projection_2035` - CSD-level population aggregated from DB projections
+- `est_population_under_19_yrs` - Ages 0-18 population for 2025
+- `est_population_19_to_64_yrs` - Working age population for 2025  
+- `est_population_over_64_yrs` - Ages 65+ population for 2025
+- `median_age` - Population-weighted median age by CSD (calculated separately)
+
+**Service Accessibility Metrics:**
+
+- `n_addresses` - Total address count within each CSD
+- `n_sbc_offices` - Count of distinct Service BC facilities serving each CSD
+- `avg_driving_distance` - Mean driving distance to nearest Service BC facility
+- `addresses_under_5_km` - Address count with high accessibility (under 5km)
+- `addresses_5_to_20_km` - Address count with moderate accessibility (5-20km)
+- `addresses_over_20_km` - Address count with low accessibility/rural (20km+)
+
+**Placeholder Fields:**
+
+- `rural_office` - 'Y/N' indicator for rural office classification (for future analysis)
+- `rural_residents` - Numeric field initialized to 0 for rural population metrics
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 3. Final CSD-Level Integration
+Calculated metrics are combined into a single comprehensive dataset by Census Subdivision and/or region level. Population projections and demographics serve as the foundation, with service accessibility metrics and rural classification placeholders integrated to create a complete analytical framework. This integration maintains complete provincial coverage across all 751 CSDs while highlighting that detailed service data is available for 525 CSDs where drive time analysis was possible.
+:::
+
+#### Key Outputs
+
+**Primary Output**: `csd-statistics-for-SBC.csv` - Comprehensive CSD-level table written to `{TABLES_OUT}` directory containing all calculated metrics above plus geographic identifiers (CSD name, ID, regional classification)
+
+**Coverage**: Complete provincial dataset with 751 CSDs, including both urban centers with full service metrics and rural/remote areas with population projections only
+
+--->
+
+### Urban/Rural Classification
+
+Analyze urban and rural accessibility patterns by classifying addresses using multiple methodological approaches. This steps provides geographic context for service accessibility and supports rural service delivery policy development.
+
+#### Methodology Overview
+
+::: {.callout-note collapse="true" icon="false"}
+
+## 1. Population Center- DB Classification
+
+- **Input**: Dissemination block (DB) shapefiles and Statistics Canada population center boundary files.
+- **Logic**: Each DB is classified as urban or rural based on its geospatial relationship with population center boundaries. The classification follows a hierarchical approach:
+  1. **Direct Assignment**: DBs that are fully contained within a population center boundary are classified as urban.
+  2. **Intersection Assignment**: For DBs that intersect multiple population center boundaries, the population center with the largest area overlap is selected. If the overlap proportion is below a predefined threshold (e.g., 30%), the DB is classified as rural.
+  3. **Nearest Assignment**: DBs that do not intersect any population center are assigned to the nearest population center. These DBs are classified as rural if their area overlap is negligible.
+- **Processing**:
+  - Geospatial relationships are analyzed using the `sf` package in R.
+  - Area overlaps are calculated using geometric intersection methods (`st_intersection`).
+  - DBs are assigned to population centers based on the highest area overlap or nearest proximity.
+
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 2. Catchment Area Urban/Rural Classification
+
+- **Input**: Dissemination block (DB) urban/rural classifications, population projections, and Service BC facility catchment assignments.
+- **Logic**: Each Service BC facility catchment area is classified as urban or rural based on the proportion of its population residing in rural dissemination blocks:
+- **Processing**: Dissemination block (DB)-level urban/rural classifications are joined with population projections and catchment assignments. For each catchment area, the total population and the proportion of rural residents are calculated. Catchments are classified as rural if more than 50% of their population resides in rural DBs.
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 3. SBC Office Urban/Rural Classification
+
+- **Input**: Service BC facility locations, and Statistics Canada population center boundaries.
+- **Logic**: Each Service BC office is classified as urban or rural based on its geographic relationship with population center boundaries:
+  1. **Direct Assignment**: Offices located entirely within a population center boundary are classified as urban.
+  2. **Rural Classification**: Offices outside population center boundaries or on the boundary are classified as rural.
+- **Processing**:
+  - Facility coordinates are spatially joined with population center boundaries. 
+  - Facilities within population centers are classified as urban; all others are classified as rural.
+:::
+
+### Service BC Facility Tables
+
+Generate final output tables aggregated at the Service BC facility catchment level, incorporating drive time statistics, population data, and demographic projections for operational planning and facility-based analysis. Produce standardized CSV output focused on individual facility service areas.
+
+#### Methodology Overview
+
+::: {.callout-note collapse="true" icon="false"}
+## 1. Data Sources and Processing
+
+This step utilizes intermediate datasets created by earlier pipeline processes (see [Data Preparation](#data-preparation) and [Catchment Assignment](#catchment-assignment) sections).  Dissemination Block (DB) and Population Center (POPCTR) geograpahic boundary files area also required.
+
+- **Geographic Crosswalk**: `csd-da-db-loc-correspondance.csv` - Links DB → DA → CSD geographies
+- **Drivetime Data**: `full-processed-drivetime-data.csv` - Processed from DSS raw data
+- **Catchment Assignments**: `complete-db-assignments.csv` - Assigns 52,424 DBs across 65 Service BC locations
+- **Service BC Locations**: `full-service-bc-locs.csv` - Facility location data covering 65 Service BC locations across 526 CSDs
+- **Population Projections**: `full-db-projections-transformed.rds` - DB-level projections for demographic analysis
+- **Population Center Boundary Files**: `popcenter-statscan.gpkg` - Population Center boundaries from Statistics Canada
+- **Dissemination Block Boundary Files**: `full-db-with-location.gpkg` - Dissemination Block boundaries from cancensus API
+
+**Data Integration**: Combines catchment assignments with drivetime data to create facility-focused datasets, with population projections linked through DB assignments.
+
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 2. Calculated Metrics
+
+**Population Metrics by Facility:**
+
+- `estimated_population_2025`, `5_yr_projection_2030`, `10_year_projection_2035` - Estimated population projections aggregated from assigned DBs.
+- `est_population_0_to_14_yrs` - Ages 0–14 population served (2025).
+- `est_population_15_to_24_yrs` - Ages 15–24 population served (2025).
+- `est_population_25_to_64_yrs` - Ages 25–64 population served (2025).
+- `est_population_over_64_yrs` - Ages 65+ population served (2025).
+- `median_age`, `mean_age` - Median and mean ages of the catchment area population.
+
+**Service Performance Metrics:**
+
+- `n_addresses_served` - Total address count served by each facility
+- `n_csds_served` - Count of distinct CSDs within each facility's catchment
+- `mean_driving_distance`, `median_driving_distance` - Mean and median driving distances to the facility.
+- `mean_driving_time`, `median_driving_time` - Mean and median driving times to the facility.
+
+**Time and Distance Bins:**
+
+- `n_x_y_km`, `n_180_plus_km` - Estimated number of residents within each distance bin.
+- `n_within_x_y_min`,`n_over_150_min` - Estimated number of residents within each drivetime bin.
+
+**Urban/Rural Classification Metrics:**
+
+- `p_rural_residents` - Proportion of the catchment area's population classified as rural.
+- `is_rural` - Binary classification (`RURAL` or `URBAN`) for each catchment area.
+- `rural_office` - Binary indicator (`Y/N`) for whether the Service BC office is classified as rural.
+:::
+
+::: {.callout-note collapse="true" icon="false"}
+## 3. Facility Catchment Integration
+
+Calculated metrics are aggregated by assigned Service BC facility (`sbc_location`) to create comprehensive facility-level performance datasets. Each facility's catchment area is defined by the DB assignments from the [Catchment Assignment](#catchment-assignment) process, ensuring complete coverage while providing detailed operational intelligence for individual Service BC locations and their service areas.
+:::
+
+## Key Outputs
+
+The Service BC data pipeline generates many interim outputs; key outputs are listed below. 
+
+1. **Dissemination Block Urban/Rural Classification**:
+   - **File**: `rurality-by-db.csv`
+   - **Description**: Contains urban/rural classifications for each dissemination block, including area overlap proportions with population center boundaries.
+
+2. **Service BC Facility Statistics**:
+   - **File**: `sbc-location-statistics-for-SBC.csv`
+   - **Description**: Comprehensive dataset for each Service BC facility, including population projections, age group breakdowns, drivetime metrics, distance bins, and time bins, and urban/rural classifications.
+  
+3. **Service BC Catchment Shapefiles**:  
+   - **File**: `sbc-catchments/sbc-catchments.shp`  
+   - **Description**: Geospatial shapefiles representing the catchment areas for each Service BC facility. These shapefiles are created by aggregating dissemination blocks (DBs) assigned to each facility and simplifying the geometries for efficient use in mapping and analysis.
+
+
+## Dependencies and Environment Requirements
+
+### R Package Dependencies
+
+The following R packages are required for the Service BC data pipeline:
+
+- **Core Data Processing**: `tidyverse`, `glue`, `janitor`, `snakecase`.
+- **Spatial Analysis**: `sf`, `bcdata`, `bcmaps`, `rmapshaper`, `tigris`, `spatstat`, `stars`, `terra`.
+- **Visualization**: `ggplot2`, `scales`, `ggnewscale`.
+- **Statistical Calculations**: `e1071`.
+- **File Management**: `safepaths`, `fs`.
+
+These packages are used for data cleaning, spatial analysis, visualization, and statistical calculations throughout the pipeline.
+
+### System Requirements
+- **Network Access**: BC Data Catalogue, CensusMapper API
+- **Storage**: Large shapefile processing requires substantial disk space
+- **Memory**: Province-wide spatial operations require significant RAM
+- **External Data**: Statistics Canada population center
+
+### Authentication Setup
+```r
+# First-time CensusMapper API key configuration
+cancensus::set_cancensus_api_key('YOUR_API_KEY', install = TRUE)
+```
+
+This comprehensive pipeline transforms raw administrative and census data into actionable intelligence for Service BC operations, providing strategic oversight, operational detail, and geographic context for evidence-based service delivery planning across British Columbia's diverse urban and rural communities.
