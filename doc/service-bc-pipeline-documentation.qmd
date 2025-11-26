@@ -211,7 +211,7 @@ Transform raw external data sources into standardized intermediate files for ana
 
 ### Catchment Assignment
 
-Assign every dissemination block in British Columbia to a Service BC facility catchment area using a hybrid methodology combining drive time optimization with spatial proximity fallback. These dissemination block based catchments then provide the basis for further aggregations, such as population projections and drive time estimates within each region. 
+Assign every dissemination block in British Columbia to a Service BC facility catchment area using a hybrid methodology combining drive time optimization with spatial proximity fallback. These dissemination block based catchments then provide the basis for further aggregations, such as population projections and drive time estimates within each region. Output is crosswalk of DB -> SBC facility assignments as well as an aggregated catchment geographic shape file that can be used in further analysis and to display the catchments visually. 
 
 #### Methodology Overview
 
@@ -368,7 +368,7 @@ This step utilizes intermediate datasets created by earlier pipeline processes (
 
 **Population Metrics by Facility:**
 
-- `estimated_population_2025`, `5_yr_projection_2030`, `10_year_projection_2035` - Population projections aggregated from assigned DBs.
+- `estimated_population_2025`, `5_yr_projection_2030`, `10_year_projection_2035` - Estimated population projections aggregated from assigned DBs.
 - `est_population_0_to_14_yrs` - Ages 0–14 population served (2025).
 - `est_population_15_to_24_yrs` - Ages 15–24 population served (2025).
 - `est_population_25_to_64_yrs` - Ages 25–64 population served (2025).
@@ -384,8 +384,8 @@ This step utilizes intermediate datasets created by earlier pipeline processes (
 
 **Time and Distance Bins:**
 
-- `n_x_y_km`, `n_180_plus_km` - Number of residents within each distance bin.
-- `n_within_x_y_min`,`n_over_150_min` - Number of residents within each drivetime bin.
+- `n_x_y_km`, `n_180_plus_km` - Estimated number of residents within each distance bin.
+- `n_within_x_y_min`,`n_over_150_min` - Estimated number of residents within each drivetime bin.
 
 **Urban/Rural Classification Metrics:**
 
@@ -413,8 +413,8 @@ The Service BC data pipeline generates many interim outputs; key outputs are lis
    - **Description**: Comprehensive dataset for each Service BC facility, including population projections, age group breakdowns, drivetime metrics, distance bins, and time bins, and urban/rural classifications.
   
 3. **Service BC Catchment Shapefiles**:  
-  - **File**: `sbc-catchments/sbc-catchments.shp`  
-  - **Description**: Geospatial shapefiles representing the catchment areas for each Service BC facility. These shapefiles are created by aggregating dissemination blocks (DBs) assigned to each facility and simplifying the geometries for efficient use in mapping and analysis.
+   - **File**: `sbc-catchments/sbc-catchments.shp`  
+   - **Description**: Geospatial shapefiles representing the catchment areas for each Service BC facility. These shapefiles are created by aggregating dissemination blocks (DBs) assigned to each facility and simplifying the geometries for efficient use in mapping and analysis.
 
 
 ## Dependencies and Environment Requirements
