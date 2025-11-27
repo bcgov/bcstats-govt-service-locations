@@ -307,9 +307,7 @@ popcenter_population <- popcenter_population |>
   )
 
 popcenter_population |>
-  write_csv(glue(
-    "{FOR_SBC_OUT}/rural-method-misc/rurality-by-db-{Sys.Date()}.csv"
-  ))
+  write_csv(glue("{FOR_SBC_OUT}/rural-method-misc/rurality-by-db.csv"))
 
 db_population_estimates_one_year <- db_projections_transformed |>
   filter(dbid %in% (crosswalk |> pull(dbid))) |>
@@ -334,7 +332,7 @@ rural_summary <- db_population_estimates_one_year |>
 
 rural_summary |>
   write_csv(glue(
-    "{FOR_SBC_OUT}/rural-method-misc/rural-residence-summary-{Sys.Date()}.csv"
+    "{FOR_SBC_OUT}/rural-method-misc/rural-residence-summary.csv"
   ))
 
 rural_office <- sbc_locs |>
@@ -358,7 +356,7 @@ rural_office <- sbc_locs |>
 
 rural_office |>
   write_csv(glue(
-    "{FOR_SBC_OUT}/rural-method-misc/rural-office-{Sys.Date()}.csv"
+    "{FOR_SBC_OUT}/rural-method-misc/rural-office.csv"
   ))
 
 # =========================================================================== #
@@ -394,11 +392,7 @@ if (!dir.exists(FOR_SBC_OUT)) {
 }
 
 # Write combined statistics table
-fn <- paste0(
-  "sbc-location-statistics-for-SBC-",
-  format(Sys.Date(), "%Y-%m-%d"),
-  ".csv"
-)
+fn <- "sbc-location-statistics-for-SBC.csv"
 
 combined_stats |>
   arrange(sbc_location) |>
