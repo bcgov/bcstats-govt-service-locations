@@ -114,7 +114,7 @@ All data is stored in a hierarchical network folder structure accessed by levera
 
 ## Global Constants and Configuration
 
-Global constants and configuration settings used throughout the Service BC data pipeline are centralized in a `settings.R` file. This file defines key parameters, file paths, and data validation requirements and is required to run the pipeline scripts. Below is a summary of the most critical settings; for a complete list, refer to the `settings.R` file in the project [Github Repository](https://github.com/bcgov/bcstats-govt-service-locations/tree/main)
+Global constants and configuration settings used throughout the Service BC data pipeline are centralized in a `settings.R` file. This file defines key parameters, file paths, and data validation requirements and is required to run the pipeline scripts. Below is a summary of the most critical settings.  For a complete list, please refer to the `settings.R` file in the project [Github Repository](https://github.com/bcgov/bcstats-govt-service-locations/tree/main).
 
 ### Core Analysis Parameters
 
