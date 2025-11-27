@@ -99,7 +99,7 @@ This document is a technical reference for the Service BC data pipeline, focusin
 
 ### Data Storage Structure
 
-All data is stored in a hierarchical network folder structure accessed via `safepaths::use_network_path()`:
+All data is stored in a hierarchical network folder structure accessed by leveraging [Safepaths](https://github.com/bcgov/safepaths) functionality.
 
 ```
 {LAN_FOLDER}/2025 Government Service Locations/
