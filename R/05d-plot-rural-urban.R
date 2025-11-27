@@ -1,5 +1,5 @@
 source("R/settings.R")
-source("R/fxns/rural-fxns.R")
+source("R/fxns/vis-pc-rural-urban.R")
 
 # -------------------------- READ DATA -----------------------------------
 db_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
@@ -15,8 +15,10 @@ popcenter_boundaries <-
   rename(geometry = geom) |>
   st_transform(crs = 3005)
 
-data <- read_csv(glue("{FOR_SBC_OUT}/rural-method-misc/rurality-by-db.csv")) |>
-  select(dbid, pcname, rurality) |>
+data <- read_csv(glue(
+  "{FOR_SBC_OUT}/rural-method-misc/rurality-by-db-2025-11-24.csv"
+)) |>
+  select(dbid, pcname, urban_rural) |>
   mutate(dbid = as.character(dbid))
 
 # -------------------------- PREPARE DATA -----------------------------------
@@ -35,7 +37,7 @@ grps <- data |>
 
 # -------------------------- CREATE PLOTS -----------------------------------
 
-plts <- apply(grps, 1, vis_pc)
+plts <- apply(grps, 1, vis_pc_rural_urban)
 names(plts) <- grps |> pull(pcname)
 
 grid::current.viewport() # workaround for: https://github.com/tidyverse/ggplot2/issues/2514
