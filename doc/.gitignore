@@ -2,3 +2,5 @@
 *.js
 *.woff
 *.css
+/.quarto/
+!styles.css

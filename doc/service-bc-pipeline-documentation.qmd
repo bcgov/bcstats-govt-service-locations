@@ -8,7 +8,12 @@ format:
     number-sections: true
     theme: cerulean
     code-fold: true
-    fig-caption: true
+    grid: 
+        body-width: 1800px
+        sidebar-width: 100px
+        margin-width: 300px
+    css: styles.css
+    self-contained: true
 ---
 
 ## Overview
