@@ -255,7 +255,7 @@ population_estimates_three_year <- population_estimates_three_year_all |>
 # count of age groups by assigned
 #------------------------------------------------------------------------------
 age_estimates_current_year <- population_estimates_three_year_all |>
-  filter(year == 2025) |>
+  filter(year == CURRENT_YEAR) |>
   summarize(
     est_population_0_to_14_yrs = sum(
       population[age >= 0 & age < 15],
@@ -274,7 +274,7 @@ age_estimates_current_year <- population_estimates_three_year_all |>
   )
 
 median_population <- population_estimates_three_year_all |>
-  filter(year == 2025) |>
+  filter(year == CURRENT_YEAR) |>
   summarize(
     population = sum(population, na.rm = TRUE),
     .by = c(assigned, age)
@@ -313,7 +313,7 @@ popcenter_population |>
 
 db_population_estimates_one_year <- db_projections_transformed |>
   filter(dbid %in% (crosswalk |> pull(dbid))) |>
-  filter(gender == "T", year == 2025) |>
+  filter(gender == "T", year == CURRENT_YEAR) |>
   summarize(
     population = sum(population, na.rm = TRUE),
     .by = c("dbid", "csdid")
