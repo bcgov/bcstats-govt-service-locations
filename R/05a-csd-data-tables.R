@@ -303,7 +303,7 @@ rural_csdid <- db_population_estimates_one_year |>
   select(csdid, p_rural)
 
 # The is_in_region_optim function may not assign a popcenter if a CSD extends beyond
-# popcenter limits or the intersection area is below the threshold.
+# popcenter limits.
 # This would need to be addressed if we were to use this code.
 # Omitting from final tables.
 rural_csd <- csd_shapefiles |>
@@ -313,8 +313,7 @@ rural_csd <- csd_shapefiles |>
       locations = csd_shapefiles,
       regions = popcenter_boundaries,
       id_col = "csdid",
-      region_name_col = "pcname",
-      area_threshold = 0
+      region_name_col = "pcname"
     ),
     by = "csdid"
   ) |>
