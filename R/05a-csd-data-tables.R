@@ -97,7 +97,10 @@ db_projections_transformed_raw <- readRDS(glue(
   "{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"
 )) |>
   filter(dbid %in% (crosswalk |> pull(dbid))) |>
-  filter(gender == "T", year %in% c(2025, 2030, 2035))
+  filter(
+    gender == "T",
+    year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)
+  )
 
 # add populations to drivetime data for current year
 drivetime_data <- drivetime_data |>
@@ -133,7 +136,7 @@ population_estimates_three_year <- db_projections_transformed_raw |>
   )
 
 age_estimates_current_year <- db_projections_transformed_raw |>
-  filter(year == 2025) |>
+  filter(year == CURRENT_YEAR) |>
   summarize(
     est_population_0_to_14_yrs = sum(
       population[age >= 0 & age < 15],
@@ -152,7 +155,7 @@ age_estimates_current_year <- db_projections_transformed_raw |>
   )
 
 median_population <- db_projections_transformed_raw |>
-  filter(year == 2025) |>
+  filter(year == CURRENT_YEAR) |>
   summarize(
     population = sum(population, na.rm = TRUE),
     .by = c(csdid, csd_name, age)
@@ -284,7 +287,7 @@ popcenter_population <- assign_region(
 )
 
 db_population_estimates_one_year <- db_projections_transformed_raw |>
-  filter(gender == "T", year == 2025) |>
+  filter(gender == "T", year == CURRENT_YEAR) |>
   summarize(
     population = sum(population, na.rm = TRUE),
     .by = c("dbid", "csdid")
