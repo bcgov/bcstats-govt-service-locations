@@ -94,6 +94,36 @@ Run the following scripts in the order specified:
         *   **How to Run:** This script can be run from source: `source("R/03c-sbc-centric-stats.R")`
         *   **Expected Output:** The script generates multiple CSV files in the `TABLES_OUT` directory containing drive metrics, CSD counts, and population metrics for each Service BC location. It also creates visualization files in the `MAP_OUT` directory, including drive distance histograms, drive distance maps, and population pyramids for each facility.
 
+    *   **Script:** `04-sbc-servicebc-catchments.R`.
+        *   **Purpose:** This script generates a map visualizing Service BC catchment areas based on Census Subdivision (CSD) boundaries. It overlays Service BC office locations, highlights assigned CSDs for each facility, and includes labels for pilot municipalities.
+        *   **How to Run:** This script can be run from source: `source("R/04-sbc-servicebc-catchments.R")`
+        *   **Expected Output:** The script creates a map image file (`bc-csd-sbc-FROM-SERVICE-BC.png`) saved in the `MAP_OUT/complete_catchments` directory. The map includes CSD boundaries, Service BC office locations, and facility assignments for pilot regions.
+
+ 6.  **Generating Statistical Tables for Service BC:**
+    *   **Script:** `05a-csd-data-tables.R`.
+        *   **Purpose:** This script generates a comprehensive table of Census Subdivision (CSD)-level statistics, including population estimates, age distributions, rurality proportions, and drive time metrics. It combines data from multiple sources to provide a detailed summary for each CSD.
+        *   **How to Run:** This script can be run from source: `source("R/05a-csd-data-tables.R")`
+        *   **Expected Output:** The script creates a CSV file (`csd-statistics-for-SBC.csv`) saved in the `TABLES_OUT` directory. The table includes metrics such as population projections, median driving distances, and proportions of rural populations for each CSD.   
+
+     *   **Script:** `05b-sbc-data-tables.R`.
+        *   **Purpose:** This script generates detailed statistics for each Service BC location, including population projections, drive time metrics, rurality proportions, and demographic breakdowns. It combines data from multiple sources to provide a comprehensive summary for each Service BC facility.
+        *   **How to Run:** This script can be run from source: `source("R/05b-sbc-data-tables.R")`
+        *   **Expected Output:** The script creates a CSV file (`sbc-location-statistics-for-SBC.csv`) saved in the `FOR_SBC_OUT` directory. The table includes metrics such as population projections, median driving distances, age group distributions, and rurality classifications for each Service BC location.
+
+ 7.  **Analyzing Urban and Rural Classifications:**
+    *   **Script:** `05c-rural-analysis.R`.
+        *   **Purpose:** This script analyzes urban and rural classifications for addresses and Census Dissemination Blocks (DBs) using two methods: Canada Post Forward Sortation Areas (FSAs) and Statistics Canada's population centers. It generates summaries at the provincial, catchment, and Census Subdivision (CSD) levels, and creates visualizations to compare urban and rural classifications across methods.
+        *   **How to Run:** This script can be run from source: `source("R/05c-rural-analysis.R")`
+        *   **Expected Output:** The script generates multiple outputs:
+            - Summary tables of urban and rural classifications at the provincial, catchment, and CSD levels, saved as CSV files in the `FOR_SBC_OUT` directory.
+            - Comparison tables of urban and rural classifications across methods, saved as CSV files.
+            - Visualizations of urban and rural areas, including maps and plots, saved as image files in the `MAP_OUT/rural-analysis` directory.    
+
+     *   **Script:** `05d-plot-rural-urban.R`.
+        *   **Purpose:** This script generates visualizations showing urban and rural classifications for Dissemination Blocks (DBs) within population centers. It uses shapefiles and preprocessed data to create plots for each population center, highlighting the spatial distribution of urban and rural areas.
+        *   **How to Run:** This script can be run from source: `source("R/05d-plot-rural-urban.R")`
+        *   **Expected Output:** The script creates SVG files for each population center, saved in the `FOR_SBC_OUT/rural-method-misc` directory. These visualizations show the urban and rural classifications for DBs within each population center, providing insights into the spatial patterns of rurality.
+
 The final analysis output files will be available in the location specified by `SRC_DATA_FOLDER` within your configured data directory structure. You can then use these files for further analysis, reporting, or visualization.
 
 
