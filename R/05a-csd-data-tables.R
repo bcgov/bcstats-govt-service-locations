@@ -31,22 +31,8 @@ source("R/fxns/rural-fxns.R")
 crosswalk <- read_csv(
   glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"),
   col_types = cols(.default = "c")
-)
-
-# census populations - 745 census subdivisions found in our data
-# This data comes from the census (52,387 DB's).
-# This is 36 fewer than listed in the BC Geographic Warehouse (52,423).
-# There is a note that the data in the is from 2016, but each record is labeled 2021, so possible we need to check on this.
-pop_db <- read_csv(
-  glue("{SRC_DATA_FOLDER}/full-population-db.csv"),
-  col_types = cols(.default = "c")
 ) |>
-  clean_names() |>
-  mutate(across(
-    c(area_sq_km, population, dwellings, households),
-    as.numeric
-  )) |>
-  inner_join(crosswalk, by = join_by(dbid))
+  clean_names()
 
 db_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
   rename(geometry = geom) |>
@@ -59,6 +45,7 @@ csd_shapefiles <- st_read(glue(
   rename(geometry = geom) |>
   st_transform(crs = 3005) |>
   select(csdid, csd_name, csd_desc, geometry)
+
 
 popcenter_boundaries <-
   st_read(
