@@ -46,7 +46,6 @@ csd_shapefiles <- st_read(glue(
   st_transform(crs = 3005) |>
   select(csdid, csd_name, csd_desc, geometry)
 
-
 popcenter_boundaries <-
   st_read(
     glue("{SRC_DATA_FOLDER}/shapefiles/popcenter-statscan.gpkg"),
@@ -54,11 +53,6 @@ popcenter_boundaries <-
   ) |>
   rename(geometry = geom) |>
   st_transform(crs = 3005)
-
-complete_assignments <-
-  read_csv(glue::glue("{FOR_SBC_OUT}/complete-db-assignments-for-SBC.csv")) |>
-  clean_names() |>
-  mutate(across(everything(), as.character))
 
 # our full set of drive data from DSS:  2,052,803 records over 41,991 DB's and 525 CSD's.
 # This is 10,432 fewer DB's than in the BC Data Catalog/BC Geographic Warehouse data (52,423).
