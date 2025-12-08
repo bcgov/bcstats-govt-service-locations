@@ -61,13 +61,13 @@ popcenter_boundaries <-
 # They are in the set of 36 DB's that are missing, which are also mostly areas around vancouver island and
 # the lower mainland.
 
-drivetime_data <- read_csv(
-  glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
-  col_types = cols(.default = "c")
-) |>
+drivetime_data <-
+  read_csv(
+    glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
+    col_types = cols(.default = "c")
+  ) |>
   clean_names() |>
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric)) |>
-  inner_join(crosswalk, join_by(dbid, daid))
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 # these DBs are from the census data, so contain 52,387 DB's and 751 CSD's.
 # Population projections come from BC Stats population projections + census population ratios.
@@ -84,7 +84,11 @@ db_projections_transformed_raw <- readRDS(glue(
   )
 
 # add populations to drivetime data for current year
-drivetime_data <- drivetime_data |>
+drivetime_data_focused <- drivetime_data |>
+  left_join(crosswalk, join_by(dbid, daid)) |>
+  filter(!is.na(csdid))
+
+drivetime_data_focused <- drivetime_data_focused |>
   left_join(
     db_projections_transformed_raw |>
       filter(year == CURRENT_YEAR) |>
@@ -98,6 +102,108 @@ drivetime_data <- drivetime_data |>
   mutate(n_address = n()) |>
   ungroup() |>
   mutate(hh_size_estimate = population / n_address)
+
+#------------------------------------------------------------------------------
+# bin the data by driving distance and time
+#------------------------------------------------------------------------------
+
+drive_distance_bins <- drivetime_data_focused |>
+  summarize(
+    n_0_5_km = sum(hh_size_estimate[drv_dist < 5.0], na.rm = TRUE),
+    n_5_10_km = sum(
+      hh_size_estimate[drv_dist >= 5.0 & drv_dist < 10.0],
+      na.rm = TRUE
+    ),
+    n_10_15_km = sum(
+      hh_size_estimate[drv_dist >= 10.0 & drv_dist < 15.0],
+      na.rm = TRUE
+    ),
+    n_15_30_km = sum(
+      hh_size_estimate[drv_dist >= 15.0 & drv_dist < 30.0],
+      na.rm = TRUE
+    ),
+    n_30_45_km = sum(
+      hh_size_estimate[drv_dist >= 30.0 & drv_dist < 45.0],
+      na.rm = TRUE
+    ),
+    n_45_60_km = sum(
+      hh_size_estimate[drv_dist >= 45.0 & drv_dist < 60.0],
+      na.rm = TRUE
+    ),
+    n_60_90_km = sum(
+      hh_size_estimate[drv_dist >= 60.0 & drv_dist < 90.0],
+      na.rm = TRUE
+    ),
+    n_90_135_km = sum(
+      hh_size_estimate[drv_dist >= 90.0 & drv_dist < 135.0],
+      na.rm = TRUE
+    ),
+    n_135_180_km = sum(
+      hh_size_estimate[drv_dist >= 135.0 & drv_dist < 180.0],
+      na.rm = TRUE
+    ),
+    n_180_plus_km = sum(hh_size_estimate[drv_dist >= 180.0], na.rm = TRUE),
+    .by = c(csd_name, csdid)
+  )
+
+drive_time_bins <- drivetime_data_focused |>
+  mutate(drv_time_min = drv_time_sec / 60) |>
+  summarize(
+    n_within_0_5_min = sum(hh_size_estimate[drv_time_min < 5], na.rm = TRUE),
+    n_5_10_min = sum(
+      hh_size_estimate[drv_time_min >= 5 & drv_time_min < 10],
+      na.rm = TRUE
+    ),
+    n_10_15_min = sum(
+      hh_size_estimate[drv_time_min >= 10 & drv_time_min < 15],
+      na.rm = TRUE
+    ),
+    n_15_20_min = sum(
+      hh_size_estimate[drv_time_min >= 15 & drv_time_min < 20],
+      na.rm = TRUE
+    ),
+    n_20_30_min = sum(
+      hh_size_estimate[drv_time_min >= 20 & drv_time_min < 30],
+      na.rm = TRUE
+    ),
+    n_30_40_min = sum(
+      hh_size_estimate[drv_time_min >= 30 & drv_time_min < 40],
+      na.rm = TRUE
+    ),
+    n_40_60_min = sum(
+      hh_size_estimate[drv_time_min >= 40 & drv_time_min < 60],
+      na.rm = TRUE
+    ),
+    n_60_90_min = sum(
+      hh_size_estimate[drv_time_min >= 60 & drv_time_min < 90],
+      na.rm = TRUE
+    ),
+    n_90_120_min = sum(
+      hh_size_estimate[drv_time_min >= 90 & drv_time_min < 120],
+      na.rm = TRUE
+    ),
+    n_120_150_min = sum(
+      hh_size_estimate[drv_time_min >= 120 & drv_time_min < 150],
+      na.rm = TRUE
+    ),
+    n_over_150_min = sum(hh_size_estimate[drv_time_min >= 150], na.rm = TRUE),
+    .by = c(csd_name, csdid)
+  )
+
+#------------------------------------------------------------------------------
+# drivetime metrics by csd
+#------------------------------------------------------------------------------
+
+drivetime_metrics <- drivetime_data_focused |>
+  summarise(
+    n_addresses = n(),
+    n_sbc_offices = n_distinct(nearest_facility),
+    mean_driving_distance = mean(drv_dist, na.rm = TRUE),
+    median_driving_distance = median(drv_dist, na.rm = TRUE),
+    mean_driving_time = mean(drv_time_sec, na.rm = TRUE) / 60,
+    median_driving_time = median(drv_time_sec, na.rm = TRUE) / 60,
+    .by = c(csd_name, csdid)
+  )
 
 # =========================================================================== #
 # DB population projections, current, 5yr, 10yr
@@ -155,107 +261,6 @@ median_population <- db_projections_transformed_raw |>
     .by = c(csdid, csd_name)
   )
 
-#------------------------------------------------------------------------------
-# drivetime metrics by csd
-#------------------------------------------------------------------------------
-
-drivetime_metrics <- drivetime_data |>
-  summarise(
-    n_addresses = n(),
-    n_sbc_offices = n_distinct(nearest_facility),
-    mean_driving_distance = mean(drv_dist, na.rm = TRUE),
-    median_driving_distance = median(drv_dist, na.rm = TRUE),
-    mean_driving_time = mean(drv_time_sec, na.rm = TRUE) / 60,
-    median_driving_time = median(drv_time_sec, na.rm = TRUE) / 60,
-    .by = c(csd_name, csdid)
-  )
-
-#------------------------------------------------------------------------------
-# bin the data by driving distance and time
-#------------------------------------------------------------------------------
-
-drive_distance_bins <- drivetime_data |>
-  summarize(
-    n_0_5_km = sum(hh_size_estimate[drv_dist < 5.0], na.rm = TRUE),
-    n_5_10_km = sum(
-      hh_size_estimate[drv_dist >= 5.0 & drv_dist < 10.0],
-      na.rm = TRUE
-    ),
-    n_10_15_km = sum(
-      hh_size_estimate[drv_dist >= 10.0 & drv_dist < 15.0],
-      na.rm = TRUE
-    ),
-    n_15_30_km = sum(
-      hh_size_estimate[drv_dist >= 15.0 & drv_dist < 30.0],
-      na.rm = TRUE
-    ),
-    n_30_45_km = sum(
-      hh_size_estimate[drv_dist >= 30.0 & drv_dist < 45.0],
-      na.rm = TRUE
-    ),
-    n_45_60_km = sum(
-      hh_size_estimate[drv_dist >= 45.0 & drv_dist < 60.0],
-      na.rm = TRUE
-    ),
-    n_60_90_km = sum(
-      hh_size_estimate[drv_dist >= 60.0 & drv_dist < 90.0],
-      na.rm = TRUE
-    ),
-    n_90_135_km = sum(
-      hh_size_estimate[drv_dist >= 90.0 & drv_dist < 135.0],
-      na.rm = TRUE
-    ),
-    n_135_180_km = sum(
-      hh_size_estimate[drv_dist >= 135.0 & drv_dist < 180.0],
-      na.rm = TRUE
-    ),
-    n_180_plus_km = sum(hh_size_estimate[drv_dist >= 180.0], na.rm = TRUE),
-    .by = c(csd_name, csdid)
-  )
-
-drive_time_bins <- drivetime_data |>
-  mutate(drv_time_min = drv_time_sec / 60) |>
-  summarize(
-    n_within_0_5_min = sum(hh_size_estimate[drv_time_min < 5], na.rm = TRUE),
-    n_5_10_min = sum(
-      hh_size_estimate[drv_time_min >= 5 & drv_time_min < 10],
-      na.rm = TRUE
-    ),
-    n_10_15_min = sum(
-      hh_size_estimate[drv_time_min >= 10 & drv_time_min < 15],
-      na.rm = TRUE
-    ),
-    n_15_20_min = sum(
-      hh_size_estimate[drv_time_min >= 15 & drv_time_min < 20],
-      na.rm = TRUE
-    ),
-    n_20_30_min = sum(
-      hh_size_estimate[drv_time_min >= 20 & drv_time_min < 30],
-      na.rm = TRUE
-    ),
-    n_30_40_min = sum(
-      hh_size_estimate[drv_time_min >= 30 & drv_time_min < 40],
-      na.rm = TRUE
-    ),
-    n_40_60_min = sum(
-      hh_size_estimate[drv_time_min >= 40 & drv_time_min < 60],
-      na.rm = TRUE
-    ),
-    n_60_90_min = sum(
-      hh_size_estimate[drv_time_min >= 60 & drv_time_min < 90],
-      na.rm = TRUE
-    ),
-    n_90_120_min = sum(
-      hh_size_estimate[drv_time_min >= 90 & drv_time_min < 120],
-      na.rm = TRUE
-    ),
-    n_120_150_min = sum(
-      hh_size_estimate[drv_time_min >= 120 & drv_time_min < 150],
-      na.rm = TRUE
-    ),
-    n_over_150_min = sum(hh_size_estimate[drv_time_min >= 150], na.rm = TRUE),
-    .by = c(csd_name, csdid)
-  )
 
 # =========================================================================== #
 # Add proportion rural for each CSD
