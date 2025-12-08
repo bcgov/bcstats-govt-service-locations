@@ -87,7 +87,7 @@ db_projections_transformed_raw <- readRDS(glue(
 drivetime_data <- drivetime_data |>
   left_join(
     db_projections_transformed_raw |>
-      filter(gender == "T", year == CURRENT_YEAR) |>
+      filter(year == CURRENT_YEAR) |>
       group_by(dbid, year) |>
       summarize(population = sum(population)) |>
       ungroup() |>
@@ -268,7 +268,7 @@ popcenter_population <- assign_region(
 )
 
 db_population_estimates_one_year <- db_projections_transformed_raw |>
-  filter(gender == "T", year == CURRENT_YEAR) |>
+  filter(year == CURRENT_YEAR) |>
   summarize(
     population = sum(population, na.rm = TRUE),
     .by = c("dbid", "csdid")
