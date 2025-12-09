@@ -283,50 +283,53 @@ popcenter_population <- assign_region(
   popcenter_boundaries,
   "dbid",
   "pcname"
-)
+) |>
+  rename("p_area_coverage" = area_ratio)
+
+# add rural flag
+popcenter_population <- popcenter_population |>
+  mutate(
+    urban_rural = case_when(
+      is.na(p_area_coverage) ~ "RURAL",
+      as.numeric(p_area_coverage) <= 0.3 ~ "RURAL",
+      TRUE ~ "URBAN"
+    )
+  )
 
 db_population_estimates_one_year <- db_projections_transformed_raw |>
+  filter(dbid %in% (crosswalk |> pull(dbid))) |>
   filter(year == CURRENT_YEAR) |>
   summarize(
     population = sum(population, na.rm = TRUE),
-    .by = c("dbid", "csdid")
+    .by = c("dbid", "csdid") # keep csdid in the result set
   )
 
 # add flags for urban rural and summarize by csdid
 rural_csdid <- db_population_estimates_one_year |>
   left_join(popcenter_population, by = "dbid") |>
-  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |>
   summarise(
-    n_rural = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
+    n_rural_residents = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
     n = sum(population, na.rm = TRUE),
-    p_rural = if_else(n == 0, 0, n_rural / n),
+    p_rural_residents = if_else(n == 0, 0, 100 * n_rural_residents / n),
+    is_rural = if_else(p_rural_residents > 50, "RURAL", "URBAN"),
     .by = csdid
   ) |>
-  select(csdid, p_rural)
+  select(csdid, p_rural_residents, is_rural)
 
-# The is_in_region_optim function may not assign a popcenter if a CSD extends beyond
-# popcenter limits.
-# This would need to be addressed if we were to use this code.
-# Omitting from final tables.
+
 rural_csd <- csd_shapefiles |>
-  st_drop_geometry() |>
-  left_join(
-    assign_region(
-      locations = csd_shapefiles,
-      regions = popcenter_boundaries,
-      id_col = "csdid",
-      region_name_col = "pcname"
-    ),
+  assign_region(
+    regions = popcenter_boundaries,
+    id_col = "csdid",
+    region_name_col = "pcname"
+  ) |>
+  rename("p_area_coverage" = area_ratio) |>
+  right_join(
+    crosswalk |> distinct(csdid, csd_name),
     by = "csdid"
   ) |>
-  mutate(
-    rurality = case_when(
-      is.na(area_ratio) ~ "RURAL",
-      as.numeric(area_ratio) < 0.3 ~ "RURAL",
-      TRUE ~ "URBAN"
-    )
-  )
-
+  mutate(rural_csd = if_else(p_area_coverage < 0.3, "Y", "N")) |> ## TODO: verify threshold
+  select(csdid, csd_name, rural_csd)
 
 # =========================================================================== #
 # All together ----
@@ -337,6 +340,7 @@ rural_csd <- csd_shapefiles |>
 # Since we only have data on 525 of the 751 CSDS  => missing data on 220/423 IRI's, 3/160 RDA's, and 3/3 S-E's
 combined_stats <- population_estimates_three_year |>
   left_join(age_estimates_current_year, by = c("csdid", "region_name")) |>
+  left_join(median_population, by = c("csdid", "csd_name")) |>
   left_join(drivetime_metrics, by = "csdid") |>
   left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
   left_join(drive_time_bins, by = c("csdid", "csd_name")) |>

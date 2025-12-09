@@ -317,7 +317,7 @@ db_population_estimates_one_year <- db_projections_transformed |>
     .by = c("dbid", "csdid")
   )
 
-# add flags for urban rural and summarize by csdid
+# add flags for urban rural and summarize by assigned sbc location
 rural_summary <- db_population_estimates_one_year |>
   left_join(popcenter_population, by = "dbid") |>
   left_join(complete_assignments, by = "dbid") |>
