@@ -103,6 +103,10 @@ drivetime_data_focused <- drivetime_data_focused |>
   ungroup() |>
   mutate(hh_size_estimate = population / n_address)
 
+# 65 Service BC locations over 526 CSD's.
+sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
+  clean_names()
+
 #------------------------------------------------------------------------------
 # bin the data by driving distance and time
 #------------------------------------------------------------------------------
@@ -317,19 +321,25 @@ rural_csdid <- db_population_estimates_one_year |>
   select(csdid, p_rural_residents, is_rural)
 
 
-rural_csd <- csd_shapefiles |>
+rural_office <- sbc_locs |>
+  distinct(nearest_facility, coord_x, coord_y) |>
+  st_as_sf(
+    coords = c("coord_x", "coord_y"),
+    crs = 3005
+  ) |>
   assign_region(
     regions = popcenter_boundaries,
-    id_col = "csdid",
+    id_col = "nearest_facility",
     region_name_col = "pcname"
   ) |>
   rename("p_area_coverage" = area_ratio) |>
   right_join(
-    crosswalk |> distinct(csdid, csd_name),
-    by = "csdid"
+    sbc_locs |> distinct(nearest_facility, csdid),
+    by = "nearest_facility"
   ) |>
-  mutate(rural_csd = if_else(p_area_coverage < 0.3, "Y", "N")) |> ## TODO: verify threshold
-  select(csdid, csd_name, rural_csd)
+  mutate(rural_office = if_else(p_area_coverage == 1, "Y", "N")) |>
+  select(nearest_facility, csdid, rural_office)
+
 
 # =========================================================================== #
 # All together ----
