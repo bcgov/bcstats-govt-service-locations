@@ -255,7 +255,7 @@ age_estimates_current_year <- population_estimates_three_year_all |>
       na.rm = TRUE
     ),
     est_population_over_64_yrs = sum(population[age >= 65], na.rm = TRUE),
-    .by = c(region_name, csdid)
+    .by = c(csd_name, csdid)
   )
 
 median_population <- population_estimates_three_year_all |>
@@ -338,7 +338,8 @@ rural_office <- sbc_locs |>
     by = "nearest_facility"
   ) |>
   mutate(rural_office = if_else(p_area_coverage == 1, "Y", "N")) |>
-  select(nearest_facility, csdid, rural_office)
+  select(nearest_facility, csdid, rural_office) |>
+  mutate(csdid = as.character(csdid))
 
 
 # =========================================================================== #
@@ -349,19 +350,13 @@ rural_office <- sbc_locs |>
 # If we want to rollup to Unincorporated areas then we can group by region_name/clean_csd in aggregations above
 # Since we only have data on 525 of the 751 CSDS  => missing data on 220/423 IRI's, 3/160 RDA's, and 3/3 S-E's
 combined_stats <- population_estimates_three_year |>
-  left_join(age_estimates_current_year, by = c("csdid", "region_name")) |>
+  left_join(age_estimates_current_year, by = c("csdid", "csd_name")) |>
   left_join(median_population, by = c("csdid", "csd_name")) |>
-  left_join(drivetime_metrics, by = "csdid") |>
+  left_join(drivetime_metrics, by = c("csdid", "csd_name")) |>
   left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
   left_join(drive_time_bins, by = c("csdid", "csd_name")) |>
-  left_join(rural_csdid, by = "csdid") |>
-  mutate(rural_office = NA) |>
-  relocate(csd_name, csdid, .before = region_name) |>
-  relocate(n_addresses, n_sbc_offices, .after = region_name) |>
-  relocate(
-    starts_with("n_addresses") & ends_with("km"),
-    .after = median_driving_distance
-  ) |>
+  left_join(rural_csdid, by = c("csdid")) |>
+  left_join(rural_office, by = c("csdid")) |>
   rename(
     estimated_population_2025 = `2025`,
     `5_yr_projection_2030` = `2030`,
@@ -379,7 +374,7 @@ if (!dir.exists(TABLES_OUT)) {
 }
 
 # Write combined statistics table
-fn <- paste0("csd-statistics-for-SBC-", format(Sys.Date(), "%Y-%m-%d"), ".csv")
+fn <- "csd-statistics-for-SBC.csv"
 
 combined_stats |>
   arrange(csdid) |>
