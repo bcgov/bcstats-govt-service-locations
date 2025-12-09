@@ -210,11 +210,24 @@ drivetime_metrics <- drivetime_data_focused |>
 # number of addresses in each CSD (from our data)
 # number of offices in each CSD (from our data)
 # =========================================================================== #
+population_estimates_three_year_all <- drivetime_data_focused |>
+  distinct(csd_name, csd_desc, csdid, dbid) |>
+  # expand drivetime data to include all years of interest for each row
+  expand_grid(tibble(
+    year = rep(unique(db_projections_transformed_raw$year))
+  )) |>
+  left_join(
+    db_projections_transformed_raw |>
+      select(dbid, year, age, population, total, area_sq_km),
+    by = c("dbid", "year")
+  ) |>
+  filter(!is.na(csdid))
+
 
 population_estimates_three_year <- db_projections_transformed_raw |>
   summarise(
-    population = sum(population, na.rm = TRUE),
-    .by = c(year, region_name, csdid)
+    population = round(sum(population, na.rm = TRUE)),
+    .by = c(year, csd_name, csdid)
   ) |>
   pivot_wider(
     names_from = year,
@@ -222,7 +235,7 @@ population_estimates_three_year <- db_projections_transformed_raw |>
     values_fill = 0
   )
 
-age_estimates_current_year <- db_projections_transformed_raw |>
+age_estimates_current_year <- population_estimates_three_year_all |>
   filter(year == CURRENT_YEAR) |>
   summarize(
     est_population_0_to_14_yrs = sum(
@@ -241,7 +254,7 @@ age_estimates_current_year <- db_projections_transformed_raw |>
     .by = c(region_name, csdid)
   )
 
-median_population <- db_projections_transformed_raw |>
+median_population <- population_estimates_three_year_all |>
   filter(year == CURRENT_YEAR) |>
   summarize(
     population = sum(population, na.rm = TRUE),
