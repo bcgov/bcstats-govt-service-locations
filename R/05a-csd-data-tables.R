@@ -103,7 +103,7 @@ drivetime_data_focused <- drivetime_data_focused |>
   ungroup() |>
   mutate(hh_size_estimate = population / n_address)
 
-# 65 Service BC locations over 526 CSD's.
+# 65 Service BC locations.
 sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
   clean_names()
 
