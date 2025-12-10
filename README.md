@@ -6,10 +6,10 @@
 
 This repository houses R code for analyzing the current geographic location of Service BC locations in British Columbia. Using spatial analysis techniques, the code scripts calculate accessibility metrics, aggregated at both the Census Subdivision (CSD) level and Service BC Location.  Accessibility metrics are based on factors such as population density distribution, facility locations, and travel times (initially by car).
 
-The primary goal is to identify potential geographic disparities in service access, highlighting potentially underserved populations or underutilized facilities. The derived data tables and visualizations provide quantitative insights to support service planning, resource allocation, and equitable service delivery strategies.  They allow for for analysis focused on specific targeted municipalities or regions of interest.
+The primary goal is to identify potential geographic disparities in service access, highlighting potentially underserved populations or under-utilized facilities. The derived data tables and visualizations provide quantitative insights to support service planning, resource allocation, and equitable service delivery strategies.  They allow for for analysis focused on specific targeted municipalities or regions of interest.
 
-The first phase of the project focused on the drive times to Service BC locations for four municipalities (Smithers, Langford, Kamloops and Dawson Creek) and subsequently expanded to the wider province. Much of the analysis is conducted at the Dissemination Block (DB) level, with metrics aggregated to larger geographic areas as needed.
- 
+The first phase of the project focused on the drive times to Service BC locations for four municipalities (Smithers, Langford, Kamloops and Dawson Creek). Many of the statistics were calculated at the the Dissemination Block (DB) level, with metrics aggregated to larger geographic areas as needed.  Phase 2 extended the analysis to all 65 Service BC offices and each Census Subdivision (CSD) in British Columbia. Population estimate methodology was refined and an urban/rural classification assigned to each Dissemination Block.
+
 ## Secure Data Access
 
 Accessing project files and data requires the [`safepaths`](https://github.com/bcgov/safepaths) R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure `safepaths` as well as the LAN location of all data files. 
