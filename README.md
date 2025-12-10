@@ -89,15 +89,14 @@ Run the following scripts in the order specified:
 - `01c-bin-distances.R`: this script processes driving time and distance data to group (bin) dissemination blocks (DBs) by driving distance to the nearest Service BC location. It calculates the total count and percentage of addresses within each distance bin for each Census Subdivision (CSD). The script outputs the results in both long and wide formats for reporting.
 
 **Mapping Results:**
-`02-map-plots.R`.
-        *   **Purpose:** Loads the processed DA/DB shapefiles (from `00b-make-map-data.R`) and the drive time summary statistics CSV files (from `01-descriptive-tables.R`). It merges these datasets and uses the `build_map` function (from `R/fxns/plots.r`) to generate and save a series of map visualization based on the configured theme (`MAP_THEME` in `settings.R`).
-        *   **How to Run:** Manually adjust inputs to the `build_map` function, save and source the file: `source("R/02-map-plots.R")`
-        *   **Expected Output:** Check the console for messages about data loading, data quality warnings (e.g., handling NAs or negative values), file overwrite warnings, or errors.  Successful completion will result in a series of map visualizations (e.g., PNG, SVG) saved to the output directory specified within the script or `settings.R`. 
 
-    *   **Script:** `02b-plot-localities.R`.
-        *   **Purpose:** Generates a map visualizing the geographic locations of the specific municipalities/localities included in the analysis, providing context within British Columbia. It uses the processed shapefiles and the service BC locations processed previously.
-        *   **How to Run:** This script can be run from source: `source("R/02b-plot-localities.R")`
-        *   **Expected Output:** Check the console for messages about data loading, data quality warnings (e.g., handling NAs or negative values), file overwrite warnings, or errors.  Successful completion will result in a map image file (e.g., PNG, SVG) saved to disk, showing the study area boundaries overlaid on a map of BC.
+- `02-map-plots.R`: this script loads processed Dissemination Block (DB) shapefiles and drive time summary statistics CSV files produced earlier in the workflow. It merges these datasets and leverages a custom function `build_map()` to generate and save a series of map visualizations. The maps display quantitative information (e.g., mean driving distance) at the DB level for each Census Subdivision (CSD), based on the configured theme (MAP_THEME) and other parameters defined in settings.R.
+
+- `02b-box-violin-plots.R`: this script generates statistical visualizations (box plots and violin plots) to show the distribution of driving distances to the nearest Service BC office across different Census Subdivisions (CSDs) in British Columbia. It uses preprocessed Dissemination Block (DB)-level data to compare access metrics between regions.
+
+- `02c-density_map.R`: this script generates spatial density maps to visualize the distribution of driving distances to the nearest Service BC office for different Census Subdivisions (CSDs) in British Columbia. It uses kernel density estimation to create smoothed heatmaps of driving distances, overlaying them on CSD boundaries.
+
+- `02d-csd-demographics.R` the script processes population projections, census data, and geographic crosswalks to calculate statistics such as total population and median age for each different Census Subdivisions (CSDs) in British Columbia. The script also generates population pyramids to visualize the age and gender distribution within each CSD, creating both individual and combined visualizations. 
 
 **Creating and Analyzing Catchment Areas:**
     *   **Script:** `03a-create-catchments.R`.
