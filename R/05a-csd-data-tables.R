@@ -69,6 +69,10 @@ drivetime_data <-
   clean_names() |>
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
+# 65 Service BC locations.
+sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
+  clean_names()
+
 # these DBs are from the census data, so contain 52,387 DB's and 751 CSD's.
 # Population projections come from BC Stats population projections + census population ratios.
 # For those csdid's/db's that are not in the population projections, they
@@ -103,9 +107,6 @@ drivetime_data_focused <- drivetime_data_focused |>
   ungroup() |>
   mutate(hh_size_estimate = population / n_address)
 
-# 65 Service BC locations.
-sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
-  clean_names()
 
 #------------------------------------------------------------------------------
 # bin the data by driving distance and time
@@ -228,7 +229,7 @@ population_estimates_three_year_all <- drivetime_data_focused |>
   filter(!is.na(csdid))
 
 
-population_estimates_three_year <- db_projections_transformed_raw |>
+population_estimates_three_year <- population_estimates_three_year_all |>
   summarise(
     population = round(sum(population, na.rm = TRUE)),
     .by = c(year, csd_name, csdid)
@@ -309,7 +310,7 @@ db_population_estimates_one_year <- db_projections_transformed_raw |>
   )
 
 # add flags for urban rural and summarize by csdid
-rural_csdid <- db_population_estimates_one_year |>
+rural_summary <- db_population_estimates_one_year |>
   left_join(popcenter_population, by = "dbid") |>
   summarise(
     n_rural_residents = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
@@ -355,8 +356,9 @@ combined_stats <- population_estimates_three_year |>
   left_join(drivetime_metrics, by = c("csdid", "csd_name")) |>
   left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
   left_join(drive_time_bins, by = c("csdid", "csd_name")) |>
-  left_join(rural_csdid, by = c("csdid")) |>
+  left_join(rural_summary, by = c("csdid")) |>
   left_join(rural_office, by = c("csdid")) |>
+  relocate(mean_driving_time, median_driving_time, .after = n_over_150_min) |>
   rename(
     estimated_population_2025 = `2025`,
     `5_yr_projection_2030` = `2030`,
