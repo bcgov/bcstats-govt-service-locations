@@ -14,6 +14,22 @@ The first phase of the project focused on the drive times to Service BC location
 
 Accessing project files and data requires the [`safepaths`](https://github.com/bcgov/safepaths) R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure `safepaths` as well as the LAN location of all data files. 
 
+
+## Data Storage Structure
+
+All data is stored in a hierarchical network folder structure accessed by leveraging [`safepaths`](https://github.com/bcgov/safepaths) functionality.
+
+```
+{LAN_FOLDER}/2025 Government Service Locations/
+├── data/
+    ├── source/          # Processed intermediate files
+    └── raw/             # Raw input data
+        └── nearest_facility_BC/  # Drive time analysis results
+└── outputs/
+    ├── tables/          # Final output tables  
+    └── visuals/         # Maps and visualizations
+```
+
 ## Installation and Usage
 
 **R:** This project requires a recent version of R (4.0.0 or later).
@@ -34,13 +50,19 @@ remotes::install_github("bcgov/safepaths")
 
 **Safepaths Configuration:** Follow the [safepaths package documentation](https://github.com/bcgov/safepaths) for initial setup. You will need the project's specific LAN path key from the project maintainers to configure access to the required datasets.
 
+
+## Global Constants and Configuration
+
+Global constants and configuration settings used throughout the Service BC data pipeline are centralized in a `settings.R` file. This file defines key parameters, file paths, and data validation requirements and is required to run the pipeline scripts. 
+
+
 ## How to Run the Analysis
 
-This section describes how to run the R scripts to perform the drive time analysis after completing the installation and setup. The process involves five scripts executed sequentially (there may be additional scripts in the future).
+This section describes how to run the R scripts to perform the drive time analysis after completing the installation and setup. 
 
 **Prerequisites:**
 
-1.  **Raw Data:** Ensure the necessary raw input data files are placed in the directory structure expected by the `settings.R` script. By default, data is assumed to be kept in the location specified by `RAW_DATA_FOLDER`. The raw files should match the naming conventions expected by the scripts (containing locality IDs, etc.).
+1.  **Raw Data:** Ensure the necessary raw input data files are placed in the directory structure expected by the `settings.R` script. By default, data is assumed to be kept in the location specified by `RAW_DATA_FOLDER`. 
 2.  **Review Configuration Settings:** Open and review the `R/settings.R` script. Verify that:
     *   The path returned from `safepaths::use_network_path()` correctly points to your network or local data storage location.
     *   The values in `EXPECTED_LOCALITIES` list matches the localities you intend to process, and for which data exists.
