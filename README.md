@@ -99,20 +99,14 @@ Run the following scripts in the order specified:
 - `02d-csd-demographics.R` the script processes population projections, census data, and geographic crosswalks to calculate statistics such as total population and median age for each different Census Subdivisions (CSDs) in British Columbia. The script also generates population pyramids to visualize the age and gender distribution within each CSD, creating both individual and combined visualizations. 
 
 **Creating and Analyzing Catchment Areas:**
-    *   **Script:** `03a-create-catchments.R`.
-        *   **Purpose:** This script assigns every Dissemination Block (DB) to a Service BC facility catchment area. It first uses drive time data to assign DBs to the nearest facility, then applies a spatial proximity method for any unassigned DBs. This process ensures complete geographic coverage with no gaps.
-        *   **How to Run:** This script can be run from source: `source("R/03a-create-catchments.R")`
-        *   **Expected Output:** Upon successful completion, the script generates a complete DB assignments CSV file (`complete_db_assignments.csv`) in the `SRC_DATA_FOLDER` and additional statistics tables in the `TABLES_OUT` directory. The console will display information about the number of DBs assigned using each method.
 
-    *   **Script:** `03b-plot-catchments.R`.
-        *   **Purpose:** This script creates several maps visualizing the Service BC facility catchment areas defined in the previous step. It generates both pilot-region focused maps and province-wide visualizations, showing both the original drive-time based assignments and the complete catchment assignments including spatial proximity assignments.
-        *   **How to Run:** This script can be run from source: `source("R/03b-plot-catchments.R")`
-        *   **Expected Output:** The script generates multiple map visualizations saved to the `MAP_OUT/complete_catchments` directory, including pilot region overviews, original drive-time catchments, and complete catchment maps. These include both focused maps of the pilot regions and provincial overviews.
+- `03a-create-catchments.R`: the script assigns every Dissemination Block (DB) to a Service BC facility catchment area. It first uses drive time data to assign DBs to the nearest facility, then applies a spatial proximity method for any unassigned DBs. This process ensures complete geographic coverage with no gaps.
 
-    *   **Script:** `03c-sbc-centric-stats.R`.
-        *   **Purpose:** This script creates detailed metrics for each individual Service BC location based on their catchment areas. It generates population projections, driving distance metrics, demographic analyses, and various visualizations for each facility. The script also produces population pyramids showing age and gender distribution for each catchment.
-        *   **How to Run:** This script can be run from source: `source("R/03c-sbc-centric-stats.R")`
-        *   **Expected Output:** The script generates multiple CSV files in the `TABLES_OUT` directory containing drive metrics, CSD counts, and population metrics for each Service BC location. It also creates visualization files in the `MAP_OUT` directory, including drive distance histograms, drive distance maps, and population pyramids for each facility.
+- `03b-plot-catchments.R`: the script creates several maps visualizing the Service BC facility catchment areas defined in the previous step. It generates both pilot-region focused maps and province-wide visualizations, showing both the original drive-time based assignments and the complete catchment assignments including spatial proximity assignments.
+
+- `03c-sbc-centric-stats.R`: the script creates detailed metrics for each individual Service BC location based on their catchment areas. It generates population projections, driving distance metrics, demographic analyses, and various visualizations for each facility. The script also produces population pyramids showing age and gender distribution for each catchment.
+
+- `03d-sbc-density-maps.R`: this script generates spatial density maps to visualize drive times to the nearest Service BC office for each facility's catchment area. Using kernel density estimation, the script creates smoothed heatmaps of drive times, highlighting areas within each catchment. It overlays these heatmaps with geographic boundaries, Service BC locations, and points representing addresses. The script ensures that maps are created for each catchment region, with additional handling for areas lacking drive time data. These maps provide insights into the spatial distribution of accessibility within Service BC catchments.
 
     *   **Script:** `04-sbc-servicebc-catchments.R`.
         *   **Purpose:** This script generates a map visualizing Service BC catchment areas based on Census Subdivision (CSD) boundaries. It overlays Service BC office locations, highlights assigned CSDs for each facility, and includes labels for pilot municipalities.
