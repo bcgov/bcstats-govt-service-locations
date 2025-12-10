@@ -127,6 +127,10 @@ Run the following scripts in the order specified:
 The final analysis output files will be available in the location specified by `SRC_DATA_FOLDER` within your configured data directory structure. You can then use these files for further analysis, reporting, or visualization.
 
 
+## Custom Functions
+
+The folder `R/fxns/` contains a collection of reusable R functions which support the analysis and visualization scripts (above). These functions handle specific tasks such as calculating drive time statistics, assigning dissemination blocks to facilities, generating thematic maps and plots.  Functions are sourced within each R script, as needed.
+
 ## Data Sources
 
 This analysis relies on the following primary data sources:
