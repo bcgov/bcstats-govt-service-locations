@@ -4,13 +4,11 @@
 
 ## Project Description
 
-This repository houses R code for analyzing the current geographic location of essential public services (e.g., Service BC locations, hospitals and schools) in British Columbia. Using spatial analysis techniques, the code scripts calculate accessibility metrics, aggregated at both the municipal level and by smaller geographic units (i.e. Census Dissemination Areas (DAs) or Dissemination Blocks (DBs)).  Accessibility metrics are based on factors such as population density distribution, facility locations, and travel times (initially by car).
+This repository houses R code for analyzing the current geographic location of Service BC locations in British Columbia. Using spatial analysis techniques, the code scripts calculate accessibility metrics, aggregated at both the Census Subdivision (CSD) level and Service BC Location.  Accessibility metrics are based on factors such as population density distribution, facility locations, and travel times (initially by car).
 
 The primary goal is to identify potential geographic disparities in service access, highlighting potentially underserved populations or underutilized facilities. The derived data tables and visualizations provide quantitative insights to support service planning, resource allocation, and equitable service delivery strategies.  They allow for for analysis focused on specific targeted municipalities or regions of interest.
 
-The first phase of the project focuses on the drive times to Service BC locations for four municipalities (Smithers, Langford, Kamloops and Dawson Creek), with plans to expand to other public services in future phases. The analysis will be conducted at the Dissemination Block (DB) level, with the option to aggregate results to larger geographic units as needed.
-
-*Note: The code and analytical methodology are currently under development.*
+The first phase of the project focused on the drive times to Service BC locations for four municipalities (Smithers, Langford, Kamloops and Dawson Creek) and subsequently expanded to the wider province. Much of the analysis is conducted at the Dissemination Block (DB) level, with metrics aggregated to larger geographic areas as needed.
  
 ## Secure Data Access
 
@@ -26,8 +24,10 @@ Accessing project files and data requires the [`safepaths`](https://github.com/b
 # Manually install packages:
 install.packages(c(
   "sf", "tidyverse", "glue", "janitor", "e1071", "remotes",
-  "svglite", "scales", "rmapshaper", "bcmaps" # Added packages for new scripts
+  "svglite", "scales", "rmapshaper", "bcmaps", "snakecase", 
+  "tigris", "spatstat", "stars", "terra", "fs", "ggnewscale" # Added packages for new scripts
 ))
+
 
 remotes::install_github("bcgov/safepaths")
 ```
