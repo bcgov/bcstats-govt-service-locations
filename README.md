@@ -28,6 +28,7 @@ All data is stored in a hierarchical network folder structure accessed by levera
 └── outputs/
     ├── tables/          # Final output tables  
     └── visuals/         # Maps and visualizations
+    └── for-sbc/         # Custom outputs for SBC
 ```
 
 ## Installation and Usage
