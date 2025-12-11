@@ -141,9 +141,11 @@ Geographic coordinates for project-relevant addresses were generated using the B
 
 While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates used for the analysis are open. 
 
-**NFA Data:** 
+**Proximity Analysis Data:** 
 
-(Description pending - this dataset represents output from the Nearest Facility Analysis pipeline, details to be added.)
+The Nearest Service BC Location dataset was provided to the project by DSS; the data was generated as outputs from their Proximity Analysis pipeline. These scripts utilize the BC Route Planner API to calculate the distance and drive time from each origin point (household) to the nearest Service BC location. To address unroutable coordinates, the pipline replaces invalid records with routable coordinates. 
+
+The final dataset includes one row per household in British Columbia, and provides the calculated distance to the nearest Service BC location. Some limitations exist, as not all households were available as geocoded address points. This dataset forms the foundation for accessibility analysis, enabling the evaluation of service coverage and drive times across the province.
 
 **Geographic Boundary Data Crosswalk**
 
@@ -151,21 +153,23 @@ A geographic crosswalk between different census geographies (Dissemination Block
 
 **Digital Boundary Files**
 
-Digital boundary files in GeoPackage format (.gpkg) defining the geographic extents of Census Subdivisions (CSDs), Dissemination Areas (DAs) and Dissemination Blocks (DBs) were obtained from the BC Data Catalogue:
+Digital boundary files defining the geographic extents of Census Subdivisions (CSDs), Dissemination Areas (DAs) and Dissemination Blocks (DBs) were obtained from the BC Data Catalogue:
 - [Census Subdivisions (CSDs)](https://catalogue.data.gov.bc.ca/dataset/current-census-subdivision-boundaries)
-- [Dissemination Areas (DAs)](https://catalogue.data.gov.bc.ca/dataset/current-census-dissemination-areas)
 - [Dissemination Blocks (DBs)](https://catalogue.data.gov.bc.ca/dataset/current-census-dissemination-blocks)
 
-These vector datasets serve as the geometric base for cartographic visualization and underpin geospatial operations within the analysis (used as input for `00b-make-map-data.R`).
+ These files were accessed and retrieved using the R packages [`bcmaps`](https://github.com/bcgov/bcmaps) and [`bcdata`](https://github.com/bcgov/bcdata). These vector datasets serve as the geometric base for cartographic visualization and underpin geospatial operations within the analysis (used as input for `00-make-map-data.R`).
 
 **Census Population and Dwelling Counts**
 
-Aggregate population and dwelling count data at the Dissemination Block (DB) level were extracted from the Statistics Canada 2021 Census. This dataset provides the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study regions (used in `01-descriptive-tables.R`).
+Aggregate population and dwelling count data at the Dissemination Block (DB) level were extracted from the Statistics Canada 2021 Census. This data was accessed using the R cancensus package, which connects to the [CensusMapper API](https://censusmapper.ca/).  This dataset provides the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study regions.
 
 **Population Projections**
 
-Population projections at the Census Subdivision (CSD) level were obtained from BC Stats through the BC Data Catalogue ([Sub-Provincial Population Projections](https://catalogue.data.gov.bc.ca/dataset/bc-sub-provincial-population-estimates-and-projections)). These projections provide future population estimates by age and gender, allowing for demographic analysis of service catchment areas over time. The projections are used in `03c-sbc-centric-stats.R` to estimate future service demands and demographic composition within Service BC facility catchment areas.
+Population projections at the Census Subdivision (CSD) level were obtained from BC Stats through the BC Data Catalogue ([Sub-Provincial Population Projections](https://catalogue.data.gov.bc.ca/dataset/bc-sub-provincial-population-estimates-and-projections)). These files were accessed and retrieved using the R package [`bcdata`](https://github.com/bcgov/bcdata). These projections provide future population estimates by age and gender, allowing for demographic analysis of service catchment areas over time. The projections are used in `03c-sbc-centric-stats.R` to estimate future service demands and demographic composition within Service BC facility catchment areas.
 
+
+**Statistics Canada Boundary Files**
+Boundary files from Statistics Canada were used to support various analyses in this project. These files were downloaded from the Statistics Canada website (link) and processed for use in the analysis. Population center boundaries were used to analyze urban and rural classifications and generate visualizations. Forward Sortation Area (FSA) boundaries were used for exploratory purposes only. 
 
 ## Guiding Principles
 
