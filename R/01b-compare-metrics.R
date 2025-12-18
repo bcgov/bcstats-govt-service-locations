@@ -26,7 +26,10 @@ output_dir <- file.path(VISUALS_OUT, "csd-drive-distance-plots")
 #------------------------------------------------------------------------------
 
 db_stats <-
-  read_csv(glue("{SRC_DATA_FOLDER}/reduced-db-average-times-dist-all-locs.csv", col_types = cols(.default = "c"))) %>%
+  read_csv(glue(
+    "{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv",
+    col_types = cols(.default = "c")
+  )) |>
   clean_names()
 
 # ------------------------------------------------------------------------------
@@ -36,26 +39,30 @@ message("Generating Scatter Plot...")
 
 outfile <- to_snake_case(glue("scatter plot mean_drv_dist_time by csd"))
 
-plot.data <- db_stats %>%
-  select(dbid, csd_name, csdid, drv_dist_mean, drv_time_sec_mean) %>%
-  mutate(drv_dist_mean = as.numeric(drv_dist_mean),
-         drv_time_sec_mean = as.numeric(drv_time_sec_mean),
-         drv_time_min_mean = drv_time_sec_mean / 60)
+plot.data <- db_stats |>
+  select(dbid, csd_name, csdid, drv_dist_mean, drv_time_sec_mean) |>
+  mutate(
+    drv_dist_mean = as.numeric(drv_dist_mean),
+    drv_time_sec_mean = as.numeric(drv_time_sec_mean),
+    drv_time_min_mean = drv_time_sec_mean / 60
+  )
 
-scatter_plot <- plot.data %>%
+scatter_plot <- plot.data |>
   ggplot(aes(x = drv_dist_mean, y = drv_time_min_mean)) +
   geom_point(aes(color = csd_name)) +
   # plot a smooth line through each group of points
   geom_smooth(aes(color = csd_name), method = "lm", se = FALSE) +
-  labs(title = "Driving Distance vs Time to Nearest Service BC Office",
-       subtitle = "Dissemination block averages, by census subdivision",
-       caption = "Source: BC Stats, 2025",
-       x = "\nDriving Distance (km)",
-       y = "Driving Time (minutes)\n",
-       color = "") +
+  labs(
+    title = "Driving Distance vs Time to Nearest Service BC Office",
+    subtitle = "Dissemination block averages, by census subdivision",
+    caption = "Source: BC Stats, 2025",
+    x = "\nDriving Distance (km)",
+    y = "Driving Time (minutes)\n",
+    color = ""
+  ) +
   SCATTER_PLOT_THEME +
   COLOR_THEME_D +
-  facet_wrap( ~csd_name, scales = "free")
+  facet_wrap(~csd_name, scales = "free")
 
 # Save the plot
 ggsave(

@@ -26,15 +26,15 @@ source("R/settings.R")
 drivetime_file <- glue("{SRC_DATA_FOLDER}/reduced-drivetime-data.csv")
 
 drivetime_data <-
-  read_csv(drivetime_file, col_types = cols(.default = "c")) %>%
-  clean_names() %>%
+  read_csv(drivetime_file, col_types = cols(.default = "c")) |>
+  clean_names() |>
   mutate(across(c(drv_time_sec, drv_dist), as.numeric))
 
 #------------------------------------------------------------------------------
 # bin the data by driving distance and add a column for the bin
 #------------------------------------------------------------------------------
 
-binned_data <- drivetime_data %>%
+binned_data <- drivetime_data |>
   mutate(
     bin = case_when(
       drv_dist <= 1 ~ "Under 1 km",
@@ -43,11 +43,11 @@ binned_data <- drivetime_data %>%
       drv_dist > 10 & drv_dist <= 20 ~ "10 to 20 km",
       TRUE ~ "20+ km"
     )
-  ) %>%
-  summarise(total_count = n(),  .by = c(csd_name, bin)) %>%
-  mutate(total_address = sum(total_count), .by = c(csd_name)) %>%
-  ungroup() %>%
-  mutate( percent = total_count / total_address)
+  ) |>
+  summarise(total_count = n(), .by = c(csd_name, bin)) |>
+  mutate(total_address = sum(total_count), .by = c(csd_name)) |>
+  ungroup() |>
+  mutate(percent = total_count / total_address)
 
 
 #------------------------------------------------------------------------------
@@ -55,21 +55,21 @@ binned_data <- drivetime_data %>%
 #------------------------------------------------------------------------------
 
 # Create long format in one step
-binned_data_long <- binned_data %>%
+binned_data_long <- binned_data |>
   pivot_longer(
     cols = c(total_count, percent),
     names_to = "metric",
     values_to = "value"
-  ) %>%
+  ) |>
   mutate(metric = factor(metric, levels = c("total_count", "percent")))
 
 # Create wide format for reporting
-binned_data_pivot <- binned_data_long %>%
+binned_data_pivot <- binned_data_long |>
   pivot_wider(
     names_from = bin,
     values_from = value,
     values_fill = 0
-  ) %>%
+  ) |>
   arrange(csd_name, metric)
 
 # Check output directory exists

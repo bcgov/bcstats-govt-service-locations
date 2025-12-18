@@ -7,4 +7,5 @@ README.html
 .Rhistory
 *.csv
 *.rds
-
+*.lintr
+tasks.json

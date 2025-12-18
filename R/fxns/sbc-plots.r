@@ -16,15 +16,15 @@
 # Function: build_map
 
 # Description: Generates a thematic map (ggplot object) from an input spatial
-# data frame (`sf` object).  Allows customization of titles, theme, and 
+# data frame (`sf` object).  Allows customization of titles, theme, and
 # fill color scale.
 
 # Inputs:
 #   - data: An sf data frame containing geometries and associated data,
 #   - varname: Character string specifying the name of the column in `data`
 #     to use for the map's fill aesthetic.
-#   - loc_id: The specific locality which we are mapping. 
-#   - loc_col: The name of the column in `data` that contains the locality identifiers. 
+#   - loc_id: The specific locality which we are mapping.
+#   - loc_col: The name of the column in `data` that contains the locality identifiers.
 #     Defaults to "loc".
 #   - plot_title: Optional character string for the main plot title. Defaults
 #     to empty string.
@@ -42,25 +42,24 @@
 # ------------------------------------------------------------------------
 
 build_map <- function(
-    data,
-    servicebc_data,
-    varname,
-    csd_name,
-    csd_col = "",
-    sbc_col = NULL,  # New parameter for filtering servicebc_data
-    plot_title = "",
-    plot_subtitle = "",
-    legend_title = "",
-    map_theme = theme_minimal(),
-    fill_scale = scale_fill_viridis_c(option = "viridis"),
-    scale_limits = NULL,
-    na_color = "#E41A1C"  # Default light red color for NA values
+  data,
+  servicebc_data,
+  varname,
+  csd_name,
+  csd_col = "",
+  sbc_col = NULL, # New parameter for filtering servicebc_data
+  plot_title = "",
+  plot_subtitle = "",
+  legend_title = "",
+  map_theme = theme_minimal(),
+  fill_scale = scale_fill_viridis_c(option = "viridis"),
+  scale_limits = NULL,
+  na_color = "#E41A1C" # Default light red color for NA values
 ) {
-
   # --- Prepare arguments as symbols ---
   varname_sym <- rlang::sym(varname)
   csd_col_sym <- rlang::sym(csd_col)
-  
+
   # Use sbc_col if provided, otherwise default to csd_col
   sbc_col_sym <- if (!is.null(sbc_col)) rlang::sym(sbc_col) else csd_col_sym
 
@@ -73,17 +72,17 @@ build_map <- function(
   fill_theme <- fill_scale$clone()
   fill_theme$limits <- range(data[[varname_sym]], na.rm = TRUE)
   fill_theme$oob <- scales::squish
-  
+
   # Filter data for the specified location
-  map_data <- data[data[[csd_col_sym]] == csd_name,]
-  
+  map_data <- data[data[[csd_col_sym]] == csd_name, ]
+
   # Split the data into those with and without the variable value
-  map_data_na <- map_data[is.na(map_data[[varname_sym]]),]
-  map_data_with_values <- map_data[!is.na(map_data[[varname_sym]]),]
+  map_data_na <- map_data[is.na(map_data[[varname_sym]]), ]
+  map_data_with_values <- map_data[!is.na(map_data[[varname_sym]]), ]
 
   # Only filter servicebc_data if the column exists, otherwise use all points
   if (sbc_col %in% names(servicebc_data)) {
-    points_data <- servicebc_data[servicebc_data[[sbc_col_sym]] == csd_name,]
+    points_data <- servicebc_data[servicebc_data[[sbc_col_sym]] == csd_name, ]
   } else {
     # If no column specified or not found, use all service locations
     points_data <- servicebc_data
@@ -91,44 +90,53 @@ build_map <- function(
 
   # Check if filtering resulted in data
   if (nrow(map_data) == 0) {
-    warning(glue::glue("Warning: No data found for csd_name '{csd_name}' in column '{csd_col}'"))
-    return(ggplot() + theme_void() + labs(title = glue::glue("No data for {csd_name}")))
+    warning(glue::glue(
+      "Warning: No data found for csd_name '{csd_name}' in column '{csd_col}'"
+    ))
+    return(
+      ggplot() +
+        theme_void() +
+        labs(title = glue::glue("No data for {csd_name}"))
+    )
   }
 
   ## Build the ggplot object
   map <- ggplot() +
     # First draw the polygons with NA values in gentle red
     geom_sf(
-        data = map_data_na,
-        fill = na_color,
-        color = "gray50",
-        lwd = 0.1,
-        alpha = 0.5  # Gentle transparency for the red
+      data = map_data_na,
+      fill = na_color,
+      color = "gray50",
+      lwd = 0.1,
+      alpha = 0.5 # Gentle transparency for the red
     ) +
     # Then draw the polygons with values using the color scale
     geom_sf(
-        data = map_data_with_values,
-        aes(fill = !!varname_sym),
-        color = "gray40",
-        lwd = 0.1
+      data = map_data_with_values,
+      aes(fill = !!varname_sym),
+      color = "gray40",
+      lwd = 0.1
     ) +
     fill_theme +
     # Add Service BC locations
-    geom_sf(data = points_data,
+    geom_sf(
+      data = points_data,
       aes(shape = "Nearest Service BC Location"),
       fill = 'yellow',
       color = 'black',
       size = 2,
-      stroke = 1.1) +
+      stroke = 1.1
+    ) +
     scale_shape_manual(
       name = NULL,
-      values = c("Nearest Service BC Location" = 23) 
+      values = c("Nearest Service BC Location" = 23)
     ) +
     guides(
       shape = guide_legend(
         override.aes = list(
-          fill = "yellow", 
-          size = 4)
+          fill = "yellow",
+          size = 4
+        )
       ),
       fill = guide_colorbar(
         title = legend_title,
@@ -153,9 +161,7 @@ build_map <- function(
     )
 
   return(map)
-
 }
-
 
 
 # ------------------------------------------------------------------------
@@ -189,7 +195,6 @@ build_boxplot <- function(
   plot_theme = theme_minimal(),
   fill_scale = scale_fill_viridis_d(option = "viridis") #Discrete Colour function scale
 ) {
-
   # --- Prepare arguments as symbols ---
   x_var_sym <- rlang::sym(x_var)
   y_var_sym <- rlang::sym(y_var)
@@ -214,8 +219,8 @@ build_boxplot <- function(
       size = 0.7,
       color = "grey30"
     ) +
-    fill_scale + 
-    scale_y_continuous(labels = scales::comma_format()) + 
+    fill_scale +
+    scale_y_continuous(labels = scales::comma_format()) +
     labs(
       title = plot_title,
       subtitle = plot_subtitle,
@@ -248,14 +253,34 @@ build_boxplot <- function(
 #   - Returns a ggplot object representing the population pyramid with
 #     bars for the current year and step lines for projections.
 # ------------------------------------------------------------------------
-create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)) {
+create_population_pyramid <- function(
+  data,
+  location_name,
+  years = c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)
+) {
   # Define the correct ordering for age groups
   age_group_order <- c(
-    "0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39",
-    "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74",
-    "75-79", "80-84", "85-89", "90+"
+    "0-4",
+    "5-9",
+    "10-14",
+    "15-19",
+    "20-24",
+    "25-29",
+    "30-34",
+    "35-39",
+    "40-44",
+    "45-49",
+    "50-54",
+    "55-59",
+    "60-64",
+    "65-69",
+    "70-74",
+    "75-79",
+    "80-84",
+    "85-89",
+    "90+"
   )
-  
+
   # Filter to only include Males and Females (not totals)
   # Group and calculate population estimates by age group and gender
   pop_by_age_gender <- data |>
@@ -277,29 +302,29 @@ create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEA
       # Format year for display
       year_label = as.character(year)
     )
-  
+
   # Get the unique years in proper order
   years_ordered <- sort(unique(pop_by_age_gender$year))
-  
+
   # Calculate total population for each year for annotations
   total_pop_by_year <- pop_by_age_gender |>
     group_by(year) |>
     summarize(total_pop = sum(abs(pop_estimate)), .groups = "drop")
-  
+
   # Create named vectors for scales - skip the first year (base year) for lines
   projection_years <- years_ordered[-1]
-  
+
   # Only need two colors for projection years
   year_colors <- c("#7a0177", "#006d2c")[1:length(projection_years)]
   names(year_colors) <- as.character(projection_years)
-  
+
   year_linetypes <- c("dashed", "dotted")[1:length(projection_years)]
   names(year_linetypes) <- as.character(projection_years)
-  
+
   # Determine y-axis range for annotation positioning
   y_min <- min(pop_by_age_gender$pop_estimate)
   y_max <- max(pop_by_age_gender$pop_estimate)
-  
+
   # Create annotation text for total population - vertically stacked in top right
   # First, create a summary label for all years
   pop_summary_label <- "Total population:\n"
@@ -307,30 +332,32 @@ create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEA
     yr <- years_ordered[i]
     pop <- total_pop_by_year |> filter(year == yr) |> pull(total_pop)
     pop_summary_label <- paste0(
-      pop_summary_label, 
-      yr, ": ", format(round(pop), big.mark = ","),
-      if(i < length(years_ordered)) "\n" else ""
+      pop_summary_label,
+      yr,
+      ": ",
+      format(round(pop), big.mark = ","),
+      if (i < length(years_ordered)) "\n" else ""
     )
   }
-  
+
   # Calculate numeric positions for step charts (between age groups)
   age_numeric_positions <- seq_along(age_group_order)
-  
+
   # Generate projection data in the right format for step charts
   projection_data <- pop_by_age_gender |>
     filter(year != min(years_ordered)) |>
     mutate(age_numeric = as.numeric(age_group))
-  
+
   # Create expanded data for the edge bins to ensure lines extend to the boundaries
   # For each gender and year combination, add points that extend the first and last bins
   first_bin_extension <- projection_data |>
     filter(age_group == age_group_order[1]) |>
-    mutate(age_numeric = 0.5)  # Extend to left edge
-  
+    mutate(age_numeric = 0.5) # Extend to left edge
+
   last_bin_extension <- projection_data |>
     filter(age_group == age_group_order[length(age_group_order)]) |>
-    mutate(age_numeric = length(age_group_order) + 0.5)  # Extend to right edge
-  
+    mutate(age_numeric = length(age_group_order) + 0.5) # Extend to right edge
+
   # Combine the data
   projection_data_extended <- bind_rows(
     first_bin_extension,
@@ -338,7 +365,7 @@ create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEA
     last_bin_extension
   ) |>
     arrange(gender, year, age_numeric)
-  
+
   # Create the pyramid plot with bars for current year and step lines for projections
   ggplot() +
     # Add solid filled bars for the current year as the base
@@ -346,14 +373,20 @@ create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEA
       data = pop_by_age_gender |> filter(year == min(years_ordered)),
       aes(x = age_group, y = pop_estimate, group = gender),
       stat = "identity",
-      fill = "#ADADAD",  # Neutral gray for all genders
+      fill = "#ADADAD", # Neutral gray for all genders
       alpha = 0.7,
       color = NA
     ) +
     # Add step lines for future years with extended edges
     geom_step(
       data = projection_data_extended,
-      aes(x = age_numeric, y = pop_estimate, color = year_label, linetype = year_label, group = interaction(gender, year_label)),
+      aes(
+        x = age_numeric,
+        y = pop_estimate,
+        color = year_label,
+        linetype = year_label,
+        group = interaction(gender, year_label)
+      ),
       direction = "mid",
       linewidth = 1.2
     ) +
@@ -371,8 +404,13 @@ create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEA
     ) +
     labs(
       title = paste0("Population Pyramid for ", location_name),
-      subtitle = paste0("Population projections: ", min(years_ordered), " (filled), ", 
-                        paste(projection_years, collapse = ", "), " (lines)"),
+      subtitle = paste0(
+        "Population projections: ",
+        min(years_ordered),
+        " (filled), ",
+        paste(projection_years, collapse = ", "),
+        " (lines)"
+      ),
       x = "Age Group",
       y = "Population"
     ) +
@@ -382,16 +420,31 @@ create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEA
     # Custom axis labels to show absolute values
     scale_y_continuous(
       labels = function(x) format(abs(x), big.mark = ","),
-      breaks = pretty(c(min(pop_by_age_gender$pop_estimate), max(pop_by_age_gender$pop_estimate)))
+      breaks = pretty(c(
+        min(pop_by_age_gender$pop_estimate),
+        max(pop_by_age_gender$pop_estimate)
+      ))
     ) +
     # Custom gender labels at the bottom
-    annotate("text", x = 1, y = min(pop_by_age_gender$pop_estimate) * 0.9, label = "Male", fontface = "bold") +
-    annotate("text", x = 1, y = max(pop_by_age_gender$pop_estimate) * 0.9, label = "Female", fontface = "bold") +
+    annotate(
+      "text",
+      x = 1,
+      y = min(pop_by_age_gender$pop_estimate) * 0.9,
+      label = "Male",
+      fontface = "bold"
+    ) +
+    annotate(
+      "text",
+      x = 1,
+      y = max(pop_by_age_gender$pop_estimate) * 0.9,
+      label = "Female",
+      fontface = "bold"
+    ) +
     # Add total population annotation as a single block in top right
     annotate(
-      "text", 
-      x = max(age_numeric_positions), 
-      y = y_max * 0.9, 
+      "text",
+      x = max(age_numeric_positions),
+      y = y_max * 0.9,
       label = pop_summary_label,
       hjust = 1,
       vjust = 1,
@@ -433,13 +486,17 @@ create_population_pyramid <- function(data, location_name, years = c(CURRENT_YEA
 #   - Returns a ggplot object representing the histogram of driving distances,
 #     with a vertical line and label for the mean distance.
 # ------------------------------------------------------------------------
-create_drive_distance_histogram <- function(data, facility_name = NULL, facet = FALSE) {
+create_drive_distance_histogram <- function(
+  data,
+  facility_name = NULL,
+  facet = FALSE
+) {
   # Filter to facility if specified
   plot_data <- data
   if (!is.null(facility_name) && !facet) {
     plot_data <- data |> filter(assigned == facility_name)
   }
-  
+
   # Calculate stats
   plot_data <- plot_data |>
     group_by(assigned) |>
@@ -449,7 +506,7 @@ create_drive_distance_histogram <- function(data, facility_name = NULL, facet = 
       drv_dist = if_else(drv_dist == 0, 0.01, drv_dist)
     ) |>
     ungroup()
-  
+
   # Create the base plot
   p <- ggplot(plot_data, aes(x = drv_dist)) +
     # Add histogram with semi-transparent fill
@@ -470,8 +527,8 @@ create_drive_distance_histogram <- function(data, facility_name = NULL, facet = 
     # Add text label for the mean value
     geom_text(
       aes(
-        x = drv_dist_mean + 5, 
-        y = Inf, 
+        x = drv_dist_mean + 5,
+        y = Inf,
         label = paste0("Mean: ", round(drv_dist_mean, 1), " km")
       ),
       vjust = 1.5,
@@ -481,7 +538,7 @@ create_drive_distance_histogram <- function(data, facility_name = NULL, facet = 
       size = 3.5,
       check_overlap = TRUE
     ) +
-    # Set consistent x limit 
+    # Set consistent x limit
     xlim(0, 150) +
     # Add labels
     labs(
@@ -498,11 +555,11 @@ create_drive_distance_histogram <- function(data, facility_name = NULL, facet = 
       legend.position = "none",
       panel.grid.minor = element_blank()
     )
-  
+
   # Add faceting if requested
   if (facet) {
-    p <- p + 
-      facet_wrap(~ assigned, scales = "free_y") +
+    p <- p +
+      facet_wrap(~assigned, scales = "free_y") +
       labs(
         title = "Driving Distances to Service BC Locations",
         subtitle = "Distribution of driving distances for each facility with mean value"
@@ -513,13 +570,16 @@ create_drive_distance_histogram <- function(data, facility_name = NULL, facet = 
       )
   } else {
     # Individual facility plot
-    p <- p + 
+    p <- p +
       labs(
         title = paste0("Driving Distances to ", facility_name),
-        subtitle = paste0("Distribution of driving distances with mean value of ", 
-                          round(mean(plot_data$drv_dist_mean), 1), " km")
+        subtitle = paste0(
+          "Distribution of driving distances with mean value of ",
+          round(mean(plot_data$drv_dist_mean), 1),
+          " km"
+        )
       )
   }
-  
+
   return(p)
 }

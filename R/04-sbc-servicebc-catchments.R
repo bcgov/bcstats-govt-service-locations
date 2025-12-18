@@ -13,8 +13,7 @@
 # limitations under the License.
 
 # Simple test map showing BC Census Subdivision boundaries and Service BC locations
-# as well as our pilot CSDs with the Service BC CSD methodology based catchments. 
-
+# as well as our pilot CSDs with the Service BC CSD methodology based catchments.
 
 # =========================================================================== #
 # Load libraries and settings ----
@@ -25,31 +24,30 @@ source("R/settings.R")
 
 # Get BC boundary as base map
 message("Loading BC boundary...")
-bc_outline <- bc_bound() %>%
-  st_transform(crs = 3005)  # Transform to BC Albers projection
+bc_outline <- bc_bound() |>
+  st_transform(crs = 3005) # Transform to BC Albers projection
 
 # Get BC Census Subdivision boundaries
 message("Loading CSD boundaries...")
-csd_boundaries <- census_subdivision() %>%
-  clean_names() %>%
-  st_transform(crs = 3005)  # Ensure consistent CRS
+csd_boundaries <- census_subdivision() |>
+  clean_names() |>
+  st_transform(crs = 3005) # Ensure consistent CRS
 
 # CSD level shapefiles for each locality
-csd_shapefile <- 
-  st_read(glue("{SHAPEFILE_OUT}/full-csd-with-location.gpkg")) %>%
-  mutate(across(c(csd_name), as.character),
-         across(c(landarea), as.numeric))
+csd_shapefile <-
+  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) |>
+  mutate(across(c(csd_name), as.character), across(c(landarea), as.numeric))
 
 # Get centroids for labels
-csd_centroids <- st_centroid(csd_shapefile) 
-csd_centroids_nudged <- csd_centroids |> 
+csd_centroids <- st_centroid(csd_shapefile)
+csd_centroids_nudged <- csd_centroids |>
   mutate(
-      geom = case_when(
-        csd_name == 'Dawson Creek' ~ geom + c(-150000, 40000),
-        csd_name == 'Langford' ~ geom + c(130000, 10000), # move east for langford
-        TRUE ~ geom + c(0, 70000)  # move label north to not overlap 
-      )
-  ) %>%
+    geom = case_when(
+      csd_name == 'Dawson Creek' ~ geom + c(-150000, 40000),
+      csd_name == 'Langford' ~ geom + c(130000, 10000), # move east for langford
+      TRUE ~ geom + c(0, 70000) # move label north to not overlap
+    )
+  ) |>
   st_set_crs(st_crs(csd_centroids))
 
 csd_centroids_nudged <- csd_centroids_nudged |>
@@ -58,49 +56,58 @@ csd_centroids_nudged <- csd_centroids_nudged |>
 # Load Service BC locations
 message("Loading Service BC locations...")
 servicebc <- read_csv(
-  glue("{SRC_DATA_FOLDER}/reduced-service-bc-locs.csv"), 
+  glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
   col_types = cols(.default = "c")
-) %>%
-  clean_names() %>%
+) |>
+  clean_names() |>
   st_as_sf(coords = c("coord_x", "coord_y"), remove = FALSE, crs = 3005)
 
 # Define CSDs assigned to each facility according to centroid mapping
-csd_facility_assignments  <- read_excel(
-  glue("{RAW_DATA_FOLDER}/from_service_bc/Municipality(CSD)toSBCofficeMappying_updated (1).xlsx"),
+csd_facility_assignments <- read_excel(
+  glue(
+    "{RAW_DATA_FOLDER}/from_service_bc/Municipality(CSD)toSBCofficeMappying_updated (1).xlsx"
+  ),
   sheet = "CSDtoSBC"
-)  %>% 
-    mutate(CSD_ID = as.character(CSD_ID)) %>%
-    filter(Nearest_office %in% c("Dawson Creek", "Victoria", "Smithers", "Kamloops")) 
+) |>
+  mutate(CSD_ID = as.character(CSD_ID)) |>
+  filter(
+    Nearest_office %in% c("Dawson Creek", "Victoria", "Smithers", "Kamloops")
+  )
 
 # Join the assignment data to the CSD boundaries
-csd_boundaries <- csd_boundaries %>%
-  left_join(csd_facility_assignments, by = c("census_subdivision_id" = "CSD_ID"))
+csd_boundaries <- csd_boundaries |>
+  left_join(
+    csd_facility_assignments,
+    by = c("census_subdivision_id" = "CSD_ID")
+  )
 
 # Create map
 message("Creating map...")
-map_plot <- ggplot() +  # Add BC outline as base layer
-  geom_sf(data = bc_outline,
-          fill = "white",
-          color = "black",
-          size = 0.5) +
+map_plot <- ggplot() + # Add BC outline as base layer
+  geom_sf(data = bc_outline, fill = "white", color = "black", size = 0.5) +
   # Add CSD boundaries - filled by facility assignment if available
-  geom_sf(data = csd_boundaries, 
-          aes(fill = Nearest_office),, 
-          color = "darkgrey", 
-          size = 0.2, 
-          alpha = 0.7) +
+  geom_sf(
+    data = csd_boundaries,
+    aes(fill = Nearest_office),
+    ,
+    color = "darkgrey",
+    size = 0.2,
+    alpha = 0.7
+  ) +
   # Add Service BC locations as points
-  geom_sf(data = servicebc, 
-          shape = 23,  # Diamond shape
-          fill = "yellow",
-          color = "black",
-          size = 3, 
-          stroke = 1.1) +  # Add labels and theme
+  geom_sf(
+    data = servicebc,
+    shape = 23, # Diamond shape
+    fill = "yellow",
+    color = "black",
+    size = 3,
+    stroke = 1.1
+  ) + # Add labels and theme
   # pilot labels
   geom_sf_text(
     data = csd_centroids_nudged,
-    aes(label = csd_name), 
-    size = 5, 
+    aes(label = csd_name),
+    size = 5,
     fontface = 'bold'
   ) +
   labs(
@@ -108,21 +115,22 @@ map_plot <- ggplot() +  # Add BC outline as base layer
     subtitle = "With CSD Boundaries and Service BC Office Locations",
     fill = "Assigned to Facility",
     color = NULL
-  ) +  
+  ) +
   # Set fill colors for assigned facilities
   scale_fill_viridis_d(
     option = "turbo",
-    na.value = NA,#"white",  # CSDs without assignment get default color
+    na.value = NA, #"white",  # CSDs without assignment get default color
     drop = FALSE
   ) +
   # Use coord_sf for proper projection display
-  coord_sf(expand = FALSE) +  # No extra white space
-  MAP_THEME +  theme(
-    legend.position = "None",  
-    axis.title = element_blank(),  # Remove axis titles
-    axis.text = element_blank(),   # Remove axis text
-    axis.ticks = element_blank(),  # Remove axis ticks
-    panel.grid = element_blank()   # Remove background grid lines
+  coord_sf(expand = FALSE) + # No extra white space
+  MAP_THEME +
+  theme(
+    legend.position = "None",
+    axis.title = element_blank(), # Remove axis titles
+    axis.text = element_blank(), # Remove axis text
+    axis.ticks = element_blank(), # Remove axis ticks
+    panel.grid = element_blank() # Remove background grid lines
   )
 
 # Print map to screen

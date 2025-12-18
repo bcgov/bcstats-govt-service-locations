@@ -4,23 +4,32 @@
 
 ## Project Description
 
-This repository houses R code for analyzing the current geographic location of essential public services (e.g., Service BC locations, hospitals and schools) in British Columbia. Using spatial analysis techniques, the code scripts calculate accessibility metrics, aggregated at both the municipal level and by smaller geographic units (i.e. Census Dissemination Areas (DAs) or Dissemination Blocks (DBs)).  Accessibility metrics are based on factors such as population density distribution, facility locations, and travel times (initially by car).
+This repository houses R code for analyzing the current geographic location of Service BC locations in British Columbia. Using spatial analysis techniques, the code scripts calculate accessibility metrics, aggregated at both the Census Subdivision (CSD) level and Service BC Location.  Accessibility metrics are based on factors such as population density distribution, facility locations, and travel times (initially by car).
 
-The primary goal is to identify potential geographic disparities in service access, highlighting potentially underserved populations or underutilized facilities. The derived data tables and visualizations provide quantitative insights to support service planning, resource allocation, and equitable service delivery strategies.  They allow for for analysis focused on specific targeted municipalities or regions of interest.
+The primary goal is to identify potential geographic disparities in service access, highlighting potentially underserved populations or under-utilized facilities. The derived data tables and visualizations provide quantitative insights to support service planning, resource allocation, and equitable service delivery strategies.  They allow for for analysis focused on specific targeted municipalities or regions of interest.
 
-### Phase 1
+The first phase of the project focused on the drive times to Service BC locations for four municipalities (Smithers, Langford, Kamloops and Dawson Creek). Many of the statistics were calculated at the the Dissemination Block (DB) level, with metrics aggregated to larger geographic areas as needed.  Phase 2 extended the analysis to all 65 Service BC offices and each Census Subdivision (CSD) in British Columbia. Population estimate methodology was refined and an urban/rural classification assigned to each Dissemination Block.
 
-The first phase of the project focuses on the drive times to Service BC locations for four municipalities (Smithers, Langford, Kamloops and Dawson Creek), with plans to expand to other public services in future phases. The analysis will be conducted at the Dissemination Block (DB) level, with the option to aggregate results to larger geographic units as needed.
-
-### Phase 2
-
-Phase 2 builds on these advances by expanding the analysis, refining methodologies, and applying the approach to all 65 Service BC offices, and all CSD regions in BC.  This work is done in collaboration with Service BC; the aggregated data tables are developed for their purposes. 
-
-*Note: The code and analytical methodology are currently under development.*
- 
 ## Secure Data Access
 
 Accessing project files and data requires the [`safepaths`](https://github.com/bcgov/safepaths) R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure [`safepaths`](https://github.com/bcgov/safepaths) as well as the LAN location of all data files. 
+
+
+## Data Storage Structure
+
+All data is stored in a hierarchical network folder structure accessed by leveraging [`safepaths`](https://github.com/bcgov/safepaths) functionality.
+
+```
+{LAN_FOLDER}/2025 Government Service Locations/
+├── data/
+    ├── source/          # Processed intermediate files
+    └── raw/             # Raw input data
+        └── nearest_facility_BC/  # Drive time analysis results
+└── outputs/
+    ├── tables/          # Final output tables  
+    └── visuals/         # Maps and visualizations
+    └── for-sbc/         # Custom outputs for SBC
+```
 
 ## Installation and Usage
 
@@ -32,57 +41,95 @@ Accessing project files and data requires the [`safepaths`](https://github.com/b
 # Manually install packages:
 install.packages(c(
   "sf", "tidyverse", "glue", "janitor", "e1071", "remotes",
-  "scales", "rmapshaper", "bcmaps", "snakecase", "readxl", 
-  "bcdata", "tigris", "spatstat", "stars", "terra", "fs", "ggnewscale"
+  "svglite", "scales", "rmapshaper", "bcmaps", "snakecase", 
+  "tigris", "spatstat", "stars", "terra", "fs", "ggnewscale" # Added packages for new scripts
 ))
+
 
 remotes::install_github("bcgov/safepaths")
 ```
 
 **Safepaths Configuration:** Follow the [safepaths package documentation](https://github.com/bcgov/safepaths) for initial setup. You will need the project's specific LAN path key from the project maintainers to configure access to the required datasets.
 
+
+## Global Constants and Configuration
+
+Global constants and configuration settings used throughout the Service BC data pipeline are centralized in a `settings.R` file. This file defines key parameters, file paths, and data validation requirements and is required to run the pipeline scripts. 
+
+
 ## How to Run the Analysis
 
-This section describes how to run the R scripts to perform the drive time analysis after completing the installation and setup. The process involves five scripts executed sequentially (there may be additional scripts in the future).
+This section describes how to run the R scripts to perform the drive time analysis after completing the installation and setup. 
 
-**Prerequisites:**
+### Prerequisites
 
-1.  Ensure the necessary raw input data files are placed in the `RAW_DATA_FOLDER` directory as specified in `settings.R`.
-2.  Open and review the `R/settings.R` script. Verify that:
-    *   The path returned from `safepaths::use_network_path()` correctly points to your network or local data storage location.
-    *   The values in `CSD_NAMES` and `CSDIDS` match the Census Subdivisions you intend to process, and for which data exists.
-    *   Paths like `SRC_DATA_FOLDER`, `SHAPEFILE_OUT` and other constants defined in `settings.R` align with your input data structure and project needs.
+**Raw Data**
+Ensure the necessary raw input data files are placed in the directory structure expected by the `settings.R` script. By default, data is assumed to be kept in the location specified by `RAW_DATA_FOLDER`. 
 
-**Execution:**
-Run the following scripts in the order specified. Each script can be run from source using: `source("R/script-name.R")`
+**Configuration Settings**
+Open and review the `R/settings.R` script. Verify:
 
-1. `00-make-data.R` Reads raw drive time data, creates geographic crosswalks between census geographies (DB, DA, CSD), and retrieves population data and projections. Produces both full provincial datasets and reduced datasets filtered to the Census Subdivisions of interest, along with Service BC location data and DB-level population projections. Outputs data files to SRC_DATA_FOLDER.
-2. `01a-descriptive-tables.R` Calculates summary statistics for drive times and distances at DB, DA, and CSD levels, merging with population data from the 2021 Census. Performs data quality checks including identifying regions with low address counts and calculates the number of Service BC locations per CSD. Outputs summary statistics tables to SRC_DATA_FOLDER.
+- The path returned from `safepaths::use_network_path()` correctly points to your network or local data storage location.
+- The values in `EXPECTED_LOCALITIES` list matches the localities you intend to process, and for which data exists.
+- Paths like `SRC_DATA_FOLDER`, `SHAPEFILE_DIR` and other patterns/constants defined in `settings.R` align with your input data structure and project needs.
 
-3. `01b-compare-metrics.R` Creates scatter plots comparing driving time versus driving distance metrics at the dissemination block level. Saves scatter plot visualizations to the VISUALS_OUT directory.
+### Execution
 
-4. `01c-bin-distances.R` Bins drive distance data into distance categories (Under 1 km, 1-5 km, 5-10 km, 10-20 km, 20+ km) and calculates address counts and percentages by CSD. Creates binned distance summary tables showing the distribution of addresses across distance ranges. Outputs binned data tables to TABLES_OUT.
+Run the following scripts in the order specified:
 
-5. `02a-map-plots.R` Loads DB-level shapefile and drive time data, merging them with Service BC location coordinates to create map-ready datasets. Uses the `build_map` function to generate customizable maps displaying accessibility metrics at the dissemination block level.
+**Preprocessing Tabular Data:**
 
-6. `02b-box-violin-plots.R` Creates box plots and violin plots showing distribution of drive times to Service BC offices across different regions. Outputs statistical distribution plots as PNG files in the VISUALS_OUT directory.
+- `00-make-data.R`: This script preprocesses raw data files, generates shapefiles for census subdivisions and dissemination blocks, processes population projections, and creates correspondence files linking dissemination blocks, dissemination areas, and census subdivisions. It writes cleaned and reduced datasets to the `SRC_DATA_FOLDER` and shapefiles to the `SHAPEFILE_OUT` directory.  The script generates multiple outputs, including processed CSV files, shapefiles, and RDS files. 
 
-7. `02c-density_map.R` Creates spatial density maps using kernel density estimation to show drive time heatmaps for census subdivisions. Saves SVG density maps to the MAP_OUT directory.
+**Aggregated Tables and Calculations:**
 
-8. `02d-csd-demographics.R` Analyzes demographic characteristics and population projections for census subdivisions with Service BC locations. Creates population pyramids and demographic summary statistics. Outputs demographic analysis files to TABLES_OUT and population pyramid visualizations to MAP_OUT.
+- `01-descriptive-tables.R`: this script reads processed files generated in the previous step, performs data quality checks, calculates summary statistics at the Dissemination Block (DB) and Census Subdivision (CSD) levels, merges population data, and identifies Service BC locations. It writes the final analysis output files to the specified directories.
 
-9. `03a-create-catchments.R` Assigns every Dissemination Block (DB) to a Service BC facility catchment area using drive time data and spatial proximity methods to ensure complete geographic coverage. Generates a complete DB assignments CSV file and additional statistics tables to the TABLES_OUT directory.
+- `01b-compare-metrics.R`: this script generates a scatter plot to compare driving time and driving distance at the Dissemination Block (DB) level, grouped by Census Subdivision (CSD). It reads preprocessed data from the SRC_DATA_FOLDER, calculates driving time in minutes, and creates a scatter plot with linear regression lines for each CSD. The plot is saved as a PNG file in the VISUALS_OUT/csd-drive-distance-plots directory.
 
-10. `03b-plot-catchments.R` Creates maps visualizing Service BC facility catchment areas with both pilot-region focused and province-wide visualizations. Saves multiple map visualizations to the MAP_OUT directory including catchment overviews and complete catchment maps.
+- `01c-bin-distances.R`: this script processes driving time and distance data to group (bin) dissemination blocks (DBs) by driving distance to the nearest Service BC location. It calculates the total count and percentage of addresses within each distance bin for each Census Subdivision (CSD). The script outputs the results in both long and wide formats for reporting.
 
-11. `03c-sbc-centric-stats.R` Creates detailed metrics for each Service BC location based on their catchment areas, including population projections, driving distance metrics, and demographic analyses. Outputs multiple CSV files with drive metrics and population data to TABLES_OUT, plus visualization files including population pyramids to VISUALS_OUT.
+**Mapping Results:**
 
-12. `03d-sbc-density-maps.R` Creates spatial density maps showing drive times for Service BC catchment regions using kernel density estimation. Generates PNG density maps for each Service BC facility's catchment area to VISUALS_OUT.
+- `02-map-plots.R`: this script loads processed Dissemination Block (DB) shapefiles and drive time summary statistics CSV files produced earlier in the workflow. It merges these datasets and leverages a custom function `build_map()` to generate and save a series of map visualizations. The maps display quantitative information (e.g., mean driving distance) at the DB level for each Census Subdivision (CSD), based on the configured theme (MAP_THEME) and other parameters defined in settings.R.
 
-13. `04-sbc-servicebc-catchments.R` Creates overview maps showing BC Census Subdivision boundaries, Service BC locations, and pilot CSD catchment areas. Produces overview maps displaying Service BC locations and catchment boundaries across British Columbia. Saves maps to MAP_OUT.
+- `02b-box-violin-plots.R`: this script generates statistical visualizations (box plots and violin plots) to show the distribution of driving distances to the nearest Service BC office across different Census Subdivisions (CSDs) in British Columbia. It uses preprocessed Dissemination Block (DB)-level data to compare access metrics between regions.
+
+- `02c-density_map.R`: this script generates spatial density maps to visualize the distribution of driving distances to the nearest Service BC office for different Census Subdivisions (CSDs) in British Columbia. It uses kernel density estimation to create smoothed heatmaps of driving distances, overlaying them on CSD boundaries.
+
+- `02d-csd-demographics.R` the script processes population projections, census data, and geographic crosswalks to calculate statistics such as total population and median age for each different Census Subdivisions (CSDs) in British Columbia. The script also generates population pyramids to visualize the age and gender distribution within each CSD, creating both individual and combined visualizations. 
+
+**Creating and Analyzing Catchment Areas:**
+
+- `03a-create-catchments.R`: the script assigns every Dissemination Block (DB) to a Service BC facility catchment area. It first uses drive time data to assign DBs to the nearest facility, then applies a spatial proximity method for any unassigned DBs. This process ensures complete geographic coverage with no gaps.
+
+- `03b-plot-catchments.R`: the script creates several maps visualizing the Service BC facility catchment areas defined in the previous step. It generates both pilot-region focused maps and province-wide visualizations, showing both the original drive-time based assignments and the complete catchment assignments including spatial proximity assignments.
+
+- `03c-sbc-centric-stats.R`: the script creates detailed metrics for each individual Service BC location based on their catchment areas. It generates population projections, driving distance metrics, demographic analyses, and various visualizations for each facility. The script also produces population pyramids showing age and gender distribution for each catchment.
+
+- `03d-sbc-density-maps.R`: this script generates spatial density maps to visualize drive times to the nearest Service BC office for each facility's catchment area. Using kernel density estimation, the script creates smoothed heatmaps of drive times, highlighting areas within each catchment. It overlays these heatmaps with geographic boundaries, Service BC locations, and points representing addresses. The script ensures that maps are created for each catchment region, with additional handling for areas lacking drive time data. These maps provide insights into the spatial distribution of accessibility within Service BC catchments.
+
+- `04-sbc-servicebc-catchments.R`: the script generates a map visualizing Service BC catchment areas based on Census Subdivision (CSD) boundaries. It overlays Service BC office locations, highlights assigned CSDs for each facility, and includes labels for pilot municipalities.
+
+ **Generating Statistical Tables for Service BC:**
+
+- `05a-csd-data-tables.R`: the script generates a comprehensive table of Census Subdivision (CSD)-level statistics, including population estimates, age distributions, rurality proportions, and drive time metrics. It combines data from multiple sources to provide a detailed summary for each CSD.
+
+- `05b-sbc-data-tables.R`: the script generates detailed statistics for each Service BC location, including population projections, drive time metrics, rurality proportions, and demographic breakdowns. It combines data from multiple sources to provide a comprehensive summary for each Service BC facility.
+
+ **Analyzing Urban and Rural Classifications:**
+
+- `05c-rural-analysis.R`: the script analyzes urban and rural classifications for addresses and Census Dissemination Blocks (DBs) using two methods: Canada Post Forward Sortation Areas (FSAs) and Statistics Canada's population centers. It generates summaries at the provincial, catchment, and Census Subdivision (CSD) levels, and creates visualizations to compare urban and rural classifications across methods.
+   
+- `05d-plot-rural-urban.R`: the script generates visualizations showing urban and rural classifications for Dissemination Blocks (DBs) within population centers. It uses shapefiles and preprocessed data to create plots for each population center, highlighting the spatial distribution of urban and rural areas.
+
 
 The final analysis output files will be available in the location specified by `SRC_DATA_FOLDER` within your configured data directory structure. You can then use these files for further analysis, reporting, or visualization.
 
+
+## Custom Functions
+
+The folder `R/fxns/` contains a collection of reusable R functions which support the analysis and visualization scripts (above). These functions handle specific tasks such as calculating drive time statistics, assigning dissemination blocks to facilities, generating thematic maps and plots.  Functions are sourced within each R script, as needed.
 
 ## Data Sources
 
@@ -94,9 +141,11 @@ Geographic coordinates for project-relevant addresses were generated using the B
 
 While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates used for the analysis are open data. 
 
-**NFA Data:** 
+**Proximity Analysis Data:** 
 
-(Description pending - this dataset represents output from the Nearest Facility Analysis pipeline, details to be added.)
+The Nearest Service BC Location dataset was provided to the project by DSS; the data was generated as outputs from their Proximity Analysis pipeline. These scripts utilize the BC Route Planner API to calculate the distance and drive time from each origin point (household) to the nearest Service BC location. To address unroutable coordinates, the pipline replaces invalid records with routable coordinates. 
+
+The final dataset includes one row per household in British Columbia, and provides the calculated distance to the nearest Service BC location. Some limitations exist, as not all households were available as geocoded address points. This dataset forms the foundation for accessibility analysis, enabling the evaluation of service coverage and drive times across the province.
 
 **Geographic Boundary Data Crosswalk**
 
@@ -104,20 +153,23 @@ A geographic crosswalk between different census geographies (Dissemination Block
 
 **Digital Boundary Files**
 
-Digital boundary files defining the geographic extents of Census Subdivisions (CSDs) and Dissemination Blocks (DBs) are accessed programmatically using the [`bcdata`](https://bcgov.github.io/bcdata/) and [`bcmaps`](https://github.com/bcgov/bcmaps) R package. These vector datasets are then processed and saved as GeoPackage (.gpkg) files, serving as the geometric base for cartographic visualization and underpinning geospatial operations throughout the analysis.
-
-For reference, the datasets correspond to:
+Digital boundary files defining the geographic extents of Census Subdivisions (CSDs), Dissemination Areas (DAs) and Dissemination Blocks (DBs) were obtained from the BC Data Catalogue:
 - [Census Subdivisions (CSDs)](https://catalogue.data.gov.bc.ca/dataset/current-census-subdivision-boundaries)
 - [Dissemination Blocks (DBs)](https://catalogue.data.gov.bc.ca/dataset/current-census-dissemination-blocks)
 
+ These files were accessed and retrieved using the R packages [`bcmaps`](https://github.com/bcgov/bcmaps) and [`bcdata`](https://github.com/bcgov/bcdata). These vector datasets serve as the geometric base for cartographic visualization and underpin geospatial operations within the analysis (used as input for `00-make-map-data.R`).
+
 **Census Population and Dwelling Counts**
 
-Population and dwelling count data at both the Dissemination Block (DB) and Census Subdivision (CSD) levels are extracted from the Statistics Canada 2021 Census using the `cancensus` R package. The data includes population, dwellings, households, and area measurements for all of British Columbia (region code "59"). This census data is processed and saved to the SRC_DATA_FOLDER, then merged with drive time statistics and calculate population density metrics. The census data provides the foundational demographic inputs for calculating accessibility metrics and deriving socio-spatial indicators for the analysis regions.
+Aggregate population and dwelling count data at the Dissemination Block (DB) level were extracted from the Statistics Canada 2021 Census. This data was accessed using the R cancensus package, which connects to the [CensusMapper API](https://censusmapper.ca/).  This dataset provides the foundational demographic inputs for calculating population density metrics and deriving other relevant socio-spatial indicators for the designated study regions.
 
 **Population Projections**
 
-Population projections at the Census Subdivision (CSD) level were obtained from BC Stats through programatic access to the the BC Data Catalogue via the `bcdata` package. The projections provide detailed age and gender breakdowns for BC region code "59" and are processed to create corresponding Dissemination Block (DB) level estimates. The CSD projections are transformed into DB-level projections using proportional allocation based on 2021 Census population distributions. These processed projections are utilized in `02d-csd-demographics.R` and `03c-sbc-centric-stats.R` for Service BC catchment area and CSD demographic analysis.
+Population projections at the Census Subdivision (CSD) level were obtained from BC Stats through the BC Data Catalogue ([Sub-Provincial Population Projections](https://catalogue.data.gov.bc.ca/dataset/bc-sub-provincial-population-estimates-and-projections)). These files were accessed and retrieved using the R package [`bcdata`](https://github.com/bcgov/bcdata). These projections provide future population estimates by age and gender, allowing for demographic analysis of service catchment areas over time. The projections are used in `03c-sbc-centric-stats.R` to estimate future service demands and demographic composition within Service BC facility catchment areas.
 
+
+**Statistics Canada Boundary Files**
+Boundary files from Statistics Canada were used to support various analyses in this project. These files were downloaded from the Statistics Canada website (link) and processed for use in the analysis. Population center boundaries were used to analyze urban and rural classifications and generate visualizations. Forward Sortation Area (FSA) boundaries were used for exploratory purposes only. 
 
 ## Guiding Principles
 
