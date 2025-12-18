@@ -361,8 +361,12 @@ combined_stats <- population_estimates_three_year |>
   relocate(mean_driving_time, median_driving_time, .after = n_over_150_min) |>
   rename(
     !!paste0("estimated_population_", CURRENT_YEAR) := !!as.name(CURRENT_YEAR),
-    !!paste0("5_yr_projection_", CURRENT_YEAR + 5) := !!as.name(CURRENT_YEAR + 5),
-    !!paste0("10_year_projection_", CURRENT_YEAR + 10) := !!as.name(CURRENT_YEAR + 10)
+    !!paste0("5_yr_projection_", CURRENT_YEAR + 5) := !!as.name(
+      CURRENT_YEAR + 5
+    ),
+    !!paste0("10_year_projection_", CURRENT_YEAR + 10) := !!as.name(
+      CURRENT_YEAR + 10
+    )
   )
 
 
@@ -376,7 +380,7 @@ if (!dir.exists(TABLES_OUT)) {
 }
 
 # Write combined statistics table
-fn <- "csd-statistics-for-SBC.csv"
+fn <- glue::glue("csd-statistics-for-SBC-{Sys.Date()}.csv")
 
 combined_stats |>
   arrange(csdid) |>
