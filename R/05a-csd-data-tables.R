@@ -31,22 +31,8 @@ source("R/fxns/rural-fxns.R")
 crosswalk <- read_csv(
   glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"),
   col_types = cols(.default = "c")
-)
-
-# census populations - 745 census subdivisions found in our data
-# This data comes from the census (52,387 DB's).
-# This is 36 fewer than listed in the BC Geographic Warehouse (52,423).
-# There is a note that the data in the is from 2016, but each record is labeled 2021, so possible we need to check on this.
-pop_db <- read_csv(
-  glue("{SRC_DATA_FOLDER}/full-population-db.csv"),
-  col_types = cols(.default = "c")
 ) |>
-  clean_names() |>
-  mutate(across(
-    c(area_sq_km, population, dwellings, households),
-    as.numeric
-  )) |>
-  inner_join(crosswalk, by = join_by(dbid))
+  clean_names()
 
 db_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
   rename(geometry = geom) |>
@@ -68,11 +54,6 @@ popcenter_boundaries <-
   rename(geometry = geom) |>
   st_transform(crs = 3005)
 
-complete_assignments <-
-  read_csv(glue::glue("{FOR_SBC_OUT}/complete-db-assignments-for-SBC.csv")) |>
-  clean_names() |>
-  mutate(across(everything(), as.character))
-
 # our full set of drive data from DSS:  2,052,803 records over 41,991 DB's and 525 CSD's.
 # This is 10,432 fewer DB's than in the BC Data Catalog/BC Geographic Warehouse data (52,423).
 # 4 db's from our drive data are not in the census data, but they are all in the data from BC Data Catalog.  They
@@ -80,13 +61,17 @@ complete_assignments <-
 # They are in the set of 36 DB's that are missing, which are also mostly areas around vancouver island and
 # the lower mainland.
 
-drivetime_data <- read_csv(
-  glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
-  col_types = cols(.default = "c")
-) |>
+drivetime_data <-
+  read_csv(
+    glue("{SRC_DATA_FOLDER}/full-processed-drivetime-data.csv"),
+    col_types = cols(.default = "c")
+  ) |>
   clean_names() |>
-  mutate(across(c(drv_time_sec, drv_dist), as.numeric)) |>
-  inner_join(crosswalk, join_by(dbid, daid))
+  mutate(across(c(drv_time_sec, drv_dist), as.numeric))
+
+# 65 Service BC locations.
+sbc_locs <- read_csv(SBCLOC_FILEPATH) |>
+  clean_names()
 
 # these DBs are from the census data, so contain 52,387 DB's and 751 CSD's.
 # Population projections come from BC Stats population projections + census population ratios.
@@ -97,13 +82,20 @@ db_projections_transformed_raw <- readRDS(glue(
   "{SRC_DATA_FOLDER}/full-db-projections-transformed.rds"
 )) |>
   filter(dbid %in% (crosswalk |> pull(dbid))) |>
-  filter(gender == "T", year %in% c(2025, 2030, 2035))
+  filter(
+    gender == "T",
+    year %in% c(CURRENT_YEAR, CURRENT_YEAR + 5, CURRENT_YEAR + 10)
+  )
 
 # add populations to drivetime data for current year
-drivetime_data <- drivetime_data |>
+drivetime_data_focused <- drivetime_data |>
+  left_join(crosswalk, join_by(dbid, daid)) |>
+  filter(!is.na(csdid))
+
+drivetime_data_focused <- drivetime_data_focused |>
   left_join(
     db_projections_transformed_raw |>
-      filter(gender == "T", year == CURRENT_YEAR) |>
+      filter(year == CURRENT_YEAR) |>
       group_by(dbid, year) |>
       summarize(population = sum(population)) |>
       ungroup() |>
@@ -115,82 +107,12 @@ drivetime_data <- drivetime_data |>
   ungroup() |>
   mutate(hh_size_estimate = population / n_address)
 
-# =========================================================================== #
-# DB population projections, current, 5yr, 10yr
-# number of addresses in each CSD (from our data)
-# number of offices in each CSD (from our data)
-# =========================================================================== #
-
-population_estimates_three_year <- db_projections_transformed_raw |>
-  summarise(
-    population = sum(population, na.rm = TRUE),
-    .by = c(year, region_name, csdid)
-  ) |>
-  pivot_wider(
-    names_from = year,
-    values_from = population,
-    values_fill = 0
-  )
-
-age_estimates_current_year <- db_projections_transformed_raw |>
-  filter(year == 2025) |>
-  summarize(
-    est_population_0_to_14_yrs = sum(
-      population[age >= 0 & age < 15],
-      na.rm = TRUE
-    ),
-    est_population_15_to_24_yrs = sum(
-      population[age >= 15 & age < 25],
-      na.rm = TRUE
-    ),
-    est_population_25_to_64_yrs = sum(
-      population[age >= 25 & age < 65],
-      na.rm = TRUE
-    ),
-    est_population_over_64_yrs = sum(population[age >= 65], na.rm = TRUE),
-    .by = c(region_name, csdid)
-  )
-
-median_population <- db_projections_transformed_raw |>
-  filter(year == 2025) |>
-  summarize(
-    population = sum(population, na.rm = TRUE),
-    .by = c(csdid, csd_name, age)
-  ) |>
-  summarize(
-    median_age = ifelse(
-      sum(population, na.rm = TRUE) == 0,
-      0,
-      weighted.median(age, population, na.rm = TRUE)
-    ),
-    mean_age = ifelse(
-      sum(population, na.rm = TRUE) == 0,
-      0,
-      weighted.mean(age, population, na.rm = TRUE)
-    ),
-    .by = c(csdid, csd_name)
-  )
-
-#------------------------------------------------------------------------------
-# drivetime metrics by csd
-#------------------------------------------------------------------------------
-
-drivetime_metrics <- drivetime_data |>
-  summarise(
-    n_addresses = n(),
-    n_sbc_offices = n_distinct(nearest_facility),
-    mean_driving_distance = mean(drv_dist, na.rm = TRUE),
-    median_driving_distance = median(drv_dist, na.rm = TRUE),
-    mean_driving_time = mean(drv_time_sec, na.rm = TRUE) / 60,
-    median_driving_time = median(drv_time_sec, na.rm = TRUE) / 60,
-    .by = c(csd_name, csdid)
-  )
 
 #------------------------------------------------------------------------------
 # bin the data by driving distance and time
 #------------------------------------------------------------------------------
 
-drive_distance_bins <- drivetime_data |>
+drive_distance_bins <- drivetime_data_focused |>
   summarize(
     n_0_5_km = sum(hh_size_estimate[drv_dist < 5.0], na.rm = TRUE),
     n_5_10_km = sum(
@@ -229,7 +151,7 @@ drive_distance_bins <- drivetime_data |>
     .by = c(csd_name, csdid)
   )
 
-drive_time_bins <- drivetime_data |>
+drive_time_bins <- drivetime_data_focused |>
   mutate(drv_time_min = drv_time_sec / 60) |>
   summarize(
     n_within_0_5_min = sum(hh_size_estimate[drv_time_min < 5], na.rm = TRUE),
@@ -273,6 +195,91 @@ drive_time_bins <- drivetime_data |>
     .by = c(csd_name, csdid)
   )
 
+#------------------------------------------------------------------------------
+# drivetime metrics by csd
+#------------------------------------------------------------------------------
+
+drivetime_metrics <- drivetime_data_focused |>
+  summarise(
+    n_addresses = n(),
+    n_sbc_offices = n_distinct(nearest_facility),
+    mean_driving_distance = mean(drv_dist, na.rm = TRUE),
+    median_driving_distance = median(drv_dist, na.rm = TRUE),
+    mean_driving_time = mean(drv_time_sec, na.rm = TRUE) / 60,
+    median_driving_time = median(drv_time_sec, na.rm = TRUE) / 60,
+    .by = c(csd_name, csdid)
+  )
+
+# =========================================================================== #
+# DB population projections, current, 5yr, 10yr
+# number of addresses in each CSD (from our data)
+# number of offices in each CSD (from our data)
+# =========================================================================== #
+population_estimates_three_year_all <- drivetime_data_focused |>
+  distinct(csd_name, csd_desc, csdid, dbid) |>
+  # expand drivetime data to include all years of interest for each row
+  expand_grid(tibble(
+    year = rep(unique(db_projections_transformed_raw$year))
+  )) |>
+  left_join(
+    db_projections_transformed_raw |>
+      select(dbid, year, age, population, total, area_sq_km),
+    by = c("dbid", "year")
+  ) |>
+  filter(!is.na(csdid))
+
+
+population_estimates_three_year <- population_estimates_three_year_all |>
+  summarise(
+    population = round(sum(population, na.rm = TRUE)),
+    .by = c(year, csd_name, csdid)
+  ) |>
+  pivot_wider(
+    names_from = year,
+    values_from = population,
+    values_fill = 0
+  )
+
+age_estimates_current_year <- population_estimates_three_year_all |>
+  filter(year == CURRENT_YEAR) |>
+  summarize(
+    est_population_0_to_14_yrs = sum(
+      population[age >= 0 & age < 15],
+      na.rm = TRUE
+    ),
+    est_population_15_to_24_yrs = sum(
+      population[age >= 15 & age < 25],
+      na.rm = TRUE
+    ),
+    est_population_25_to_64_yrs = sum(
+      population[age >= 25 & age < 65],
+      na.rm = TRUE
+    ),
+    est_population_over_64_yrs = sum(population[age >= 65], na.rm = TRUE),
+    .by = c(csd_name, csdid)
+  )
+
+median_population <- population_estimates_three_year_all |>
+  filter(year == CURRENT_YEAR) |>
+  summarize(
+    population = sum(population, na.rm = TRUE),
+    .by = c(csdid, csd_name, age)
+  ) |>
+  summarize(
+    median_age = ifelse(
+      sum(population, na.rm = TRUE) == 0,
+      0,
+      weighted.median(age, population, na.rm = TRUE)
+    ),
+    mean_age = ifelse(
+      sum(population, na.rm = TRUE) == 0,
+      0,
+      weighted.mean(age, population, na.rm = TRUE)
+    ),
+    .by = c(csdid, csd_name)
+  )
+
+
 # =========================================================================== #
 # Add proportion rural for each CSD
 # =========================================================================== #
@@ -281,50 +288,59 @@ popcenter_population <- assign_region(
   popcenter_boundaries,
   "dbid",
   "pcname"
-)
+) |>
+  rename("p_area_coverage" = area_ratio)
 
-db_population_estimates_one_year <- db_projections_transformed_raw |>
-  filter(gender == "T", year == 2025) |>
-  summarize(
-    population = sum(population, na.rm = TRUE),
-    .by = c("dbid", "csdid")
-  )
-
-# add flags for urban rural and summarize by csdid
-rural_csdid <- db_population_estimates_one_year |>
-  left_join(popcenter_population, by = "dbid") |>
-  mutate(urban_rural = if_else(is.na(pcname), "RURAL", "URBAN")) |>
-  summarise(
-    n_rural = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
-    n = sum(population, na.rm = TRUE),
-    p_rural = if_else(n == 0, 0, n_rural / n),
-    .by = csdid
-  ) |>
-  select(csdid, p_rural)
-
-# The is_in_region_optim function may not assign a popcenter if a CSD extends beyond
-# popcenter limits or the intersection area is below the threshold.
-# This would need to be addressed if we were to use this code.
-# Omitting from final tables.
-rural_csd <- csd_shapefiles |>
-  st_drop_geometry() |>
-  left_join(
-    assign_region(
-      locations = csd_shapefiles,
-      regions = popcenter_boundaries,
-      id_col = "csdid",
-      region_name_col = "pcname",
-      area_threshold = 0
-    ),
-    by = "csdid"
-  ) |>
+# add rural flag
+popcenter_population <- popcenter_population |>
   mutate(
-    rurality = case_when(
-      is.na(area_ratio) ~ "RURAL",
-      as.numeric(area_ratio) < 0.3 ~ "RURAL",
+    urban_rural = case_when(
+      is.na(p_area_coverage) ~ "RURAL",
+      as.numeric(p_area_coverage) <= 0.3 ~ "RURAL",
       TRUE ~ "URBAN"
     )
   )
+
+db_population_estimates_one_year <- db_projections_transformed_raw |>
+  filter(dbid %in% (crosswalk |> pull(dbid))) |>
+  filter(year == CURRENT_YEAR) |>
+  summarize(
+    population = sum(population, na.rm = TRUE),
+    .by = c("dbid", "csdid") # keep csdid in the result set
+  )
+
+# add flags for urban rural and summarize by csdid
+rural_summary <- db_population_estimates_one_year |>
+  left_join(popcenter_population, by = "dbid") |>
+  summarise(
+    n_rural_residents = sum(population[urban_rural == "RURAL"], na.rm = TRUE),
+    n = sum(population, na.rm = TRUE),
+    p_rural_residents = if_else(n == 0, 0, 100 * n_rural_residents / n),
+    is_rural = if_else(p_rural_residents > 50, "RURAL", "URBAN"),
+    .by = csdid
+  ) |>
+  select(csdid, p_rural_residents, is_rural)
+
+
+rural_office <- sbc_locs |>
+  distinct(nearest_facility, coord_x, coord_y) |>
+  st_as_sf(
+    coords = c("coord_x", "coord_y"),
+    crs = 3005
+  ) |>
+  assign_region(
+    regions = popcenter_boundaries,
+    id_col = "nearest_facility",
+    region_name_col = "pcname"
+  ) |>
+  rename("p_area_coverage" = area_ratio) |>
+  right_join(
+    sbc_locs |> distinct(nearest_facility, csdid),
+    by = "nearest_facility"
+  ) |>
+  mutate(rural_office = if_else(p_area_coverage == 1, "Y", "N")) |>
+  select(nearest_facility, csdid, rural_office) |>
+  mutate(csdid = as.character(csdid))
 
 
 # =========================================================================== #
@@ -335,22 +351,22 @@ rural_csd <- csd_shapefiles |>
 # If we want to rollup to Unincorporated areas then we can group by region_name/clean_csd in aggregations above
 # Since we only have data on 525 of the 751 CSDS  => missing data on 220/423 IRI's, 3/160 RDA's, and 3/3 S-E's
 combined_stats <- population_estimates_three_year |>
-  left_join(age_estimates_current_year, by = c("csdid", "region_name")) |>
-  left_join(drivetime_metrics, by = "csdid") |>
+  left_join(age_estimates_current_year, by = c("csdid", "csd_name")) |>
+  left_join(median_population, by = c("csdid", "csd_name")) |>
+  left_join(drivetime_metrics, by = c("csdid", "csd_name")) |>
   left_join(drive_distance_bins, by = c("csdid", "csd_name")) |>
   left_join(drive_time_bins, by = c("csdid", "csd_name")) |>
-  left_join(rural_csdid, by = "csdid") |>
-  mutate(rural_office = NA) |>
-  relocate(csd_name, csdid, .before = region_name) |>
-  relocate(n_addresses, n_sbc_offices, .after = region_name) |>
-  relocate(
-    starts_with("n_addresses") & ends_with("km"),
-    .after = median_driving_distance
-  ) |>
+  left_join(rural_summary, by = c("csdid")) |>
+  left_join(rural_office, by = c("csdid")) |>
+  relocate(mean_driving_time, median_driving_time, .after = n_over_150_min) |>
   rename(
-    estimated_population_2025 = `2025`,
-    `5_yr_projection_2030` = `2030`,
-    `10_year_projection_2035` = `2035`
+    !!paste0("estimated_population_", CURRENT_YEAR) := !!as.name(CURRENT_YEAR),
+    !!paste0("5_yr_projection_", CURRENT_YEAR + 5) := !!as.name(
+      CURRENT_YEAR + 5
+    ),
+    !!paste0("10_year_projection_", CURRENT_YEAR + 10) := !!as.name(
+      CURRENT_YEAR + 10
+    )
   )
 
 
@@ -364,7 +380,7 @@ if (!dir.exists(TABLES_OUT)) {
 }
 
 # Write combined statistics table
-fn <- paste0("csd-statistics-for-SBC-", format(Sys.Date(), "%Y-%m-%d"), ".csv")
+fn <- glue::glue("csd-statistics-for-SBC-{Sys.Date()}.csv")
 
 combined_stats |>
   arrange(csdid) |>

@@ -255,7 +255,7 @@ population_estimates_three_year <- population_estimates_three_year_all |>
 # count of age groups by assigned
 #------------------------------------------------------------------------------
 age_estimates_current_year <- population_estimates_three_year_all |>
-  filter(year == 2025) |>
+  filter(year == CURRENT_YEAR) |>
   summarize(
     est_population_0_to_14_yrs = sum(
       population[age >= 0 & age < 15],
@@ -274,7 +274,7 @@ age_estimates_current_year <- population_estimates_three_year_all |>
   )
 
 median_population <- population_estimates_three_year_all |>
-  filter(year == 2025) |>
+  filter(year == CURRENT_YEAR) |>
   summarize(
     population = sum(population, na.rm = TRUE),
     .by = c(assigned, age)
@@ -307,19 +307,17 @@ popcenter_population <- popcenter_population |>
   )
 
 popcenter_population |>
-  write_csv(glue(
-    "{FOR_SBC_OUT}/rural-method-misc/rurality-by-db-{Sys.Date()}.csv"
-  ))
+  write_csv(glue("{FOR_SBC_OUT}/rural-method-misc/rurality-by-db.csv"))
 
 db_population_estimates_one_year <- db_projections_transformed |>
   filter(dbid %in% (crosswalk |> pull(dbid))) |>
-  filter(gender == "T", year == 2025) |>
+  filter(gender == "T", year == CURRENT_YEAR) |>
   summarize(
     population = sum(population, na.rm = TRUE),
     .by = c("dbid", "csdid")
   )
 
-# add flags for urban rural and summarize by csdid
+# add flags for urban rural and summarize by assigned sbc location
 rural_summary <- db_population_estimates_one_year |>
   left_join(popcenter_population, by = "dbid") |>
   left_join(complete_assignments, by = "dbid") |>
@@ -334,7 +332,7 @@ rural_summary <- db_population_estimates_one_year |>
 
 rural_summary |>
   write_csv(glue(
-    "{FOR_SBC_OUT}/rural-method-misc/rural-residence-summary-{Sys.Date()}.csv"
+    "{FOR_SBC_OUT}/rural-method-misc/rural-residence-summary.csv"
   ))
 
 rural_office <- sbc_locs |>
@@ -358,7 +356,7 @@ rural_office <- sbc_locs |>
 
 rural_office |>
   write_csv(glue(
-    "{FOR_SBC_OUT}/rural-method-misc/rural-office-{Sys.Date()}.csv"
+    "{FOR_SBC_OUT}/rural-method-misc/rural-office.csv"
   ))
 
 # =========================================================================== #
@@ -379,9 +377,13 @@ combined_stats <- population_estimates_three_year |>
   relocate(mean_driving_time, median_driving_time, .after = n_over_150_min) |>
   rename(
     sbc_location = assigned,
-    estimated_population_2025 = `2025`,
-    `5_yr_projection_2030` = `2030`,
-    `10_year_projection_2035` = `2035`
+    !!paste0("estimated_population_", CURRENT_YEAR) := !!as.name(CURRENT_YEAR),
+    !!paste0("5_yr_projection_", CURRENT_YEAR + 5) := !!as.name(
+      CURRENT_YEAR + 5
+    ),
+    !!paste0("10_year_projection_", CURRENT_YEAR + 10) := !!as.name(
+      CURRENT_YEAR + 10
+    )
   )
 
 # =========================================================================== #
@@ -394,11 +396,7 @@ if (!dir.exists(FOR_SBC_OUT)) {
 }
 
 # Write combined statistics table
-fn <- paste0(
-  "sbc-location-statistics-for-SBC-",
-  format(Sys.Date(), "%Y-%m-%d"),
-  ".csv"
-)
+fn <- glue::glue("sbc-location-statistics-for-SBC-{Sys.Date()}.csv")
 
 combined_stats |>
   arrange(sbc_location) |>

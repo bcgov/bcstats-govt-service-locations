@@ -101,7 +101,7 @@ db_shapefiles <- st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
 
 db_projections_transformed_agg <-
   readRDS(glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds")) |>
-  filter(gender == 'T', year == 2025) |>
+  filter(gender == 'T', year == CURRENT_YEAR) |>
   summarize(population = sum(population, na.rm = TRUE), .by = c("dbid"))
 
 # =========================================================================== #

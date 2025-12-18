@@ -70,7 +70,7 @@ db_projections_transformed <- db_projections_transformed |>
 # =========================================================================== #
 
 summary_stats <- db_projections_transformed |>
-  filter(year == 2025, gender == 'T') |>
+  filter(year == CURRENT_YEAR, gender == 'T') |>
   summarise(population = sum(population), .by = c(age, region_name)) |>
   group_by(region_name) |>
   summarise(
