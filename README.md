@@ -12,7 +12,7 @@ The first phase of the project focused on the drive times to Service BC location
 
 ## Secure Data Access
 
-Accessing project files and data requires the [`safepaths`](https://github.com/bcgov/safepaths) R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure `safepaths` as well as the LAN location of all data files. 
+Accessing project files and data requires the [`safepaths`](https://github.com/bcgov/safepaths) R package. This package securely manages the LAN paths to the data, abstracting sensitive location details from the user. VPN connection is required to use and configure [`safepaths`](https://github.com/bcgov/safepaths) as well as the LAN location of all data files. 
 
 
 ## Data Storage Structure
@@ -139,7 +139,7 @@ This analysis relies on the following primary data sources:
 
 Geographic coordinates for project-relevant addresses were generated using the British Columbia Physical Address Geocoder REST API service ([https://www2.gov.bc.ca/gov/content/data/geographic-data-services/location-services/geocoder](https://www2.gov.bc.ca/gov/content/data/geographic-data-services/location-services/geocoder)). This API performs address validation and returns point location data (latitude/longitude or projected coordinates). The output dataset utilized in this project includes these derived coordinates along with the corresponding Statistics Canada Dissemination Block (DB) identifier (blockID field from the API response), enabling spatial linkage. Records returned by the geocoder that lacked valid coordinates were excluded from the analysis dataset.
 
-While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates used for the analysis are open. 
+While the source address list input to the geocoder is restricted under license, the derived geocoded point coordinates used for the analysis are open data. 
 
 **Proximity Analysis Data:** 
 
@@ -149,7 +149,7 @@ The final dataset includes one row per household in British Columbia, and provid
 
 **Geographic Boundary Data Crosswalk**
 
-A geographic crosswalk between different census geographies (Dissemination Blocks, Dissemination Areas, and Census Subdivisions) was created based on the Dissemination Block shapefile available from the BC Data Catalogue. This crosswalk facilitates data linkage across disparate census geographic hierarchies, enabling the aggregation or translation of data between administrative or statistical units.
+A geographic crosswalk between different census geographies (Dissemination Blocks, Dissemination Areas, and Census Subdivisions) is created in `00-make-data.R` using the BC Data Catalogue's Dissemination Block shapefile. Two related files are generated: a "crosswalk" containing DB-DA linkages from the drive time data, and a comprehensive "correspondence file" (`csd-da-db-loc-correspondance.csv`) that contains all DBs in BC with their hierarchical relationships to DAs and CSDs. This correspondence file facilitates data linkage across census geographic hierarchies, enabling aggregation and translation of data between different administrative and statistical units throughout the analysis.
 
 **Digital Boundary Files**
 

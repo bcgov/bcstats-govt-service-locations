@@ -123,7 +123,7 @@ message(
 # Save the complete assignments for use in other scripts
 write_csv(
   complete_assignments,
-  glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
+  glue("{SRC_DATA_FOLDER}/complete-db-assignments.csv")
 )
 
 # ----------------------------------------------------------------------------
