@@ -43,7 +43,7 @@ bc_map <- bc_bound() |>
 
 # CSD level shapefiles for each locality
 csd_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) |>
+  st_read(glue("{SHAPEFILE_OUT}/full-csd-with-location.gpkg")) |>
   mutate(across(c(csd_name), as.character), across(c(landarea), as.numeric))
 
 # Locations of all Service BC locations
@@ -55,12 +55,12 @@ sbc_locs <- read_csv(glue("{SRC_DATA_FOLDER}/full-service-bc-locs.csv")) |>
 
 # DB shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) |>
+  st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
   mutate(across(c(landarea), as.numeric))
 
 # Read the pre-computed assignment data
 complete_assignments <- read_csv(
-  glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
+  glue("{SRC_DATA_FOLDER}/complete-db-assignments.csv")
 ) |>
   mutate(
     across(

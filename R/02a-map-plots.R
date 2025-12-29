@@ -56,7 +56,7 @@ db_drivetime_map_data <- db_shapefile |>
 # service bc location data
 servicebc <-
   read_csv(
-    glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
+    glue("{SRC_DATA_FOLDER}/reduced-service-bc-locs.csv"),
     col_types = cols(.default = "c")
   ) |>
   clean_names() |>

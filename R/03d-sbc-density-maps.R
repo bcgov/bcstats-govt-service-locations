@@ -97,18 +97,18 @@ servicebc <-
 
 # --- DB shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) |>
+  st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
   mutate(across(c(landarea), as.numeric))
 
 # --- CSD shapefiles
 csd_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-csd_with_location.gpkg")) |>
+  st_read(glue("{SHAPEFILE_OUT}/full-csd-with-location.gpkg")) |>
   clean_names() |>
   mutate(across(c(landarea), as.numeric))
 
 # --- Read the complete assignments data (catchment information)
 complete_assignments <- read_csv(
-  glue("{SRC_DATA_FOLDER}/complete_db_assignments.csv")
+  glue("{SRC_DATA_FOLDER}/complete-db-assignments.csv")
 ) |>
   mutate(
     across(
