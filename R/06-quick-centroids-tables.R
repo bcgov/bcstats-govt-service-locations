@@ -101,11 +101,10 @@ complete_assignments <- assign_unassigned_dbs(
   db_shapefile,
   assigned_facility,
   facility_locations = sbc_locs,
-  batch_size = 20000,
   verbose = TRUE
 )
 tictoc::toc()
-# 580.35 sec elapsed
+# 1.72 sec elapsed
 
 
 # Do again, but with the pilot location included
@@ -114,11 +113,10 @@ pilot_assignments <- assign_unassigned_dbs(
   db_shapefile,
   assigned_facility,
   facility_locations = full_pilot_locs,
-  batch_size = 20000,
   verbose = TRUE
 )
 tictoc::toc()
-# 880.97 sec elapsed
+# 3.06 sec elapsed
 
 # ----------------------------------------------------------------------------
 # Population Estimates for each DB
