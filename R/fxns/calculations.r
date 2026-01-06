@@ -136,7 +136,6 @@ assign_unassigned_dbs <- function(
   db_shapefile,
   assigned_facility,
   facility_locations,
-  batch_size = 1000,
   verbose = TRUE
 ) {
   # Create distinct datasets for assigned and unassigned DBs
@@ -192,67 +191,26 @@ assign_unassigned_dbs <- function(
   }
   unassigned_centroids <- st_centroid(unassigned_dbs)
 
-  # Prepare result container
-  new_assignments <- tibble()
+  # get index of nearest facility using vectorized sf operations:
+  near_idx <- st_nearest_feature(
+    unassigned_centroids,
+    facility_locations
+  )
 
-  # Process in batches to avoid memory issues
-  n_unassigned <- nrow(unassigned_dbs)
-  n_batches <- ceiling(n_unassigned / batch_size)
+  # use calculated indexes to assign a facility to each location
+  new_assignments <- unassigned_centroids |>
+    mutate(
+      assigned = facility_locations$nearest_facility[near_idx],
+      assignment_method = 'nearest_facility',
+      min_distance = as.numeric(st_distance(
+        geometry,
+        facility_locations$geometry[near_idx],
+        by_element=TRUE
+      ))
+    ) |>
+    st_drop_geometry() |>
+    select(dbid, assigned, assignment_method, min_distance)
 
-  if (verbose && n_batches > 1) {
-    message(
-      "Processing in ",
-      n_batches,
-      " batches of up to ",
-      batch_size,
-      " DBs each"
-    )
-  }
-
-  for (batch in 1:n_batches) {
-    if (verbose) {
-      message("Processing batch ", batch, " of ", n_batches)
-    }
-
-    # Get the current batch
-    start_idx <- (batch - 1) * batch_size + 1
-    end_idx <- min(batch * batch_size, n_unassigned)
-
-    current_batch_centroids <- unassigned_centroids[start_idx:end_idx, ]
-
-    # Find nearest facility for each DB in the batch
-    batch_assignments <- purrr::map_dfr(
-      1:nrow(current_batch_centroids),
-      function(i) {
-        # Find the nearest facility location
-        nearest_idx <- st_nearest_feature(
-          current_batch_centroids[i, ],
-          facility_locations
-        )
-
-        # Get the distance to the nearest facility
-        min_dist <- as.numeric(st_distance(
-          current_batch_centroids[i, ],
-          facility_locations[nearest_idx, ],
-          by_element = TRUE
-        )[1])
-
-        # Get the name of the nearest facility
-        facility_name <- facility_locations$nearest_facility[nearest_idx]
-
-        # Return new assignment
-        tibble(
-          dbid = unassigned_dbs$dbid[start_idx + i - 1],
-          assigned = facility_name,
-          assignment_method = "nearest_facility",
-          min_distance = min_dist
-        )
-      }
-    )
-
-    # Append batch results to the overall result
-    new_assignments <- bind_rows(new_assignments, batch_assignments)
-  }
 
   # Combine original assignments with new ones
   complete_assignments <- assigned_facility |>
