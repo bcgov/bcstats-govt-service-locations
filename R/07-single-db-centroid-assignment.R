@@ -79,24 +79,31 @@
 #   "ggplot2",
 #   "cancensus"
 #   "readxl"
+#   "safepaths",
+#   "spatstat"
+#   "rmapshaper"
 # ))
 
 # Load the installed packages
-library(bcdata)
-library(sf)
-library(dplyr)
-library(readr)
-library(tidyr)
-library(purrr)
-library(stringr)
-library(glue)
-library(units)
-library(bcmaps)
-library(readxl)
-library(janitor)
-library(ggplot2)
-library(cancensus)
-
+suppressPackageStartupMessages({
+  library(bcdata)
+  library(sf)
+  library(dplyr)
+  library(readr)
+  library(tidyr)
+  library(purrr)
+  library(stringr)
+  library(glue)
+  library(units)
+  library(bcmaps)
+  library(readxl)
+  library(janitor)
+  library(ggplot2)
+  library(cancensus)
+  library(safepaths)
+  library(spatstat)
+  library(rmapshaper)
+})
 # =========================================================================== #
 # Helper functions
 # ------------------------------------------------------------------------
@@ -221,11 +228,20 @@ CANCENSUS_YEAR <- "CA21"
 # Inputs (set these before running the script)
 # =========================================================================== #
 
+# file paths, could put this into settings.R, but as a standalone script, define here
+LAN_FOLDER <- use_network_path()
+TEST_DATA_FOLDER <- glue(
+  "{LAN_FOLDER}/2025 Government Service Locations/data/test"
+)
+TEST_OUT <- glue(
+  "{LAN_FOLDER}/2025 Government Service Locations/outputs/test_07_output"
+)
+
 # file path to CSV containing SBC facility names and latitude/longitude columns (EPSG:4326)
-facilities_csv <- "Path/full-service-bc-locs-wgs84.csv"
+facilities_csv <- glue("{TEST_DATA_FOLDER}/full-service-bc-locs-wgs84.csv")
 
 # desired output directory
-output_directory <- "Path/output"
+output_directory <- glue("{TEST_OUT}")
 
 # create output directory
 message("Creating output directory at ", output_directory)
@@ -308,7 +324,7 @@ pop_db <- get_census(
 # read in CSD rural/urban identification from Rural Initiatives file from Ministry of Jobs and Economic Growth
 # https://intranet.gov.bc.ca/economy-sector/jeg/rural-initiative/rural-data
 csd_rural_category <- read_excel(
-  "C:/Users/zhijiaju/Downloads/rural_matrix_list_of_communities.xlsx",
+  glue("{TEST_DATA_FOLDER}/rural_matrix_list_of_communities.xlsx"),
   sheet = "Census Subdivision Data"
 ) |>
   transmute(
