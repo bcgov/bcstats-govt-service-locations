@@ -83,7 +83,7 @@ Run the following scripts in the order specified:
 
 **Aggregated Tables and Calculations:**
 
-- `01-descriptive-tables.R`: this script reads processed files generated in the previous step, performs data quality checks, calculates summary statistics at the Dissemination Block (DB) and Census Subdivision (CSD) levels, merges population data, and identifies Service BC locations. It writes the final analysis output files to the specified directories.
+- `01a-descriptive-tables.R`: this script reads processed files generated in the previous step, performs data quality checks, calculates summary statistics at the Dissemination Block (DB) and Census Subdivision (CSD) levels, merges population data, and identifies Service BC locations. It writes the final analysis output files to the specified directories.
 
 - `01b-compare-metrics.R`: this script generates a scatter plot to compare driving time and driving distance at the Dissemination Block (DB) level, grouped by Census Subdivision (CSD). It reads preprocessed data from the SRC_DATA_FOLDER, calculates driving time in minutes, and creates a scatter plot with linear regression lines for each CSD. The plot is saved as a PNG file in the VISUALS_OUT/csd-drive-distance-plots directory.
 
@@ -91,7 +91,7 @@ Run the following scripts in the order specified:
 
 **Mapping Results:**
 
-- `02-map-plots.R`: this script loads processed Dissemination Block (DB) shapefiles and drive time summary statistics CSV files produced earlier in the workflow. It merges these datasets and leverages a custom function `build_map()` to generate and save a series of map visualizations. The maps display quantitative information (e.g., mean driving distance) at the DB level for each Census Subdivision (CSD), based on the configured theme (MAP_THEME) and other parameters defined in settings.R.
+- `02a-map-plots.R`: this script loads processed Dissemination Block (DB) shapefiles and drive time summary statistics CSV files produced earlier in the workflow. It merges these datasets and leverages a custom function `build_map()` to generate and save a series of map visualizations. The maps display quantitative information (e.g., mean driving distance) at the DB level for each Census Subdivision (CSD), based on the configured theme (MAP_THEME) and other parameters defined in settings.R.
 
 - `02b-box-violin-plots.R`: this script generates statistical visualizations (box plots and violin plots) to show the distribution of driving distances to the nearest Service BC office across different Census Subdivisions (CSDs) in British Columbia. It uses preprocessed Dissemination Block (DB)-level data to compare access metrics between regions.
 
@@ -130,6 +130,11 @@ The final analysis output files will be available in the location specified by `
 
 To aid in priority requests from SBC to determine service population estimates for new locations, we have also produced a new script, `06-quick-centroids-tables.R` that determines which DBs get re-assigned to pilot locations, with accompanying DB specific statistics about population. 
 
+**Self-contained centroid assignment**
+
+For quick, standalone runs (e.g., testing pilot locations without access to the LAN folder structure), use:
+
+- `07-single-db-centroid-assignment.R`: this script assigns every Dissemination Block (DB) in BC to the nearest Service BC facility using DB centroid distance, with accompanying DB specific statistics about population.
 
 ## Custom Functions
 

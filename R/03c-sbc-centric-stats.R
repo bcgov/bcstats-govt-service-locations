@@ -82,7 +82,7 @@ pop_db <- read_csv(
 
 ## db shapefiles
 db_shapefile <-
-  st_read(glue("{SHAPEFILE_OUT}/full-db_with_location.gpkg")) |>
+  st_read(glue("{SHAPEFILE_OUT}/full-db-with-location.gpkg")) |>
   mutate(across(c(landarea), as.numeric))
 
 ## crosswalk (entire province, not filtered)
