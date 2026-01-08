@@ -1,4 +1,4 @@
-# Copyright 2025 Province of British Columbia
+# Copyright 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -569,11 +569,20 @@ dir.create(shp_dir, showWarnings = FALSE, recursive = TRUE)
 # each DB is assigned to a facility using the centroid only method
 # dbid | csdid | csd_name | pop_2025 | pop_2030 | pop_2035 | assigned_facility | centroid_distance | urban_rural
 db_with_assignment |>
+  mutate(
+    across(starts_with("pop_"), \(x) round(x, 1)),
+    centroid_distance_m = round(centroid_distance_m, 1)
+  ) |>
   write_csv(csv1_path)
 
 # create CSV 2 SBC facility population projections
 # facility | pop_2025 | pop_2030 | pop_2035 | est_population_0_to_14_yrs | est_population_15_to_24_yrs | est_population_25_to_64_yrs | est_population_over_64_yrs | median_age | mean_age
 facility_demographics |>
+  mutate(
+    across(starts_with("pop_"), \(x) round(x, 1)),
+    across(starts_with("est_population_"), \(x) round(x, 1)),
+    across(c(median_age, mean_age), \(x) round(x, 1))
+  ) |>
   write_csv(csv2_path)
 
 # create shapefiles for each SBC facility location catchment
