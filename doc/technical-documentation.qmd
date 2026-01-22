@@ -132,27 +132,102 @@ The following key files are produced in the source and shapefile output folders:
 
 ## Descriptive Tables (01-descriptive-tables.R)
 
-This script \`01-descriptive-tables.R\` generates comprehensive statistical summaries of drive times and distances to Service BC offices. The data is aggregated at three distinct geographic levels to support multi-scale analysis:
+This script `01-descriptive-tables.R` generates comprehensive statistical summaries of drive times and distances to Service BC offices. The data is aggregated at two distinct geographic levels—Dissemination Block (DB) and Census Subdivision (CSD) to support multi-scale analysis and form the analytical foundation for subsequent visualizations.
 
-### Geographic Levels of Analysis
+#### Data Preparation and Inputs
 
-**Dissemination Block (DB)**: The smallest geographic unit for which population and dwelling counts are available (\~500-750 people). Provides the most granular view of accessibility patterns.
+-   Reads in reduced drive time data (`reduced-drivetime-data.csv`) and population data for DBs and CSDs (`reduced-population-db.csv`, `reduced-population-csd.csv`).
+-   Cleans column names and ensures numeric types for relevant fields.
 
-**Dissemination Area (DA)**: A small geographic unit composed of one or more adjacent dissemination blocks (\~400-700 people). Serves as an intermediate level of analysis.
+#### Statistical Summaries
 
-**Census Subdivision (CSD)**: Municipal-level geography (e.g., cities, towns, villages) used for census data dissemination. Provides a broad overview of access patterns.
+-   Uses the `calculate_drivetime_stats()` function to compute summary statistics for drive distance and drive time (in both seconds and minutes), including:
+    -   Mean, variance, skewness, kurtosis
+    -   Quantiles (min, 25th, median, 75th, max)
+    -   Count of distinct addresses per group
+-   Summaries are calculated at the DB level (`csd_name`, `csdid`, `dbid`) and CSD level (`csd_name`, `csdid`).
+-   Population metrics (area, population, dwellings, households) are joined to the summary tables for context.
 
-### Statistical Metrics Produced
+#### Data Quality Checks
 
-For each geographic unit, the output includes:
+-   Calculates the proportion of DBs with missing address counts and the proportion with fewer than 5 addresses.
+-   Summarizes the number and percentage of DB blocks with low address counts by CSD.
 
--   **Count metrics**: Number of addresses, number of DB blocks with insufficient data
--   **Time metrics**: Drive time statistics in both seconds and minutes
--   **Distance metrics**: Drive distance statistics in kilometers
--   **Population metrics**: Area size, population count, dwelling count, household count
--   **Data quality metrics**: Counts of DB blocks with insufficient address data
+#### Service BC Location Counts
 
-These tables form the analytical foundation for all subsequent visualizations, allowing accessibility patterns to be examined at different geographic scales and in relation to population distribution.
+-   Calculates the number of Service BC locations in each CSD, accounting for possible multiple locations per label.
+
+#### Output Files
+
+The following key tables are produced and written to the source and tables output folders:
+
+-   `reduced_db_average_times_dist_all_locs.csv`: DB-level summary statistics (used as input for future scripts)
+-   `reduced_csd_average_times_dist_all_locs.csv`: CSD-level summary statistics
+-   `reduced_csd_low_counts.csv`: Summary of DB blocks with low address counts by CSD
+-   `reduced_csd_service_bc_counts.csv`: Number of Service BC locations per CSD
+
+#### Notes
+
+-   DA-level summaries are not currently produced in this script.
+-   The script removes the `csd_name` column from population data before joining, due to naming mismatches.
+-   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
+
+## Comparing Drive Time and Distance (01b-compare-metrics.R)
+
+This script `01b-compare-metrics.R` generates a comparative visualization of driving distance and driving time to the nearest Service BC office at the dissemination block (DB) level. The resulting scatter plot provides insight into the relationship between these two accessibility metrics across the municipalities of interest.
+
+#### Data Preparation and Inputs
+
+-   Reads in DB-level summary statistics from `reduced_db_average_times_dist_all_locs.csv` (produced by the previous script).
+-   Cleans column names and ensures numeric types for mean drive distance and mean drive time.
+
+#### Comparative Visualization
+
+-   Creates a scatter plot of mean driving distance (km) versus mean driving time (minutes) for each DB, colored by census subdivision (CSD).
+-   Adds a linear regression line for each CSD group to highlight trends.
+-   Facets the plot by CSD, allowing for comparison across municipalities.
+-   Applies consistent styling using the `SCATTER_PLOT_THEME` and `COLOR_THEME_D` defined in `settings.R`.
+
+#### Output Files
+
+-   The scatter plot is saved as a PNG file in the `csd-drive-distance-plots` subfolder of the `VISUALS_OUT` directory.
+
+#### Notes
+
+-   This visualization helps identify differences in the relationship between distance and time across regions, which may reflect variations in road networks, geography, or traffic conditions.
+-   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
+
+## Binned Drive Distance Summaries (01c-bin-distances.R)
+
+This script `01c-bin-distances.R` categorizes and summarizes drive distances to the nearest Service BC office for each municipality. The resulting binned tables provide a clear view of the distribution of address accessibility by distance bands.
+
+#### Data Preparation and Inputs
+
+-   Reads in reduced drive time data from `reduced-drivetime-data.csv`.
+-   Cleans column names and ensures numeric types for drive distance and drive time.
+
+#### Binning and Summarization
+
+-   Assigns each record to a drive distance bin:
+    -   Under 1 km
+    -   1 to 5 km
+    -   5 to 10 km
+    -   10 to 20 km
+    -   20+ km
+-   For each municipality (CSD), calculates:
+    -   The total number of addresses in each distance bin
+    -   The percentage of addresses in each bin (relative to the CSD total)
+-   Data is transformed into both long and wide formats for reporting and analysis.
+
+#### Output Files
+
+-   The binned summary table is saved as `reduced-csd-binned-drivetime-data.csv` in the `TABLES_OUT` directory.
+
+#### Notes
+
+-   This summary enables quick comparison of accessibility patterns across municipalities and supports downstream reporting and visualization.
+-   The script includes error handling for file loading and ensures the output directory exists before writing results.
+
 
 ## Thematic Maps for Accessibility Metrics
 
