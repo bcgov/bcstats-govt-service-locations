@@ -230,41 +230,36 @@ This script `01c-bin-distances.R` categorizes and summarizes drive distances to 
 
 
 ## Thematic Maps for Accessibility Metrics
+### Standard Choropleth Maps (02a-map-plots.R)
 
-### Standard Choropleth Maps (02-map-plots.R)
+The script `02a-map-plots.R` generates thematic maps visualizing accessibility metrics at the dissemination block (DB) level for each of the four municipalities of interest. These maps display spatial patterns in mean driving distance to the nearest Service BC office, supporting the identification of geographic disparities in service access.
 
-The `02-map-plots.R` script generates thematic maps that visualize accessibility metrics at various geographic levels. These maps provide insights into potential disparities in service access by coloring each dissemination block based on drive time or distance.
+#### Data Preparation and Inputs
 
-#### Required Files
+-   Reads in the reduced DB-level shapefile (`reduced-db-with-location.gpkg`).
+-   Reads in DB-level summary statistics (`reduced_db_average_times_dist_all_locs.csv`).
+-   Reads in Service BC location data (`reduced-service_bc_locs.csv`).
+-   Cleans and merges data to ensure all relevant attributes are available for mapping.
 
--   **Shapefiles**: Processed geographical boundaries from `SHAPEFILE_OUT` folder:
-    -   Census Subdivision (CSD) level shapefiles (`reduced-csd-with-location.gpkg`)
-    -   Dissemination Area (DA) level shapefiles (`reduced-da-with-location.gpkg`)
-    -   Dissemination Block (DB) level shapefiles (`reduced-db-with-location.gpkg`)
--   **Statistical Data**: Aggregated metrics from the output of `01-descriptive-tables.R`:
-    -   DA-level summary statistics (`reduced_da_average_times_dist_all_locs.csv`)
-    -   DB-level summary statistics (`reduced_db_average_times_dist_all_locs.csv`)
-    -   CSD-level summary statistics (`reduced_csd_average_times_dist_all_locs.csv`)
--   **Location Data**:
-    -   Service BC office locations (`service_bc_locs.csv`)
+#### Map Generation
 
+-   For each municipality in `CSD_NAMES`, generates a separate map of mean driving distance to the nearest Service BC office.
+-   Uses the custom `build_map()` function (from `fxns/csd-plots.R`) to:
+    -   Filter data for the selected municipality.
+    -   Apply consistent cartographic styling (`MAP_THEME`, `FILL_THEME`).
+    -   Overlay Service BC locations as reference points.
+    -   Handle missing data by highlighting areas with no drive data in red.
+-   The variable mapped is currently set to mean driving distance (`drv_dist_mean`), but the function can be adapted for other metrics if needed.
 
-#### Parameterization and Customization
+#### Output Files
 
-The script implements a flexible parameterization framework for accessibility metric visualization. Parameters include metric type selection (drive_time_sec, drive_time_min, drive_dist) with unit conversion support. Geographic filtering utilizes predicate functions applied to the CSD_NAMES constant. Map metadata elements (titles, subtitles, legends) are exposed through function interfaces for contextual modification. Default parameter values ensure execution in minimal configuration scenarios.
+-   Saves one SVG map per municipality in the `csd-drive-distance-maps` subfolder of the `MAP_OUT` directory. Filenames reflect the mapped variable and region.
 
-#### Styling
+#### Notes
 
-Visualization styling applies predefined ggplot2 theme elements from global constants. The MAP_THEME establishes cartographic parameters for fonts, margins, and background elements. Data representation utilizes the FILL_THEME scale with a viridis-based color ramp and parametric transparency settings. Service BC locations are overlaid as spatial reference indicators with consistent symbolization. All styling adheres to accessibility standards while optimizing information density.
-
-
-#### Visualization Specifics
-
--   **Spatial Gaps**: Some dissemination blocks may appear blank on the maps because:
-    -   No addresses exist within certain blocks (e.g., parks, undeveloped areas)
-    -   Insufficient data was collected for those areas
-    -   The minimum threshold for address counts wasn't met
--   **Output Format**: Saves maps as SVG files in the `MAP_OUT/csd-drive-distance-maps` directory
+-   The script focuses on DB-level mapping for the four municipalities of interest; DA and CSD-level maps are not produced here.
+-   DA and CSD shapefiles and DA-level summary statistics are not required for this script.
+-   The script clears the R environment at the end to free memory for subsequent processing steps.
 
 ### Smoothed Density Maps (02d-density_map.R)
 
