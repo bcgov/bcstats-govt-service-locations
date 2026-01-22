@@ -261,35 +261,6 @@ The script `02a-map-plots.R` generates thematic maps visualizing accessibility m
 -   DA and CSD shapefiles and DA-level summary statistics are not required for this script.
 -   The script clears the R environment at the end to free memory for subsequent processing steps.
 
-### Smoothed Density Maps (02d-density_map.R)
-
-The `02d-density_map.R` script addresses the spatial gaps in the standard choropleth maps by using kernel density estimation to create continuous surfaces representing drive time or distance across entire geographic areas.
-
-#### Required Files
-
--   **Address Data**: Point-level drive time data (`reduced-drivetime-data.csv`)
--   **Crosswalk File**: Geographic identifier relationships (`csd-da-db-loc-crosswalk.csv`)
--   **Population Data**: DB-level population statistics (`population-db.csv`)
--   **Location Data**: Service BC office locations (`reduced-service_bc_locs.csv`)
--   **Shape Data**: CSD boundaries (retrieved dynamically from bcmaps package)
-
-#### Parameterization and Customization
-
-The script configures spatial kernel density estimation through parametric controls for smoothing operations. Core parameters include kernel bandwidth (sigma = 1000), grid resolution (300x300 cells), and boundary clipping to municipal extents. The implementation features a toggle for scale normalization, enabling either consistent color ranges across municipalities for comparative analysis or locally optimized ranges for enhanced local detail visibility.
-
-#### Styling
-
-Visualization styling leverages predefined theme elements from settings.R to maintain project-wide consistency. The MAP_THEME governs cartographic layout parameters while the FILL_THEME provides a continuous color scale based on the viridis palette. Service BC locations are programmatically rendered as reference markers with standardized symbolization to provide spatial context across all visualization outputs.
-
-
-#### Visualization Specifics
-
--   **Spatial Smoothing**: Uses kernel density estimation via the `spatstat` package to:
-    -   Convert point-based data to continuous surfaces
-    -   Fill gaps between known data points with interpolated values
-    -   Provide a more complete visual representation of accessibility patterns
--   **Output Format**: Saves maps as PNG files in the `MAP_OUT/csd-drive-distance-maps` directory
-
 
 ### Statistical Visualizations (02b-box-violin-plots.R)
 
@@ -319,6 +290,43 @@ The `02b-box-violin-plots.R` script generates statistical visualizations that re
 -   The script currently visualizes mean driving distance (`drv_dist_mean`) by municipality. Other metrics can be substituted by adjusting the `y_var` parameter.
 -   No summary statistics CSV is produced by this script; outputs are limited to the visualizations.
 -   The script clears the R environment at the end to free memory for subsequent processing steps.
+
+### Smoothed Density Maps (02c-density-map.R)
+
+The `02d-density_map.R` script generates smoothed spatial density maps visualizing drive distances to the nearest Service BC office for each municipality of interest. By applying kernel density estimation, the script produces continuous heatmaps that fill spatial gaps between known address points, providing a more complete representation of accessibility patterns.
+
+#### Data Preparation and Inputs
+
+-   Reads DB-level population data (`reduced-population-db.csv`) and calculates people per household.
+-   Reads point-level drive time data (`reduced-drivetime-data.csv`), converts coordinates to spatial features, and joins population data.
+-   Reads Service BC location data (`reduced-service_bc_locs.csv`) and converts to spatial features.
+-   Reads CSD boundary shapefiles (`full-csd_with_location.gpkg`) for all census subdivisions.
+-   Filters and prepares data for each municipality using CSD identifiers.
+
+#### Density Estimation and Map Generation
+
+-   For each municipality (CSD), subsets address points and boundaries.
+-   Converts address points to a spatial point pattern (`ppp` object) and assigns drive distance as a mark.
+-   Applies kernel density smoothing (`Smooth()` from `spatstat`) with a bandwidth of 1000 meters and a grid resolution of 300x300 cells.
+-   Converts the smoothed result to a raster and then to a spatial feature for plotting.
+-   Overlays CSD boundaries, address points, and Service BC locations on the map.
+-   Supports a toggle for common scale normalization across municipalities (`common_scale` parameter), ensuring either consistent color ranges for comparison or locally optimized ranges for detail.
+
+#### Styling
+
+-   Uses consistent cartographic styling from `settings.R` (`MAP_THEME`, `FILL_THEME`).
+-   Service BC locations are rendered as yellow reference markers with standardized symbolization.
+-   Map titles, subtitles, and legends are dynamically generated for each municipality.
+
+#### Output Files
+
+-   Saves each map as a PNG file in the `csd-drive-distance-maps` subfolder of the `MAP_OUT` directory. Filenames indicate the mapped variable, scale setting, and municipality.
+
+#### Notes
+
+-   The script focuses on drive distance (`drv_dist`) as the primary metric, but can be adapted for drive time or other variables.
+-   Handles missing or empty data gracefully, skipping maps for municipalities with no address points.
+-   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
 ## Future Work
 
