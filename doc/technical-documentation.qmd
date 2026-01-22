@@ -328,6 +328,44 @@ The `02d-density_map.R` script generates smoothed spatial density maps visualizi
 -   Handles missing or empty data gracefully, skipping maps for municipalities with no address points.
 -   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
+## Demographic Summaries and Population Pyramids (02d-csd-demographics.R)
+
+The `02d-csd-demographics.R` script generates demographic summaries and visualizations for each municipality of interest, focusing on population structure and projections. This script produces both summary tables and population pyramid plots to support demographic analysis at the census subdivision (CSD) level.
+
+#### Data Preparation and Inputs
+
+-   Reads Service BC location data (`reduced-service_bc_locs.csv`) and filters to the municipalities in `CSD_NAMES`.
+-   Loads population projections (`full-population-projections.csv`) and census population data (`reduced-population-db.csv`).
+-   Reads the crosswalk file (`csd-da-db-loc-correspondance.csv`) to link DBs, DAs, and CSDs.
+-   Loads DB-level population projections (`full-db-projections-transformed.rds`) and filters to the CSDs of interest.
+
+#### Demographic Summaries
+
+-   Aggregates DB-level population projections to the CSD level for the current year, calculating:
+    -   Estimated total population
+    -   Median age (weighted by population)
+-   Writes the summary statistics to `reduced-csd_population_metrics.csv` in the `TABLES_OUT` directory.
+
+#### Population Pyramid Visualization
+
+-   Prepares data for population pyramids by joining DB-level projections with CSD assignments.
+-   For each municipality, generates a population pyramid plot showing the distribution of population by age group and gender for the current year and projections for 5 and 10 years ahead.
+-   Uses the custom `create_population_pyramid()` function from `fxns/csd-plots.R` to create the plots.
+-   Saves each CSD’s population pyramid as a PNG file in the `csd_population_pyramids` subfolder of the `MAP_OUT` directory.
+-   Optionally creates a combined plot of up to four pyramids for comparative visualization.
+
+#### Output Files
+
+-   `reduced-csd_population_metrics.csv`: CSD-level summary statistics (TABLES_OUT)
+-   Individual PNG files for each CSD’s population pyramid (`csd_population_pyramids` folder in MAP_OUT)
+-   Combined PNG file with multiple pyramids for side-by-side comparison
+
+#### Notes
+
+-   The script uses age and gender breakdowns from the population projections to provide both current and future demographic perspectives.
+-   All plots and tables are generated for the municipalities specified in `CSD_NAMES`.
+-   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
+
 ## Future Work
 
 -   Expand the analysis to include additional municipalities and public services.
