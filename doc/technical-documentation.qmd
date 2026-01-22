@@ -291,35 +291,34 @@ Visualization styling leverages predefined theme elements from settings.R to mai
 -   **Output Format**: Saves maps as PNG files in the `MAP_OUT/csd-drive-distance-maps` directory
 
 
-### Statistical Visualizations (02c-box-violin-plots.R)
+### Statistical Visualizations (02b-box-violin-plots.R)
 
-The `02c-box-violin-plots.R` script generates statistical visualizations that reveal the distribution patterns of drive times or distances across different municipalities, complementing the spatial maps with comparative statistical perspectives.
+The `02b-box-violin-plots.R` script generates statistical visualizations that reveal the distribution patterns of mean driving distances to the nearest Service BC office across the four municipalities of interest. These visualizations complement the spatial maps by providing comparative statistical perspectives on accessibility.
 
-#### Required Files
+#### Data Preparation and Inputs
 
--   **Statistical Data**: DB-level summary statistics (`reduced_db_average_times_dist_all_locs.csv`)
--   **Configuration**: Uses constants defined in `settings.R`
--   **Plot Functions**: Relies on custom functions defined in `plots.r`
+-   Reads in DB-level summary statistics from `reduced_db_average_times_dist_all_locs.csv` (produced by earlier scripts).
+-   Cleans column names and ensures numeric types for relevant fields, including mean driving distance.
+-   Filters data to include only the municipalities listed in `CSD_NAMES` (as defined in `settings.R`).
 
-#### Parameterization and Customization
+#### Visualization Logic
 
-The script supports visualization of multiple numeric metrics including mean drive time (minutes), mean drive distance (kilometers), and statistical distribution measures (variance, skewness). Function parameters enable customization of plot titles and labels for analytical context. Plot type configuration allows generation of box plots, violin plots, or both based on analytical requirements and visualization objectives.
+-   For each municipality, generates:
+    -   **Box Plot**: Shows the distribution of mean driving distances by municipality, highlighting central tendency, spread, and outliers.
+    -   **Violin Plot**: Illustrates the full distribution shape and density of mean driving distances for each municipality.
+-   Both plots use the custom `build_boxplot()` and `build_violinplot()` functions from `fxns/csd-plots.R`, with consistent styling and color scales.
+-   Plot parameters (titles, axis labels, themes) are set using constants from `settings.R` (`BOX_PLOT_THEME`, `VIOLIN_PLOT_THEME`, `FILL_THEME_D`).
 
-#### Styling
+#### Output Files
 
-Visualization styling implements specialized theme constants from settings.R tailored for statistical graphics. BOX_PLOT_THEME optimizes display parameters with rotated axis labels to accommodate municipality names, while VIOLIN_PLOT_THEME provides variant settings for density distribution displays. The FILL_THEME_D discrete color scale ensures consistent municipality representation across all statistical visualizations with appropriate color differentiation for categorical data.
+-   Saves the box plot as a PNG file in the `csd-drive-distance-plots` subfolder of the `VISUALS_OUT` directory, with a filename indicating the plot type and variable.
+-   Saves the violin plot as a separate PNG file in the same directory.
 
+#### Notes
 
-#### Visualization Specifics
-
--   **Box Plots**: Show central tendency, dispersion, and outliers
-    -   Central line represents the median
-    -   Box spans from first to third quartile (interquartile range)
-    -   Whiskers show range of non-outlier data
--   **Violin Plots**: Display full distribution shape
-    -   Width indicates frequency density at different values
-    -   Shows distribution characteristics like bimodality or skewness
--   **Output Format**: Saves plots as PNG files in the `VISUALS_OUT/csd-drive-distance-plots` directory
+-   The script currently visualizes mean driving distance (`drv_dist_mean`) by municipality. Other metrics can be substituted by adjusting the `y_var` parameter.
+-   No summary statistics CSV is produced by this script; outputs are limited to the visualizations.
+-   The script clears the R environment at the end to free memory for subsequent processing steps.
 
 ## Future Work
 
