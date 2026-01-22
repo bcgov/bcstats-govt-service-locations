@@ -67,42 +67,28 @@ The file `settings.R` contains the settings for the project, including global co
 
 ## Raw to Ready Data (00-make-data.R)
 
-The file `00-make-data.R` prepares the data required for subsequent analysis, such as visuals and tables. It processes raw input files, generates shape files, and creates crosswalks for different geographic units.
+The file `00-make-data.R` prepares the data required for subsequent analysis, such as visuals and tables. It reads, transforms, and writes a variety of data sources, effectively creating a project “data lake” on the LAN. The script processes raw input files, generates shapefiles, creates crosswalks, and produces both full-province and municipality-specific (“reduced”) outputs for efficient downstream use.
 
-#### Pre-processing Driving distance data files
+#### Drive Time Data Preparation
 
-The script utilizes the `preprocess_locs` function to handle raw drive time files. Originally, this function was designed to handle separate data files for each municipality, cleaning and extracting relevant columns before merging them together. While the current dataset now arrives as a single consolidated file, the function has been maintained for compatibility with the existing pipeline structure to avoid extensive refactoring. The function:
+-   Reads the consolidated drive time data file (`final_result_no_errors.csv`) from the LAN, cleans column names, renames key columns for consistency, and derives dissemination area IDs (daid) from dissemination block IDs (dbid).
+-   The processed drive time data is saved as `full-processed-drivetime-data.csv` and, after filtering for the municipalities of interest, as `reduced-drivetime-data.csv` in the source data folder.
 
--   Reads the raw CSV data
--   Cleans column names using `janitor::clean_names()`
--   Filters for rows matching the specified tag (typically 'servicebc')
--   Renames key columns for consistency ('site_albers_x' to 'address_albers_x', etc.)
--   Derives dissemination area IDs (daid) from dissemination block IDs (dbid
+#### Shapefiles
 
-The processed data is then consolidated and saved to the `SRC_DATA_FOLDER` for use in subsequent analysis steps.
+-   Generates shapefiles for Census Subdivisions (CSDs) and Dissemination Blocks (DBs) using the `bcmaps` and `bcdata` packages.
+-   Writes both full-province shapefiles (`full-csd_with_location.gpkg`, `full-db_with_location.gpkg`) and reduced shapefiles for the four municipalities of interest (`reduced-csd-with-location.gpkg`, `reduced-db-with-location.gpkg`) to the shapefile output folder.
+-   Additionally, creates exploratory shapefiles for Statistics Canada population centers and FSAs, saved as GeoPackage files for reference.
 
-#### Shapefiles:
+#### Crosswalks
 
-Shapefiles for Census Subdivisions (CSDs), Dissemination Areas (DAs), and Dissemination Blocks (DBs) are created using the `bcmaps` and `bcdata` packages. Two sets of shapefiles are generated:
+-   Constructs a correspondence file (`csd-da-db-loc-correspondance.csv`) linking DBs, DAs, and CSDs, including names and types, for all of BC.
+-   Builds a crosswalk for only the DBs present in the drive time data, joining with the correspondence file for hierarchical relationships.
 
--   **Full shapefiles**: Contain geographic boundaries for all areas across British Columbia. These comprehensive files serve as the master reference but can be computationally intensive to work with.
+#### Population Data
 
--   **Reduced shapefiles**: Filtered to include only the four municipalities of interest (Langford, Dawson Creek, Smithers, Kamloops). These optimized files significantly improve processing efficiency for visualization and analysis tasks.
-
-All shapefiles are saved to the `SHAPEFILE_OUT` folder in GPKG (GeoPackage) format, which offers better performance and compression than traditional shapefiles.
-
-#### Crosswalk:
-
-A crosswalk is created to link dissemination blocks (DBs) to dissemination areas (DAs) and Census Subdivisions (CSDs). This crosswalk is used to aggregate data at different geographic levels. Two crosswalk files are generated:
-
-**Correspondence file**: Contains all DB's in BC with their hierarchical relationships
-
-**Crosswalk file**: Contains only the DBs used in the analysis with links to higher geographic levels. This may become obsolete as the correspondence file retains the full picture of BC.
-
-#### Population Data:
-
--   Population data for DAs, DBs, and CSDs is retrieved using the `cancensus` package. The data is pruned and cleaned and saved for use in later scripts.
-
+-   Retrieves population data for DBs and CSDs from the `cancensus` package, cleans and selects relevant columns, and writes out as `full-population-db.csv` and `full-population-csd.csv`.
+-   Filters and writes reduced population files for the municipalities of interest (`reduced-population-db.csv`, `reduced-population-csd.csv`).
 -   **API Key Requirement**: The first time a user runs this script, they will need a CensusMapper API key. Users can obtain a free key by signing up at [CensusMapper](https://censusmapper.ca/). Once obtained, the key should be set using:
 
 ``` r
@@ -111,11 +97,38 @@ cancensus::set_cancensus_api_key('YOUR_API_KEY', install = TRUE)
 
 This will store the key in the user's R environment for future use. API quotas are generally sufficient for standard analysis, but users performing extensive operations may need to request higher limits.
 
-Similar to shapefiles, both full (province-wide) and reduced (municipalities of interest only) versions are created for computational efficiency.
+#### Population Projections
 
-#### Service BC Location Data:
+-   Downloads CSD-level population projections from BC Data Catalogue, cleans and standardizes region codes.
+-   Allocates CSD projections to DBs by calculating the proportion of each DB within its CSD, assuming these proportions remain constant over time.
+-   Joins projections to DBs and transforms age columns into rows, creating age groups for analysis.
+-   Saves the resulting DB-level projections as `full_db_projections_transformed.rds` and the raw projections as `full-population-projections.csv`.
 
-An aggregated data set containing the count of addresses considered "nearest" to each Service BC location is saved. Coordinates are stored in the Albers equal-area projection (EPSG:3005), which is specifically optimized for British Columbia.
+#### Service BC Location Data
+
+-   Extracts Service BC office locations by joining processed drive time data with the crosswalk, and writes the full and reduced sets as `full-service-bc-locs.csv` and `reduced-service_bc_locs.csv`.
+-   Coordinates are stored in the Albers equal-area projection (EPSG:3005).
+
+#### Output Summary
+
+The following key files are produced in the source and shapefile output folders:
+
+-   `full-processed-drivetime-data.csv`, `reduced-drivetime-data.csv`
+-   `full-service-bc-locs.csv`, `reduced-service_bc_locs.csv`
+-   `csd-da-db-loc-correspondance.csv`
+-   `full-population-db.csv`, `reduced-population-db.csv`
+-   `full-population-csd.csv`, `reduced-population-csd.csv`
+-   `full-population-projections.csv`
+-   `full_db_projections_transformed.rds`
+-   `full-csd_with_location.gpkg`, `reduced-csd-with-location.gpkg`
+-   `full-db_with_location.gpkg`, `reduced-db-with-location.gpkg`
+-   Exploratory: `popcenter-statscan.gpkg`, `fsa-statscan.gpkg`
+
+#### Notes
+
+-   The script writes both full-province and reduced (municipality-specific) outputs for efficiency in downstream scripts.
+-   The logic for DB-level population projections and age group transformation is implemented directly in the script.
+-   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
 ## Descriptive Tables (01-descriptive-tables.R)
 
