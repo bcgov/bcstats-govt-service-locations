@@ -366,6 +366,46 @@ The `02d-csd-demographics.R` script generates demographic summaries and visualiz
 -   All plots and tables are generated for the municipalities specified in `CSD_NAMES`.
 -   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
+## Catchment Area Delineation (03a-create-catchments.R)
+
+The script `03a-create-catchments.R` executes the comprehensive assignment of every dissemination block (DB) to a specific service catchment area. It employs a hierarchical methodology, prioritizing empirical drive-time data while utilizing secondary spatial proximity algorithms to ensure 100% geographic coverage across the province.
+
+#### Data Preparation and Inputs
+
+-   Reads Service BC location data (`full-service-bc-locs.csv`) and projects coordinates to the BC Albers (EPSG:3005) coordinate reference system.
+-   Loads the processed drive-time matrix (`full-processed-drivetime-data.csv`) and cleans attribute headers for relational consistency.
+-   Integrates DB-level population statistics (`full-population-db.csv`) and provincial DB shapefiles (`full-db-with-location.gpkg`).
+-   Imports specialized assignment logic from the `calculations.r` function library.
+
+#### Catchment Assignment Logic
+
+-   **Primary Assignment**: Utilizes `assign_nearest_facility()` to link DBs to facilities based on the minimum recorded drive-time impedance.
+-   **Secondary Spatial Fill**: For DBs lacking valid routing data (e.g., areas with no address points or topographical errors), the `assign_unassigned_dbs()` function executes a batch-processed Euclidean distance calculation to identify the nearest facility.
+-   **Geometric Aggregation**: Generates aggregate catchment boundaries by performing a spatial union of constituent DB geometries, followed by a topological simplification (`ms_simplify`) to optimize file size for administrative reporting.
+
+#### Data Quality and QA Diagnostics
+
+-   Calculates the statistical variance between drive-time and spatial-proximity assignment cohorts, documenting the frequency of "no-route" errors.
+-   Summarizes demographic exposure by analyzing population distributions (median, mean, and zero-count frequencies) within unassigned blocks.
+-   Maintains a transparent audit trail of the assignment method used for every dissemination block in the provincial set.
+
+#### Output Files
+
+The following key datasets and geospatial artifacts are produced:
+
+-   `complete-db-assignments.csv`: The master crosswalk of all DBs and their assigned facility catchments (Source Data Folder).
+-   `complete-db-assignments-for-SBC.csv`: A refined, distinct list of assignments for external stakeholder use (Service BC Output Folder).
+-   `sbc-catchments.shp`: A simplified geospatial shapefile representing aggregated facility service areas (Service BC Output Folder).
+-   `unassigned_dbs.csv` and `unassigned_dbs_summary.csv`: Detailed QA reports and demographic summaries of routing failures (Tables Output Folder).
+
+#### Notes
+
+-   The script ensures total provincial coverage by falling back to spatial proximity when network-based routing is unavailable.
+-   The simplification of the final shapefile geometry is set to a 1% threshold to balance geographic precision with computational performance.
+-   The R environment is purged upon script completion to ensure memory availability for subsequent analytical modules.
+
+
+
 ## Future Work
 
 -   Expand the analysis to include additional municipalities and public services.
