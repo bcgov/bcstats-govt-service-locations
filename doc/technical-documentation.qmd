@@ -5,10 +5,17 @@ format:
     toc: true
     toc-location: right
     toc-depth: 3
-    number-sections: false
+    number-sections: true
+    number-depth: 3
     theme: cerulean
     code-fold: true
-    fig-caption: true
+    grid: 
+        body-width: 1800px
+        sidebar-width: 100px
+        margin-width: 300px
+    css: styles.css
+    html-math-method: katex
+    self-contained: true
 ---
 
 ::: {style="font-size: 0.9em;"}
