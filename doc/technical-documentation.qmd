@@ -449,6 +449,69 @@ The following visualizations are archived within the `MAP_OUT/complete_catchment
 -   Geometry simplification is critical for the provincial-scale maps to prevent excessive memory usage during the `ggsave` process.
 -   The R environment is cleared and memory is garbage-collected (`gc()`) upon completion to maintain system stability for the final document rendering.
 
+## Facility-Centric Performance Metrics (03c-sbc-centric-stats.R)
+
+The script `03c-sbc-centric-stats.R` executes a granular performance and demographic analysis localized to individual Service BC facilities. By pivoting the analytical lens from administrative boundaries to catchment-specific influence zones, the routine quantifies service delivery burden, transit impedance distributions, and longitudinal population shifts unique to each facility’s operational footprint.
+
+#### Data Preparation and Inputs
+
+-   **Multi-Dimensional Integration**: Synthesizes pre-computed catchment assignments (`complete-db-assignments.csv`), processed drive-time matrices, and longitudinal population projections (`full-db-projections-transformed.rds`).
+-   **Spatial Feature Merging**: Integrates facility coordinates and Dissemination Block (DB) geometries from the provincial shapefile repository (`full-db-with-location.gpkg`).
+-   **Crosswalk Synchronization**: Utilizes a comprehensive correspondence file to bridge DB identifiers with Census Subdivision (CSD) and Dissemination Area (DA) hierarchies, ensuring high-fidelity grouping for Service BC-centric measures.
+
+#### Catchment-Based Metric Computation
+
+-   **Transit Impedance Statistics**: Computes comprehensive drive-time and distance distributions for each facility, including measures of central tendency (mean, median), dispersion (variance, standard deviation), and extreme values (quantiles, min/max).
+-   **Demographic Exposure Profiling**: Estimates total population, weighted average age, and median age within each catchment area. This calculation accounts for the proportional representation of CSDs within a facility’s footprint, utilizing the `pct_of_csd` constant derived from DB-level transformations.
+-   **Coverage Diagnostics**: Quantifies the percentage of a facility's catchment area derived from empirical drive-time routing versus direct spatial assignment, providing a metric for data reliability and geographic "edge case" identification.
+
+#### Visualization and Statistical Graphics
+
+-   **Distance Distribution Analysis**: Generates individual and faceted histograms to visualize the frequency of transit distances within catchments, supporting the identification of outlier populations with excessive travel burdens.
+-   **Catchment Heatmaps**: Produces high-resolution spatial visualizations for each Service BC location, mapping mean driving distances at the DB level to reveal internal accessibility gradients within the catchment boundary.
+-   **Longitudinal Demographic Pyramids**: Constructs population pyramids for each facility, illustrating age and gender distributions for the current year alongside five- and ten-year projections to forecast future service demand shifts.
+-   **Comparative Diagnostics**: Executes box-plot visualizations to contrast driving distance distributions across the various catchments of interest, facilitating systemic benchmarking of facility accessibility.
+
+#### Output Files
+
+The script produces an extensive catalog of evidentiary artifacts archived within the `TABLE
+
+## Catchment Spatial Density Analysis (03d-sbc-density-maps.R)
+
+The script `03d-sbc-density-maps.R` executes a sophisticated spatial smoothing routine to visualize accessibility gradients within Service BC facility catchments. By transitioning from discrete address-level data points to a continuous surface via kernel density estimation (KDE), the script identifies localized "service deserts" and geographic trends in drive-time impedance that may be obscured in aggregate statistical reporting.
+
+#### Data Preparation and Inputs
+
+-   **Synthesized Population Metrics**: Integrates dissemination block (DB) population counts to derive household density, facilitating a nuanced understanding of potential service demand.
+-   **High-Resolution Drive Matrices**: Processes empirical drive-time and distance data, converting coordinate pairs into spatial features projected in the BC Albers (EPSG:3005) system.
+-   **Catchment Geometry Integration**: Ingests the complete DB assignment ledger (`complete_db_assignments.csv`) to delineate the spatial boundaries for each facility's analytical window.
+-   **Multi-Layer Shapefiles**: Loads both DB and Census Subdivision (CSD) geometries to provide administrative context and facilitate spatial filtering.
+
+#### Spatial Smoothing and Mapping Logic
+
+-   **Kernel Density Estimation (KDE)**: Utilizes the `spatstat` package to apply a Gaussian kernel (`Smooth()`) to address-level drive distances. The routine employs a bandwidth ($\sigma$) of 1000 meters and a grid resolution of $300 \times 300$ cells to generate a continuous friction surface.
+-   **Geometric Masking**: Converts KDE surfaces into `stars` objects and subsequently into `sf` polygons, ensuring that density estimates are strictly constrained to the legal boundaries of the facility's assigned catchment.
+-   **Proximity-Assignment Identification**: Explicitly identifies and renders regions with "No Drive Data Available" in red. These represent areas where network routing failed, and assignments were defaulted to Euclidean proximity, signaling zones of lower data reliability.
+-   **Normalization Controls**: Supports a toggle for `common_scale` normalization, allowing for either locally optimized color gradients or a standardized provincial scale to facilitate direct inter-facility comparison.
+
+#### Cartographic Styling and Visualization
+
+-   **Layered Symbology**: Overlays address-level point data (grey), smoothed density surfaces (mako viridis scale), and facility locations (yellow diamond markers) to provide a multi-scalar view of accessibility.
+-   **Contextual Outlining**: Renders the associated pilot region (CSD) boundary in black to illustrate how facility catchments intersect with or transcend municipal jurisdictions.
+-   **Aesthetic Consistency**: Adheres to the global `MAP_THEME` while utilizing `ggnewscale` to manage multiple discrete and continuous fill legends within a single visualization.
+
+#### Output Files
+
+The following high-resolution PNG artifacts are archived in the `{MAP_OUT}/sbc-catchment-drive-distance-maps` directory:
+
+-   `catchment-drv_dist-commonscale=[TRUE/FALSE]-[CSD_NAME]-[FACILITY_ID].png`: Detailed heatmaps illustrating the spatial distribution of transit impedance for each facility catchment.
+
+#### Notes
+
+-   **Handling Multi-Unit Housing**: The KDE routine utilizes `suppressWarnings` during `ppp` object creation to account for coincident address points (e.g., apartment complexes) which are valid in high-density urban contexts.
+-   **Error Mitigation**: The script employs `tryCatch` blocks to handle potential failures in spatial smoothing for catchments with sparse data or irregular topologies.
+-   **Resource Management**: To prevent memory fragmentation during the generation of complex spatial rasters, the R environment is purged and garbage-collected (`gc()`) upon the completion of the mapping loop.
+
 ## Future Work
 
 -   Expand the analysis to include additional municipalities and public services.
