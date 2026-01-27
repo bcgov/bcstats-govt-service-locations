@@ -551,6 +551,41 @@ The following visualization is produced and saved in the `complete_catchments` s
 -   The script clears the R environment and performs a garbage collection (`gc()`) at the end to ensure system memory is available for subsequent tasks.
 
 
+### File: 05a-csd-data-tables.R (CSD Statistics and Demographic Profiling) {-}
+
+This script aggregates demographic, geographic, and drive-time data to create a comprehensive statistical profile for each Census Subdivision (CSD) in British Columbia. It combines population projections with spatial analysis to determine how residents across different municipalities access Service BC locations.
+
+#### Data Preparation and Inputs
+
+* Loads geographic crosswalks to align Dissemination Blocks (DBs) with Census Subdivisions (CSDs).
+* Imports spatial shapefiles for DBs, CSDs, and Statistics Canada population centers, standardizing all to the BC Albers projection.
+* Integrates provincial drive-time data containing over 2 million records to link residential areas to the nearest service facilities.
+* Ingests BC Stats population projections and age demographics for current and future year intervals.
+* Calculates household size estimates by distributing total CSD populations proportionally across known address locations.
+
+#### Statistical Aggregation and Logic
+
+* Bins the population into specific driving distance categories ranging from under 5 km to over 180 km.
+* Categorizes population counts by drive-time intervals, using segments from 5 minutes up to 150+ minutes.
+* Calculates mean and median driving distances and times for every municipality to measure service accessibility.
+* Develops 5-year and 10-year population growth projections for each CSD to support long-term service planning.
+* Segments the population into four primary age brackets and calculates weighted mean and median ages for each jurisdiction.
+* Determines the rural status of both residents and Service BC offices by analyzing spatial overlaps with defined population centers.
+
+#### Output Files
+
+The following statistical artifact is produced and saved in the `TABLES_OUT` directory:
+
+* `csd-statistics-for-SBC-[Date].csv`: A master table containing all demographic, rurality, and drive-time metrics indexed by CSD.
+
+#### Notes
+
+* The script accounts for minor alignment discrepancies between different geographic data sources by using a complete crosswalk of census-based dissemination blocks.
+* Rurality for residents is determined by a 30% area coverage threshold within defined population centers; areas falling below this threshold are flagged as rural.
+* Final numeric values are rounded to one decimal place to ensure a clean and consistent output for reporting.
+* The environment is cleared at the end of the routine to maintain computational efficiency for subsequent scripts.
+
+
 ## Future Work
 
 -   Expand the analysis to include additional municipalities and public services.
