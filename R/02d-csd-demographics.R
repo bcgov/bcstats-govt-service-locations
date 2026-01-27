@@ -25,7 +25,7 @@ source("R/fxns/csd-plots.R")
 
 ## SBC locations to include from source folder
 sbc_locs <- read_csv(
-  glue("{SRC_DATA_FOLDER}/reduced-service_bc_locs.csv"),
+  glue("{SRC_DATA_FOLDER}/reduced-service-bc-locs.csv"),
   col_types = cols(.default = "c")
 ) |>
   st_as_sf(coords = c("coord_x", "coord_y"), crs = 3005) |>
