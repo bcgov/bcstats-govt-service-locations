@@ -3,7 +3,6 @@ title: "Technical Documentation"
 format:
   html:
     toc: true
-    toc-location: right
     toc-depth: 3
     number-sections: true
     number-depth: 3
@@ -21,7 +20,7 @@ format:
 ::: {style="font-size: 0.9em;"}
 ## Configuration Settings {-}
 
-### settings.R {-}
+### File: settings.R (Global Constants and Configuration) {-}
 
 The file `settings.R` contains the settings for the project, including global constants (written in all caps) and the paths to the data files. These constants are used throughout the project to ensure consistency and simplify configuration.
 
@@ -76,7 +75,7 @@ The file `settings.R` contains the settings for the project, including global co
 
 ## Raw to Ready Data {-}
 
-### 00-make-data.R (Data Preprocessing) {-}
+### File: 00-make-data.R (Data Preprocessing) {-}
 
 The file `00-make-data.R` prepares the data required for subsequent analysis, such as visuals and tables. It reads, transforms, and writes a variety of data sources, effectively creating a project “data lake” on the LAN. The script processes raw input files, generates shapefiles, creates crosswalks, and produces both full-province and municipality-specific (“reduced”) outputs for efficient downstream use.
 
@@ -143,7 +142,7 @@ The following key files are produced in the source and shapefile output folders:
 
 ## CSD-level Analysis {-}
 
-### 01a-descriptive-tables.R (Descriptive Statistics){-}
+### File: 01a-descriptive-tables.R (Descriptive Statistics){-}
 
 This script `01-descriptive-tables.R` generates comprehensive statistical summaries of drive times and distances to Service BC offices. The data is aggregated at two distinct geographic levels—Dissemination Block (DB) and Census Subdivision (CSD) to support multi-scale analysis and form the analytical foundation for subsequent visualizations.
 
@@ -185,7 +184,7 @@ The following key tables are produced and written to the source and tables outpu
 -   The script removes the `csd_name` column from population data before joining, due to naming mismatches.
 -   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
-### 01b-compare-metrics.R (Drive Time vs Distance) {-}
+### File: 01b-compare-metrics.R (Drive Time vs Distance) {-}
 
 This script `01b-compare-metrics.R` generates a comparative visualization of driving distance and driving time to the nearest Service BC office at the dissemination block (DB) level. The resulting scatter plot provides insight into the relationship between these two accessibility metrics across the municipalities of interest.
 
@@ -210,7 +209,7 @@ This script `01b-compare-metrics.R` generates a comparative visualization of dri
 -   This visualization helps identify differences in the relationship between distance and time across regions, which may reflect variations in road networks, geography, or traffic conditions.
 -   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
-### 01c-bin-distances.R (Generate Binned Distances) {-}
+### File: 01c-bin-distances.R (Generate Binned Distances) {-}
 
 This script `01c-bin-distances.R` categorizes and summarizes drive distances to the nearest Service BC office for each municipality. The resulting binned tables provide a clear view of the distribution of address accessibility by distance bands.
 
@@ -244,7 +243,7 @@ This script `01c-bin-distances.R` categorizes and summarizes drive distances to 
 
 ## CSD-level Visualizations {-}
 
-### 02a-map-plots.R (Cloropleth Maps) {-}
+### File: 02a-map-plots.R (Cloropleth Maps) {-}
 
 The script `02a-map-plots.R` generates thematic maps visualizing accessibility metrics at the dissemination block (DB) level for each of the four municipalities of interest. These maps display spatial patterns in mean driving distance to the nearest Service BC office, supporting the identification of geographic disparities in service access.
 
@@ -276,7 +275,7 @@ The script `02a-map-plots.R` generates thematic maps visualizing accessibility m
 -   The script clears the R environment at the end to free memory for subsequent processing steps.
 
 
-### 02b-box-violin-plots.R (Statistical Visualizations) {-}
+### File: 02b-box-violin-plots.R (Statistical Visualizations) {-}
 
 The `02b-box-violin-plots.R` script generates statistical visualizations that reveal the distribution patterns of mean driving distances to the nearest Service BC office across the four municipalities of interest. These visualizations complement the spatial maps by providing comparative statistical perspectives on accessibility.
 
@@ -305,7 +304,7 @@ The `02b-box-violin-plots.R` script generates statistical visualizations that re
 -   No summary statistics CSV is produced by this script; outputs are limited to the visualizations.
 -   The script clears the R environment at the end to free memory for subsequent processing steps.
 
-### 02c-density-map.R (Smoothed Density Maps) {-}
+### File: 02c-density-map.R (Smoothed Density Maps) {-}
 
 The `02d-density_map.R` script generates smoothed spatial density maps visualizing drive distances to the nearest Service BC office for each municipality of interest. By applying kernel density estimation, the script produces continuous heatmaps that fill spatial gaps between known address points, providing a more complete representation of accessibility patterns.
 
@@ -342,7 +341,7 @@ The `02d-density_map.R` script generates smoothed spatial density maps visualizi
 -   Handles missing or empty data gracefully, skipping maps for municipalities with no address points.
 -   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
-###  02d-csd-demographics.R (Additional Demographic Work) {-}
+### File:  02d-csd-demographics.R (Additional Demographic Work) {-}
 
 The `02d-csd-demographics.R` script generates demographic summaries and visualizations for each municipality of interest, focusing on population structure and projections. This script produces both summary tables and population pyramid plots to support demographic analysis at the census subdivision (CSD) level.
 
@@ -382,7 +381,7 @@ The `02d-csd-demographics.R` script generates demographic summaries and visualiz
 
 ## SBC-level Analysis {-}
 
-### 03a-create-catchments.R (Catchment Area Delineation) {-}
+### File: 03a-create-catchments.R (Catchment Area Delineation) {-}
 
 The script `03a-create-catchments.R` executes the comprehensive assignment of every dissemination block (DB) to a specific service catchment area. It employs a hierarchical methodology, prioritizing empirical drive-time data while utilizing secondary spatial proximity algorithms to ensure 100% geographic coverage across the province.
 
@@ -420,7 +419,7 @@ The following key datasets and geospatial artifacts are produced:
 -   The simplification of the final shapefile geometry is set to a 1% threshold to balance geographic precision with computational performance.
 -   The R environment is purged upon script completion to ensure memory availability for subsequent analytical modules.
 
-### 03b-plot-catchments.R (Catchment Area Visualization) {-}
+### File: 03b-plot-catchments.R (Catchment Area Visualization) {-}
 
 The script `03b-plot-catchments.R` generates a series of cartographic visualizations to illustrate the spatial distribution of Service BC facility catchments. These maps serve as visual evidence of the assignment methodologies—specifically contrasting empirical network-based assignments with direct spatial fill methods—at both the regional pilot and provincial scales.
 
@@ -458,7 +457,7 @@ The following visualizations are archived within the `MAP_OUT/complete_catchment
 -   Geometry simplification is critical for the provincial-scale maps to prevent excessive memory usage during the `ggsave` process.
 -   The R environment is cleared and memory is garbage-collected (`gc()`) upon completion to maintain system stability for the final document rendering.
 
-### 03c-sbc-centric-stats.R (Facility-Centric Performance Metrics) {-}
+### File: 03c-sbc-centric-stats.R (Facility-Centric Performance Metrics) {-}
 
 The script `03c-sbc-centric-stats.R` executes a granular performance and demographic analysis localized to individual Service BC facilities. By pivoting the analytical lens from administrative boundaries to catchment-specific influence zones, the routine quantifies service delivery burden, transit impedance distributions, and longitudinal population shifts unique to each facility’s operational footprint.
 
@@ -485,7 +484,7 @@ The script `03c-sbc-centric-stats.R` executes a granular performance and demogra
 
 The script produces an extensive catalog of evidentiary artifacts archived within the `TABLE
 
-### 03d-sbc-density-maps.R (Catchment Spatial Density Analysis) {-}
+### File: 03d-sbc-density-maps.R (Catchment Spatial Density Analysis) {-}
 
 The script `03d-sbc-density-maps.R` executes a sophisticated spatial smoothing routine to visualize accessibility gradients within Service BC facility catchments. By transitioning from discrete address-level data points to a continuous surface via kernel density estimation (KDE), the script identifies localized "service deserts" and geographic trends in drive-time impedance that may be obscured in aggregate statistical reporting.
 
@@ -520,6 +519,37 @@ The following high-resolution PNG artifacts are archived in the `{MAP_OUT}/sbc-c
 -   The KDE routine utilizes `suppressWarnings` during `ppp` object creation to account for coincident address points (e.g., apartment complexes) which are valid in high-density urban contexts.
 -   The script employs `tryCatch` blocks to handle potential failures in spatial smoothing for catchments with sparse data or irregular topologies.
 -   To prevent memory fragmentation during the generation of complex spatial rasters, the R environment is purged and garbage-collected (`gc()`) upon the completion of the mapping loop.
+
+### File: 04-sbc-servicebc-catchments.R (Administrative Catchment Mapping) {-}
+
+This script creates a provincial map illustrating the service catchments assigned to each municipality based on official administrative records. Unlike previous models that use empirical drive-time data, this script visualizes the "CSD Method" of assignment to provide a baseline for comparing existing administrative boundaries against network-based catchments.
+
+#### Data Preparation and Inputs
+
+-   Loads the BC provincial boundary and Census Subdivision (CSD) geometries, transforming them to the BC Albers projection (EPSG:3005).
+-   Reads the reduced Service BC location data to identify office coordinates for the Diamond-shaped markers.
+-   Imports the official mapping spreadsheet (`Municipality(CSD)toSBCofficeMappying_updated (1).xlsx`) from the raw data folder to link specific CSD IDs with their assigned office.
+-   Joins the Excel-based assignments to the CSD spatial boundaries for mapping.
+
+#### Map Generation
+
+-   Calculates the center points (centroids) of each municipality to determine label placement.
+-   Applies specific manual offsets ("nudges") to the labels for Dawson Creek and Langford to prevent overlap with boundary lines and improve legibility.
+-   Renders the CSD boundaries colored by their assigned facility using the "turbo" viridis color scale.
+-   Overlays the Service BC office locations as yellow diamond markers on top of the BC provincial outline.
+
+#### Output Files
+
+The following visualization is produced and saved in the `complete_catchments` subfolder:
+
+-   `bc-csd-sbc-FROM-SERVICE-BC.png`: A provincial-scale map showing the official administrative office assignments for every municipality.
+
+#### Notes
+
+-   This script is dependent on the external Excel mapping file; any changes to administrative assignments must be updated in the source spreadsheet.
+-   The label nudging logic is specific to the current pilot regions; if the project scope expands, additional municipalities may require manual coordinate adjustments.
+-   The script clears the R environment and performs a garbage collection (`gc()`) at the end to ensure system memory is available for subsequent tasks.
+
 
 ## Future Work
 
