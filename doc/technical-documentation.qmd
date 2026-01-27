@@ -20,7 +20,7 @@ format:
 ::: {style="font-size: 0.9em;"}
 ## Configuration Settings {-}
 
-### File: settings.R (Global Constants and Configuration) {-}
+### settings.R (Global Constants/Configuration) {-}
 
 The file `settings.R` contains the settings for the project, including global constants (written in all caps) and the paths to the data files. These constants are used throughout the project to ensure consistency and simplify configuration.
 
@@ -75,7 +75,7 @@ The file `settings.R` contains the settings for the project, including global co
 
 ## Raw to Ready Data {-}
 
-### File: 00-make-data.R (Data Preprocessing) {-}
+### 00-make-data.R (Data Preprocessing) {-}
 
 The file `00-make-data.R` prepares the data required for subsequent analysis, such as visuals and tables. It reads, transforms, and writes a variety of data sources, effectively creating a project “data lake” on the LAN. The script processes raw input files, generates shapefiles, creates crosswalks, and produces both full-province and municipality-specific (“reduced”) outputs for efficient downstream use.
 
@@ -142,7 +142,7 @@ The following key files are produced in the source and shapefile output folders:
 
 ## CSD-level Analysis {-}
 
-### File: 01a-descriptive-tables.R (Descriptive Statistics){-}
+### 01a-descriptive-tables.R (Descriptive Statistics) {-}
 
 This script `01-descriptive-tables.R` generates comprehensive statistical summaries of drive times and distances to Service BC offices. The data is aggregated at two distinct geographic levels—Dissemination Block (DB) and Census Subdivision (CSD) to support multi-scale analysis and form the analytical foundation for subsequent visualizations.
 
@@ -184,7 +184,7 @@ The following key tables are produced and written to the source and tables outpu
 -   The script removes the `csd_name` column from population data before joining, due to naming mismatches.
 -   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
-### File: 01b-compare-metrics.R (Drive Time vs Distance) {-}
+### 01b-compare-metrics.R (Drive Time vs Distance) {-}
 
 This script `01b-compare-metrics.R` generates a comparative visualization of driving distance and driving time to the nearest Service BC office at the dissemination block (DB) level. The resulting scatter plot provides insight into the relationship between these two accessibility metrics across the municipalities of interest.
 
@@ -209,7 +209,7 @@ This script `01b-compare-metrics.R` generates a comparative visualization of dri
 -   This visualization helps identify differences in the relationship between distance and time across regions, which may reflect variations in road networks, geography, or traffic conditions.
 -   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
-### File: 01c-bin-distances.R (Generate Binned Distances) {-}
+### 01c-bin-distances.R (Generate Binned Distances) {-}
 
 This script `01c-bin-distances.R` categorizes and summarizes drive distances to the nearest Service BC office for each municipality. The resulting binned tables provide a clear view of the distribution of address accessibility by distance bands.
 
@@ -243,7 +243,7 @@ This script `01c-bin-distances.R` categorizes and summarizes drive distances to 
 
 ## CSD-level Visualizations {-}
 
-### File: 02a-map-plots.R (Cloropleth Maps) {-}
+### 02a-map-plots.R (Cloropleth Maps) {-}
 
 The script `02a-map-plots.R` generates thematic maps visualizing accessibility metrics at the dissemination block (DB) level for each of the four municipalities of interest. These maps display spatial patterns in mean driving distance to the nearest Service BC office, supporting the identification of geographic disparities in service access.
 
@@ -275,7 +275,7 @@ The script `02a-map-plots.R` generates thematic maps visualizing accessibility m
 -   The script clears the R environment at the end to free memory for subsequent processing steps.
 
 
-### File: 02b-box-violin-plots.R (Statistical Visualizations) {-}
+### 02b-box-violin-plots.R (Statistical Visualizations) {-}
 
 The `02b-box-violin-plots.R` script generates statistical visualizations that reveal the distribution patterns of mean driving distances to the nearest Service BC office across the four municipalities of interest. These visualizations complement the spatial maps by providing comparative statistical perspectives on accessibility.
 
@@ -304,7 +304,7 @@ The `02b-box-violin-plots.R` script generates statistical visualizations that re
 -   No summary statistics CSV is produced by this script; outputs are limited to the visualizations.
 -   The script clears the R environment at the end to free memory for subsequent processing steps.
 
-### File: 02c-density-map.R (Smoothed Density Maps) {-}
+### 02c-density-map.R (Smoothed Density Maps) {-}
 
 The `02d-density_map.R` script generates smoothed spatial density maps visualizing drive distances to the nearest Service BC office for each municipality of interest. By applying kernel density estimation, the script produces continuous heatmaps that fill spatial gaps between known address points, providing a more complete representation of accessibility patterns.
 
@@ -341,7 +341,7 @@ The `02d-density_map.R` script generates smoothed spatial density maps visualizi
 -   Handles missing or empty data gracefully, skipping maps for municipalities with no address points.
 -   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
-### File:  02d-csd-demographics.R (Additional Demographic Work) {-}
+###  02d-csd-demographics.R (Additional Demographic Work) {-}
 
 The `02d-csd-demographics.R` script generates demographic summaries and visualizations for each municipality of interest, focusing on population structure and projections. This script produces both summary tables and population pyramid plots to support demographic analysis at the census subdivision (CSD) level.
 
@@ -381,7 +381,7 @@ The `02d-csd-demographics.R` script generates demographic summaries and visualiz
 
 ## SBC-level Analysis {-}
 
-### File: 03a-create-catchments.R (Catchment Area Delineation) {-}
+### 03a-create-catchments.R (Catchment Area Delineation) {-}
 
 The script `03a-create-catchments.R` executes the comprehensive assignment of every dissemination block (DB) to a specific service catchment area. It employs a hierarchical methodology, prioritizing empirical drive-time data while utilizing secondary spatial proximity algorithms to ensure 100% geographic coverage across the province.
 
@@ -419,7 +419,7 @@ The following key datasets and geospatial artifacts are produced:
 -   The simplification of the final shapefile geometry is set to a 1% threshold to balance geographic precision with computational performance.
 -   The R environment is purged upon script completion to ensure memory availability for subsequent analytical modules.
 
-### File: 03b-plot-catchments.R (Catchment Area Visualization) {-}
+### 03b-plot-catchments.R (Catchment Area Visualization) {-}
 
 The script `03b-plot-catchments.R` generates a series of cartographic visualizations to illustrate the spatial distribution of Service BC facility catchments. These maps serve as visual evidence of the assignment methodologies—specifically contrasting empirical network-based assignments with direct spatial fill methods—at both the regional pilot and provincial scales.
 
@@ -457,7 +457,7 @@ The following visualizations are archived within the `MAP_OUT/complete_catchment
 -   Geometry simplification is critical for the provincial-scale maps to prevent excessive memory usage during the `ggsave` process.
 -   The R environment is cleared and memory is garbage-collected (`gc()`) upon completion to maintain system stability for the final document rendering.
 
-### File: 03c-sbc-centric-stats.R (Facility-Centric Performance Metrics) {-}
+### 03c-sbc-centric-stats.R (Facility-Centric Performance Metrics) {-}
 
 The script `03c-sbc-centric-stats.R` executes a granular performance and demographic analysis localized to individual Service BC facilities. By pivoting the analytical lens from administrative boundaries to catchment-specific influence zones, the routine quantifies service delivery burden, transit impedance distributions, and longitudinal population shifts unique to each facility’s operational footprint.
 
@@ -484,7 +484,7 @@ The script `03c-sbc-centric-stats.R` executes a granular performance and demogra
 
 The script produces an extensive catalog of evidentiary artifacts archived within the `TABLE
 
-### File: 03d-sbc-density-maps.R (Catchment Spatial Density Analysis) {-}
+### 03d-sbc-density-maps.R (Catchment Spatial Density Analysis) {-}
 
 The script `03d-sbc-density-maps.R` executes a sophisticated spatial smoothing routine to visualize accessibility gradients within Service BC facility catchments. By transitioning from discrete address-level data points to a continuous surface via kernel density estimation (KDE), the script identifies localized "service deserts" and geographic trends in drive-time impedance that may be obscured in aggregate statistical reporting.
 
@@ -520,7 +520,9 @@ The following high-resolution PNG artifacts are archived in the `{MAP_OUT}/sbc-c
 -   The script employs `tryCatch` blocks to handle potential failures in spatial smoothing for catchments with sparse data or irregular topologies.
 -   To prevent memory fragmentation during the generation of complex spatial rasters, the R environment is purged and garbage-collected (`gc()`) upon the completion of the mapping loop.
 
-### File: 04-sbc-servicebc-catchments.R (Administrative Catchment Mapping) {-}
+## Service BC Specific Analysis {-}
+
+### 04-sbc-servicebc-catchments.R (Administrative Catchment Mapping) {-}
 
 This script creates a provincial map illustrating the service catchments assigned to each municipality based on official administrative records. Unlike previous models that use empirical drive-time data, this script visualizes the "CSD Method" of assignment to provide a baseline for comparing existing administrative boundaries against network-based catchments.
 
@@ -551,7 +553,7 @@ The following visualization is produced and saved in the `complete_catchments` s
 -   The script clears the R environment and performs a garbage collection (`gc()`) at the end to ensure system memory is available for subsequent tasks.
 
 
-### File: 05a-csd-data-tables.R (CSD Statistics and Demographic Profiling) {-}
+### 05a-csd-data-tables.R (CSD Statistics and Demographic Profiling) {-}
 
 This script aggregates demographic, geographic, and drive-time data to create a comprehensive statistical profile for each Census Subdivision (CSD) in British Columbia. It combines population projections with spatial analysis to determine how residents across different municipalities access Service BC locations.
 
@@ -578,12 +580,110 @@ The following statistical artifact is produced and saved in the `TABLES_OUT` dir
 
 * `csd-statistics-for-SBC-[Date].csv`: A master table containing all demographic, rurality, and drive-time metrics indexed by CSD.
 
+
+### 05b-sbc-data-tables.R (SBC Catchment Area Statistical Profiling) {-}
+
+This script aggregates demographic, rurality, and accessibility metrics for the 65 Service BC (SBC) locations across British Columbia. Unlike the previous script which focused on municipality-level data, this routine compiles statistics based on the total population and area served by each specific SBC office catchment.
+
+#### Data Preparation and Inputs
+
+* Loads the complete database of address-to-office assignments, linking over 52,000 Dissemination Blocks (DBs) to their corresponding service locations.
+* Integrates provincial drive-time data to calculate the travel distances and times for all addresses within each office's service area.
+* Ingests BC Stats population projections, age demographics, and spatial shapefiles for both municipalities and population centers.
+* Standardizes all spatial data to the BC Albers projection (EPSG:3005) to ensure consistent area and distance calculations.
+* Calculates an estimated household size per address by dividing the total DB population by the number of known address points.
+
+#### Statistical Aggregation and Logic
+
+* Categorizes the population served by each SBC office into drive-distance bins (ranging from <5 km to 180+ km) and drive-time bins (ranging from <5 minutes to 150+ minutes).
+* Calculates specific accessibility metrics for each office, including the total number of addresses served, the number of municipalities within the catchment, and the mean/median travel times and distances.
+* Projects catchment population growth for 5-year and 10-year intervals and segments the current population into age brackets (0–14, 15–24, 25–64, and 65+).
+* Determines the rural composition of each catchment by identifying residents living outside defined population centers.
+* Flags the office locations themselves as "Rural" or "Urban" based on their spatial overlap with Statistics Canada population center boundaries.
+
+#### Output Files
+
+The script generates a master summary table and several supporting reference files in the `FOR_SBC_OUT` directory:
+
+* `sbc-location-statistics-for-SBC-[Date].csv`: A comprehensive master table containing demographic, accessibility, and rurality metrics for all 65 SBC locations.
+* `rurality-by-db.csv`: A reference file identifying the urban/rural status of every Dissemination Block.
+* `rural-residence-summary.csv`: A summary of rural population counts per office.
+* `rural-office.csv`: A list identifying whether each Service BC office is located in a rural area.
+
 #### Notes
 
-* The script accounts for minor alignment discrepancies between different geographic data sources by using a complete crosswalk of census-based dissemination blocks.
-* Rurality for residents is determined by a 30% area coverage threshold within defined population centers; areas falling below this threshold are flagged as rural.
-* Final numeric values are rounded to one decimal place to ensure a clean and consistent output for reporting.
-* The environment is cleared at the end of the routine to maintain computational efficiency for subsequent scripts.
+* This script uses "household size estimates" to distribute population data across address points, which allows for more granular accessibility reporting than using block centroids alone.
+* The "assigned" office for each area is determined by the results of the drive-time optimization model established in previous workflow steps.
+* All numeric outputs are rounded to one decimal place for reporting consistency.
+
+## Other Research {-}
+
+### 05c-rural-analysis.R (Urban/Rural Classification Methodology) {-}
+
+This script evaluates and compares different methodologies for classifying residential areas, service catchments, and office locations as "Urban" or "Rural." By testing various spatial definitions, the script establishes a robust framework for understanding service delivery challenges in non-urban environments.
+
+#### Data Preparation and Inputs
+
+* Loads point-level address data and transforms it into spatial features using BC Albers coordinates.
+* Imports Statistics Canada Forward Sortation Area (FSA) boundaries to support postal-code-based classification (Method 1).
+* Ingests Statistics Canada Population Center boundaries to support geography-based classification (Method 2).
+* Integrates Dissemination Block (DB) shapefiles and population projections to allow for population-weighted rurality analysis.
+* Accesses the complete office assignment crosswalk to link individual residential classifications back to specific Service BC catchments.
+
+#### Script Logic and Analysis
+
+* Performs a point-in-polygon spatial join to determine if individual addresses reside within a defined population center or a "rural" postal code (FSA starting with 'V0').
+* Aggregates point-level classifications to the provincial and catchment levels to calculate the percentage of rural residents served by each office.
+* Conducts a population-based analysis by mapping Dissemination Blocks to rural zones, providing an alternative metric to address-count-based classification.
+* Compares the outcomes of the FSA method against the Population Center method to identify discrepancies and select the most accurate baseline for BC.
+* Classifies the 65 Service BC office locations themselves as urban or rural based on their physical coordinates.
+* Generates comparative visualizations, including scatter plots of address-based vs. population-based rurality and provincial maps of classification results.
+
+#### Output Files
+
+The script produces several analytical tables and visualizations stored in the `FOR_SBC_OUT` and `MAP_OUT` directories:
+
+* `catchment_rural_methods_comparison.csv`: A detailed comparison of rurality percentages per office catchment across all tested methods.
+* `urban-dbid-popcenter-crosswalk.csv`: A reference file mapping every DB to its associated population center.
+* `all-data-urban-rural.png`: A provincial-scale map showing the distribution of urban and rural areas.
+* `catchment-urban-rural.png`: A map overlaying Service BC catchment boundaries with rurality classifications.
+
+#### Notes
+
+* The "Population Center" method is generally treated as the primary standard, where any area falling outside a defined center is automatically classified as rural.
+* The script identifies that address-based counts can sometimes overstate rurality compared to population-based counts; the provided comparison table helps account for this bias.
+* Manual checks are performed for specific locations (e.g., Atlin) to ensure the spatial joins handled remote areas correctly.
+* Standardized memory cleanup routines are executed to ensure efficient processing of large spatial datasets.
+
+### 05d-plot-rural-urban.R (Population Center Boundary Visualization) {-}
+
+This script generates high-resolution vector graphics to visualize the spatial relationship between Dissemination Blocks (DBs) and Statistics Canada population centers. It serves as a quality assurance tool to validate how specific neighborhoods and blocks are classified as "Urban" or "Rural" across different regions of British Columbia.
+
+#### Data Preparation and Inputs
+
+* Loads Dissemination Block (DB) shapefiles and transforms them to the BC Albers projection (EPSG:3005).
+* Imports the Statistics Canada population center boundaries used as the official urban baseline.
+* Reads the pre-calculated rurality results (`rurality-by-db.csv`) to obtain the specific urban/rural status assigned to each block.
+* Performs spatial joins to associate the geometric shapes of the blocks with their corresponding population center boundaries.
+
+#### Script Logic and Generation
+
+* Groups the data by population center name to allow for individual analysis of specific towns and cities.
+* Utilizes a specialized visualization function (`vis_pc_rural_urban`) to create detailed comparison plots for each location.
+* Nests the dataset to iterate through every population center in the province programmatically.
+* Renders the classification results into a series of SVG files, which maintain clarity at high zoom levels for boundary inspection.
+
+#### Output Files
+
+The following visualizations are produced and saved in the `rural-method-misc` directory:
+
+* `[Population-Center-Name].svg`: A collection of individual vector map files (one per population center) showing the exact classification of every block within and surrounding the area.
+
+#### Notes
+
+* The script includes a specific workaround for a known `ggplot2` viewport issue to ensure that the grid-based drawings render correctly in the SVG output.
+* The output format is set to SVG specifically to support detailed manual review of complex boundaries where standard raster images (like PNG) might lose detail.
+* While the script defaults to processing the entire province, it contains internal logic to filter for specific pilot regions (e.g., Duncan, Victoria, Fort St. James) for focused analysis.
 
 
 ## Future Work
