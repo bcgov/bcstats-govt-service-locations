@@ -721,6 +721,38 @@ The finalized statistical artifact is exported to the `FOR_SBC_OUT` directory:
 * The script includes automated directory verification logic to ensure the `FOR_SBC_OUT` path exists prior to file serialization.
 * Numeric outputs for distances and population estimates are rounded to one decimal place to maintain reporting consistency across the administrative dataset.
 
+### 07-db-centroid-assignment-standalone.R (Automated Geometric Catchment Modeling) {-}
+
+This script constitutes a self-contained computational pipeline designed for the rapid spatial assignment of Dissemination Blocks (DBs) to Service BC (SBC) facilities and the subsequent aggregation of demographic projections. By automating data acquisition from the British Columbia Data Catalogue (BCDC) and Statistics Canada (via the Cancensus API), the routine facilitates an objective, reproducible analysis of service accessibility based on geometric proximity metrics.
+
+#### Data Preparation and Inputs
+
+* Performs automated retrieval of Dissemination Block geometries and provincial population projections directly from the BCDC API, ensuring that the most recent geographic and demographic frameworks are utilized.
+* Executes an API-driven extraction of 2021 Census data (CA21) using the `cancensus` package, requiring a pre-configured CensusMapper API key for the retrieval of DB-level population and dwelling counts.
+* Ingests a facility location CSV (EPSG:4326), which is programmatically transformed into the British Columbia Albers projection (EPSG:3005) to maintain spatial alignment with provincial boundary layers.
+* Integrates an external rural-urban classification matrix (sourced from the Ministry of Jobs and Economic Growth) to assign categorical rurality labels at the Census Subdivision (CSD) level.
+
+#### Script Logic and Analysis
+
+* Implements a vectorized geometric assignment function (`assign_dbs`) that utilizes the `st_nearest_feature` operation to link individual DB centroids to the nearest SBC facility point based on Euclidean distance.
+* Employs a top-down demographic estimation model to convert CSD-level population projections into DB-level estimates; this methodology assumes a static longitudinal proportion of population distribution within each parent jurisdiction.
+* Executes a multi-dimensional data "roll-up" to calculate facility-specific metrics, including weighted mean and median age distributions (using `spatstat` weighted calculations) and age-bracketed population counts for the current reporting year.
+* Constructs aggregated catchment geometries by performing a spatial union of all DBs assigned to a specific facility, followed by a topological simplification (`ms_simplify`) to optimize rendering performance for geographic information systems (GIS).
+
+#### Output Files
+
+The script generates three primary analytical artifacts within a user-specified output directory:
+
+* `db_centroid_assignments.csv`: A granular list identifying the assigned facility, Euclidean distance (in meters), and demographic projections for every dissemination block.
+* `facility_population_projections.csv`: A longitudinal summary of population demographics and age distributions aggregated to the service facility level.
+* `facility_catchments/sbc-catchments.shp`: A spatial dataset containing simplified polygonal boundaries representing the geometric service area for each SBC office.
+
+#### Notes
+
+* Users must ensure that the `CM_API_KEY` system environment variable is correctly set via `set_cancensus_api_key()` to avoid authentication failures during the data acquisition phase.
+* The proximity modeling is restricted to straight-line Euclidean distance (measured centroid-to-centroid) and does not account for road-network topology, topographical barriers, or seasonal travel variations.
+* The "Urban/Rural" designation is derived verbatim from the Rural Initiatives Excel matrix at the CSD level rather than being calculated from local population density or the 30% area-coverage threshold used in previous analytical iterations.
+
 ## Future Work
 
 -   Expand the analysis to include additional municipalities and public services.
