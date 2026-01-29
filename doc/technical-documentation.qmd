@@ -685,6 +685,41 @@ The following visualizations are produced and saved in the `rural-method-misc` d
 * The output format is set to SVG specifically to support detailed manual review of complex boundaries where standard raster images (like PNG) might lose detail.
 * While the script defaults to processing the entire province, it contains internal logic to filter for specific pilot regions (e.g., Duncan, Victoria, Fort St. James) for focused analysis.
 
+## Ad Hoc Work {-}
+
+### 06-quick-centroids-tables.R (Preliminary Pilot Impact and Proximity Analysis) {-}
+
+This script facilitates the expedited generation of a preliminary analytical dataset—specifically commissioned for January administrative review—to assess the spatial implications of integrating a singular pilot service location into the existing Service BC (SBC) infrastructure. The methodology employs a geometric centroid-based proximity model (Euclidean distance) to provide a comparative baseline between the current sixty-five-office configuration and an expanded sixty-six-office scenario (inclusive of the pilot site).
+
+#### Data Preparation and Inputs
+
+* Performs an ingestion of spatial coordinates for the sixty-five (65) extant Service BC facilities and the proposed pilot location, the latter of which requires a formal geographic coordinate transformation (from the WGS 84 datum, EPSG:4326, to the British Columbia Albers projection, EPSG:3005) to ensure spatial consistency across all comparative geometry layers.
+* Loads Dissemination Block (DB) geometries, Census Subdivision (CSD) crosswalks, and Statistics Canada population center boundaries to provide the necessary demographic and jurisdictional context for subsequent proximity calculations.
+* Integrates longitudinal population projections—aggregated from pre-processed RDS objects—to facilitate service demand forecasting across a ten-year horizon.
+
+#### Proximity Modeling and Catchment Assignment
+
+* Utilizes a centroid-to-centroid assignment logic (executed via the `assign_unassigned_dbs` function), which, while distinct from the high-fidelity road-network travel models used in antecedent scripts, provides an efficient proxy for measuring geographic proximity.
+* Calculates the minimum straight-line distance (Euclidean metric) between 52,000+ DB centroids and their nearest service facility under two distinct iterations: a baseline scenario (the original 65 locations) and a pilot scenario (the 65 locations plus the pilot facility).
+* Quantifies the resultant shift in service catchments by identifying DBs where the pilot location represents a more proximal service point than the existing infrastructure.
+
+#### Demographic Integration and Rurality Classification
+
+* Aggregates population projections for the current year (2025) and subsequent five- and ten-year intervals (2030 and 2035) to support strategic resource allocation analysis.
+* Determines the urban-rural designation for each DB based on a spatial intersection with population center boundaries; following established project parameters, any DB maintaining an area coverage ratio of $\le 30\%$ within a defined population center is classified as "Rural."
+* Conducts a spatial validation of catchment reassignments using `ggplot2` to ensure that geographic partitions follow logical proximity gradients within the specific geographic extent of the pilot region.
+
+#### Output Files
+
+The finalized statistical artifact is exported to the `FOR_SBC_OUT` directory:
+
+* `sbc-pilot_statistics-db-centroid-method-[Date].csv`: A comprehensive table containing DB identifiers, CSD names, multi-year population projections, and comparative distance metrics for both the 65-office and 66-office scenarios.
+
+#### Notes
+
+* This script employs Euclidean distance as an optimization for processing speed; users should note that these values do not represent true road-network travel distances and are intended for comparative proximity analysis rather than absolute accessibility modeling.
+* The script includes automated directory verification logic to ensure the `FOR_SBC_OUT` path exists prior to file serialization.
+* Numeric outputs for distances and population estimates are rounded to one decimal place to maintain reporting consistency across the administrative dataset.
 
 ## Future Work
 
