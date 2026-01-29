@@ -127,28 +127,29 @@ This will store the key in the user's R environment for future use. API quotas a
 
 The following key files are produced in the source and shapefile output folders:
 
--   `full-processed-drivetime-data.csv`: Processed drivetime data for all municipalities
--   `reduced-drivetime-data.csv`: Processed drivetime data for the municipalities of interest
--   `full-service-bc-locs.csv`: Service BC office locations for all municipalities
--   `reduced-service_bc_locs.csv`: Service BC office locations for the municipalities of interest
+-   `full-processed-drivetime-data.csv`: Processed drivetime
+-   `reduced-drivetime-data.csv`: Processed drivetime data (pilot regions only)
+-   `full-service-bc-locs.csv`: Service BC office locations
+-   `reduced-service_bc_locs.csv`: Service BC office locations (pilot regions only)
 -   `csd-da-db-loc-correspondance.csv`: Correspondence file linking DBs, DAs, and CSDs in BC
--   `full-population-db.csv`: Census 2021 population data for all DBs
--   `reduced-population-db.csv`: Census 2021 population data for the DB's in municipalities of interest
--   `full-population-csd.csv`: Census 2021 population data for all CSDs
--   `reduced-population-csd.csv`: Census 2021 population data for CSD's involving the municipalities of interest
--   `full-population-projections.csv`: raw DB-level projections
--   `full_db_projections_transformed.rds`: DB-level projections after some initial transformation
--   `full-csd_with_location.gpkg`: Shapefiles for each CSD in British Columbia
--   `reduced-csd-with-location.gpkg`: Shapefiles for each CSD for the municipalities of interest
--   `full-db_with_location.gpkg`:  Shapefiles for each DB in British Columbia
--   `reduced-db-with-location.gpkg`: Shapefiles for each DB for the municipalities of interest
--   Exploratory: `popcenter-statscan.gpkg`, `fsa-statscan.gpkg`
+-   `full-population-db.csv`: DB Census 2021 population data
+-   `reduced-population-db.csv`: DB Census 2021 population data (pilot regions only)
+-   `full-population-csd.csv`: CSD Census 2021 population data
+-   `reduced-population-csd.csv`: CSD Census 2021 population data (pilot regions only)
+-   `full-population-projections.csv`: DB-level projections
+-   `full_db_projections_transformed.rds`: DB-level projections (transformation applied)
+-   `full-csd_with_location.gpkg`: British Columbia CSD Shapefiles
+-   `reduced-csd-with-location.gpkg`: British Columbia CSD Shapefiles(pilot regions only)
+-   `full-db_with_location.gpkg`:  British Columbia DB Shapefiles
+-   `reduced-db-with-location.gpkg`:  British Columbia DB Shapefiles(pilot regions only)
+-   `popcenter-statscan.gpkg`: Exploratory
+-   `fsa-statscan.gpkg`: Exploratory
 
 ## CSD-level Analysis {-}
 
 ### 01a-descriptive-tables.R (Descriptive Statistics) {-}
 
-This script `01-descriptive-tables.R` generates comprehensive statistical summaries of drivetimes and distances to Service BC offices. The data is aggregated at two distinct geographic levels—Dissemination Block (DB) and Census Subdivision (CSD) to support multi-scale analysis and form the analytical foundation for subsequent visualizations.
+This script `01-descriptive-tables.R` generates comprehensive statistical summaries of driving times and distances to Service BC offices. The data is aggregated at two distinct geographic levels—Dissemination Block (DB) and Census Subdivision (CSD) to support multi-scale analysis and form the analytical foundation for subsequent visualizations.
 
 #### Data Preparation and Inputs
 
@@ -161,40 +162,26 @@ This script `01-descriptive-tables.R` generates comprehensive statistical summar
     -   Mean, variance, skewness, kurtosis
     -   Quantiles (min, 25th, median, 75th, max)
     -   Count of distinct addresses per group
--   Summaries are calculated at the DB level (`csd_name`, `csdid`, `dbid`) and CSD level (`csd_name`, `csdid`).
--   Population metrics (area, population, dwellings, households) are joined to the summary tables for context.
-
-#### Data Quality Checks
-
--   Calculates the proportion of DBs with missing address counts and the proportion with fewer than 5 addresses.
--   Summarizes the number and percentage of DB blocks with low address counts by CSD.
-
-#### Service BC Location Counts
-
--   Calculates the number of Service BC locations in each CSD, accounting for possible multiple locations per label.
+-   Summaries are calculated at the DB level CSD level.
+-   Population metrics (area, population, dwellings, households) are joined to the summary tables for context
+-   A count of Service BC locations per CSD
 
 #### Output Files
 
-The following key tables are produced and written to the source and tables output folders:
+The following key tables are produced and written to the LAN output folders:
 
--   `reduced_db_average_times_dist_all_locs.csv`: DB-level summary statistics (used as input for future scripts)
+-   `reduced_db_average_times_dist_all_locs.csv`: DB-level summary statistics
 -   `reduced_csd_average_times_dist_all_locs.csv`: CSD-level summary statistics
--   `reduced_csd_low_counts.csv`: Summary of DB blocks with low address counts by CSD
--   `reduced_csd_service_bc_counts.csv`: Number of Service BC locations per CSD
-
-#### Notes
-
--   DA-level summaries are not currently produced in this script.
--   The script removes the `csd_name` column from population data before joining, due to naming mismatches.
--   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
+-   `reduced_csd_low_counts.csv`: List of DB blocks with low address counts by CSD
+-   `reduced_csd_service_bc_counts.csv`: Count of Service BC locations per CSD
 
 ### 01b-compare-metrics.R (Drive Time vs Distance) {-}
 
-This script `01b-compare-metrics.R` generates a comparative visualization of driving distance and driving time to the nearest Service BC office at the dissemination block (DB) level. The resulting scatter plot provides insight into the relationship between these two accessibility metrics across the municipalities of interest.
+This script `01b-compare-metrics.R` generates a comparative visualization (driving distance vs driving time) to the nearest Service BC office at the dissemination block (DB) level. This visualization helps identify differences in the relationship between distance and time across regions, which may reflect variations in road networks, geography, or traffic conditions.
 
 #### Data Preparation and Inputs
 
--   Reads in DB-level summary statistics from `reduced_db_average_times_dist_all_locs.csv` (produced by the previous script).
+-   Reads in DB-level summary statistics from `reduced_db_average_times_dist_all_locs.csv`.
 -   Cleans column names and ensures numeric types for mean drive distance and mean drive time.
 
 #### Comparative Visualization
@@ -208,14 +195,9 @@ This script `01b-compare-metrics.R` generates a comparative visualization of dri
 
 -   The scatter plot is saved as a PNG file in the `csd-drive-distance-plots` subfolder of the `VISUALS_OUT` directory.
 
-#### Notes
-
--   This visualization helps identify differences in the relationship between distance and time across regions, which may reflect variations in road networks, geography, or traffic conditions.
--   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
-
 ### 01c-bin-distances.R (Generate Binned Distances) {-}
 
-This script `01c-bin-distances.R` categorizes and summarizes drive distances to the nearest Service BC office for each municipality. The resulting binned tables provide a clear view of the distribution of address accessibility by distance bands.
+This script `01c-bin-distances.R` categorizes and summarizes drive distances to the nearest Service BC office for each municipality. The resulting binned tables enables quick comparison of accessibility patterns across municipalities and supports downstream reporting and visualization.
 
 #### Data Preparation and Inputs
 
@@ -238,11 +220,6 @@ This script `01c-bin-distances.R` categorizes and summarizes drive distances to 
 #### Output Files
 
 -   The binned summary table is saved as `reduced-csd-binned-drivetime-data.csv` in the `TABLES_OUT` directory.
-
-#### Notes
-
--   This summary enables quick comparison of accessibility patterns across municipalities and supports downstream reporting and visualization.
--   The script includes error handling for file loading and ensures the output directory exists before writing results.
 
 
 ## CSD-level Visualizations {-}
