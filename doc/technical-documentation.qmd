@@ -22,7 +22,7 @@ format:
 
 ### settings.R (Global Constants/Configuration) {-}
 
-The file `settings.R` contains the settings for the project, including global constants (written in all caps) and the paths to the data files. These constants are used throughout the project to ensure consistency and simplify configuration.
+The script `settings.R` contains the settings for the project, including global constants and the paths to the data files. These constants are used throughout the project to ensure consistency and simplify configuration.
 
 #### General Project Settings
 
@@ -37,7 +37,7 @@ The file `settings.R` contains the settings for the project, including global co
 -   **LAN_FOLDER**: The base folder for the project, configured using the `safepaths::use_network_path()` function. This provides a consistent root directory for all data resources.
 -   **SRC_DATA_FOLDER**: The folder containing processed source data files, a subfolder of the LAN_FOLDER. These are intermediate files produced by the pipeline.
 -   **RAW_DATA_FOLDER**: The folder containing unprocessed input data files, a subfolder of the LAN_FOLDER.
--   **DT_DATA_FOLDER**: The folder containing raw drive time data collected for the nearest facility analysis (`nearest-facility-BC`).
+-   **DT_DATA_FOLDER**: The folder containing raw drivetime data collected for the nearest facility analysis (`nearest-facility-BC`).
 -   **SBCLOC_FILEPATH**: Path to the file containing Service BC office locations.
 -   **SHAPEFILE_OUT**: Destination folder where processed geospatial shapefiles are saved after processing.
 -   **MAP_OUT**: Destination folder where map visualizations (PNG, SVG files) are saved for reporting.
@@ -47,7 +47,7 @@ The file `settings.R` contains the settings for the project, including global co
 
 #### File Naming and Path Patterns
 
--   **NO_ERRS_FILE_PATTERN**: Regular expression pattern (`no_errors.csv`) used to identify valid drive time files without errors.
+-   **NO_ERRS_FILE_PATTERN**: Regular expression pattern (`no_errors.csv`) used to identify valid drivetime files without errors.
 -   **INPUT_ADDR_DA_PATTERN**: Pattern (`address_with_da.*`) for identifying address files with dissemination area information.
 
 #### Data Columns and Tags
@@ -81,25 +81,26 @@ The file `00-make-data.R` prepares the data required for subsequent analysis, su
 
 #### Drive Time Data Preparation
 
--   Reads the consolidated drive time data file (`final_result_no_errors.csv`) from the LAN, cleans column names, renames key columns for consistency, and derives dissemination area IDs (daid) from dissemination block IDs (dbid).
--   The processed drive time data is saved as `full-processed-drivetime-data.csv` and, after filtering for the municipalities of interest, as `reduced-drivetime-data.csv` in the source data folder.
+-   Reads the consolidated drivetime data file (`final_result_no_errors.csv`) from the LAN, cleans column names, renames key columns for consistency, and derives dissemination area IDs (daid) from dissemination block IDs (dbid).
 
 #### Shapefiles
 
 -   Generates shapefiles for Census Subdivisions (CSDs) and Dissemination Blocks (DBs) using the `bcmaps` and `bcdata` packages.
--   Writes both full-province shapefiles (`full-csd_with_location.gpkg`, `full-db_with_location.gpkg`) and reduced shapefiles for the four municipalities of interest (`reduced-csd-with-location.gpkg`, `reduced-db-with-location.gpkg`) to the shapefile output folder.
 -   Additionally, creates exploratory shapefiles for Statistics Canada population centers and FSAs, saved as GeoPackage files for reference.
 
 #### Crosswalks
 
--   Constructs a correspondence file (`csd-da-db-loc-correspondance.csv`) linking DBs, DAs, and CSDs, including names and types, for all of BC.
--   Builds a crosswalk for only the DBs present in the drive time data, joining with the correspondence file for hierarchical relationships.
+-   Constructs a correspondence file linking DBs, DAs, and CSDs, including names and types, for all of BC.
+-   Builds a crosswalk for only the DBs present in the drivetime data, joining with the correspondence file for hierarchical relationships.
 
 #### Population Data
 
--   Retrieves population data for DBs and CSDs from the `cancensus` package, cleans and selects relevant columns, and writes out as `full-population-db.csv` and `full-population-csd.csv`.
--   Filters and writes reduced population files for the municipalities of interest (`reduced-population-db.csv`, `reduced-population-csd.csv`).
--   **API Key Requirement**: The first time a user runs this script, they will need a CensusMapper API key. Users can obtain a free key by signing up at [CensusMapper](https://censusmapper.ca/). Once obtained, the key should be set using:
+-   Retrieves population data for DBs and CSDs from the `cancensus` package, cleans and selects relevant columns.
+-   Filters for the municipalities of interest.
+
+::: {.callout-note title="API Key Requirement" collapse=true}
+
+The first time a user runs this script, they will need a CensusMapper API key. Users can obtain a free key by signing up at [CensusMapper](https://censusmapper.ca/). Once obtained, the key should be set using:
 
 ``` r
 cancensus::set_cancensus_api_key('YOUR_API_KEY', install = TRUE)
@@ -107,53 +108,56 @@ cancensus::set_cancensus_api_key('YOUR_API_KEY', install = TRUE)
 
 This will store the key in the user's R environment for future use. API quotas are generally sufficient for standard analysis, but users performing extensive operations may need to request higher limits.
 
+:::
+
+
+
 #### Population Projections
 
 -   Downloads CSD-level population projections from BC Data Catalogue, cleans and standardizes region codes.
 -   Allocates CSD projections to DBs by calculating the proportion of each DB within its CSD, assuming these proportions remain constant over time.
 -   Joins projections to DBs and transforms age columns into rows, creating age groups for analysis.
--   Saves the resulting DB-level projections as `full_db_projections_transformed.rds` and the raw projections as `full-population-projections.csv`.
 
 #### Service BC Location Data
 
--   Extracts Service BC office locations by joining processed drive time data with the crosswalk, and writes the full and reduced sets as `full-service-bc-locs.csv` and `reduced-service_bc_locs.csv`.
+-   Extracts Service BC office locations by joining processed drivetime data with the crosswalk, for the full and reduced sets
 -   Coordinates are stored in the Albers equal-area projection (EPSG:3005).
 
 #### Output Summary
 
 The following key files are produced in the source and shapefile output folders:
 
--   `full-processed-drivetime-data.csv`, `reduced-drivetime-data.csv`
--   `full-service-bc-locs.csv`, `reduced-service_bc_locs.csv`
--   `csd-da-db-loc-correspondance.csv`
--   `full-population-db.csv`, `reduced-population-db.csv`
--   `full-population-csd.csv`, `reduced-population-csd.csv`
--   `full-population-projections.csv`
--   `full_db_projections_transformed.rds`
--   `full-csd_with_location.gpkg`, `reduced-csd-with-location.gpkg`
--   `full-db_with_location.gpkg`, `reduced-db-with-location.gpkg`
+-   `full-processed-drivetime-data.csv`: Processed drivetime data for all municipalities
+-   `reduced-drivetime-data.csv`: Processed drivetime data for the municipalities of interest
+-   `full-service-bc-locs.csv`: Service BC office locations for all municipalities
+-   `reduced-service_bc_locs.csv`: Service BC office locations for the municipalities of interest
+-   `csd-da-db-loc-correspondance.csv`: Correspondence file linking DBs, DAs, and CSDs in BC
+-   `full-population-db.csv`: Census 2021 population data for all DBs
+-   `reduced-population-db.csv`: Census 2021 population data for the DB's in municipalities of interest
+-   `full-population-csd.csv`: Census 2021 population data for all CSDs
+-   `reduced-population-csd.csv`: Census 2021 population data for CSD's involving the municipalities of interest
+-   `full-population-projections.csv`: raw DB-level projections
+-   `full_db_projections_transformed.rds`: DB-level projections after some initial transformation
+-   `full-csd_with_location.gpkg`: Shapefiles for each CSD in British Columbia
+-   `reduced-csd-with-location.gpkg`: Shapefiles for each CSD for the municipalities of interest
+-   `full-db_with_location.gpkg`:  Shapefiles for each DB in British Columbia
+-   `reduced-db-with-location.gpkg`: Shapefiles for each DB for the municipalities of interest
 -   Exploratory: `popcenter-statscan.gpkg`, `fsa-statscan.gpkg`
-
-#### Notes
-
--   The script writes both full-province and reduced (municipality-specific) outputs for efficiency in downstream scripts.
--   The logic for DB-level population projections and age group transformation is implemented directly in the script.
--   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
 ## CSD-level Analysis {-}
 
 ### 01a-descriptive-tables.R (Descriptive Statistics) {-}
 
-This script `01-descriptive-tables.R` generates comprehensive statistical summaries of drive times and distances to Service BC offices. The data is aggregated at two distinct geographic levels—Dissemination Block (DB) and Census Subdivision (CSD) to support multi-scale analysis and form the analytical foundation for subsequent visualizations.
+This script `01-descriptive-tables.R` generates comprehensive statistical summaries of drivetimes and distances to Service BC offices. The data is aggregated at two distinct geographic levels—Dissemination Block (DB) and Census Subdivision (CSD) to support multi-scale analysis and form the analytical foundation for subsequent visualizations.
 
 #### Data Preparation and Inputs
 
--   Reads in reduced drive time data (`reduced-drivetime-data.csv`) and population data for DBs and CSDs (`reduced-population-db.csv`, `reduced-population-csd.csv`).
+-   Reads in reduced drivetime data (`reduced-drivetime-data.csv`) and population data for DBs and CSDs (`reduced-population-db.csv`, `reduced-population-csd.csv`).
 -   Cleans column names and ensures numeric types for relevant fields.
 
 #### Statistical Summaries
 
--   Uses the `calculate_drivetime_stats()` function to compute summary statistics for drive distance and drive time (in both seconds and minutes), including:
+-   Uses the `calculate_drivetime_stats()` function to compute summary statistics for drive distance and drivetime (in both seconds and minutes), including:
     -   Mean, variance, skewness, kurtosis
     -   Quantiles (min, 25th, median, 75th, max)
     -   Count of distinct addresses per group
@@ -215,7 +219,7 @@ This script `01c-bin-distances.R` categorizes and summarizes drive distances to 
 
 #### Data Preparation and Inputs
 
--   Reads in reduced drive time data from `reduced-drivetime-data.csv`.
+-   Reads in reduced drivetime data from `reduced-drivetime-data.csv`.
 -   Cleans column names and ensures numeric types for drive distance and drive time.
 
 #### Binning and Summarization
@@ -311,7 +315,7 @@ The `02d-density_map.R` script generates smoothed spatial density maps visualizi
 #### Data Preparation and Inputs
 
 -   Reads DB-level population data (`reduced-population-db.csv`) and calculates people per household.
--   Reads point-level drive time data (`reduced-drivetime-data.csv`), converts coordinates to spatial features, and joins population data.
+-   Reads point-level drivetime data (`reduced-drivetime-data.csv`), converts coordinates to spatial features, and joins population data.
 -   Reads Service BC location data (`reduced-service_bc_locs.csv`) and converts to spatial features.
 -   Reads CSD boundary shapefiles (`full-csd_with_location.gpkg`) for all census subdivisions.
 -   Filters and prepares data for each municipality using CSD identifiers.
@@ -337,7 +341,7 @@ The `02d-density_map.R` script generates smoothed spatial density maps visualizi
 
 #### Notes
 
--   The script focuses on drive distance (`drv_dist`) as the primary metric, but can be adapted for drive time or other variables.
+-   The script focuses on drive distance (`drv_dist`) as the primary metric, but can be adapted for drivetime or other variables.
 -   Handles missing or empty data gracefully, skipping maps for municipalities with no address points.
 -   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
@@ -689,71 +693,63 @@ The following visualizations are produced and saved in the `rural-method-misc` d
 
 ### 06-quick-centroids-tables.R (Preliminary Pilot Impact and Proximity Analysis) {-}
 
-This script facilitates the expedited generation of a preliminary analytical dataset—specifically commissioned for January administrative review—to assess the spatial implications of integrating a singular pilot service location into the existing Service BC (SBC) infrastructure. The methodology employs a geometric centroid-based proximity model (Euclidean distance) to provide a comparative baseline between the current sixty-five-office configuration and an expanded sixty-six-office scenario (inclusive of the pilot site).
+This script executes a comparative spatial analysis to assess the implications of integrating a pilot service location into the existing Service BC (SBC) infrastructure. The methodology employs a geometric centroid-based proximity model (Euclidean distance) to assign Dissemination Blocks (DBs) across both the current sixty-five-office baseline and an expanded sixty-six-office scenario. This analysis quantifies changes in service accessibility and catchment boundaries for administrative review.
 
 #### Data Preparation and Inputs
 
-* Performs an ingestion of spatial coordinates for the sixty-five (65) extant Service BC facilities and the proposed pilot location, the latter of which requires a formal geographic coordinate transformation (from the WGS 84 datum, EPSG:4326, to the British Columbia Albers projection, EPSG:3005) to ensure spatial consistency across all comparative geometry layers.
-* Loads Dissemination Block (DB) geometries, Census Subdivision (CSD) crosswalks, and Statistics Canada population center boundaries to provide the necessary demographic and jurisdictional context for subsequent proximity calculations.
-* Integrates longitudinal population projections—aggregated from pre-processed RDS objects—to facilitate service demand forecasting across a ten-year horizon.
+* Ingests spatial coordinates for existing SBC facilities and a specific pilot location, executing a coordinate transformation from WGS 84 (EPSG:4326) to the BC Albers projection (EPSG:3005).
+* Loads Dissemination Block (DB) geometries, Census Subdivision (CSD) crosswalks, and Statistics Canada population center boundaries to establish the spatial baseline.
+* Accesses BC Stats population projections (RDS format) to integrate longitudinal demographic data for the years 2025, 2030, and 2035.
 
 #### Proximity Modeling and Catchment Assignment
 
-* Utilizes a centroid-to-centroid assignment logic (executed via the `assign_unassigned_dbs` function), which, while distinct from the high-fidelity road-network travel models used in antecedent scripts, provides an efficient proxy for measuring geographic proximity.
-* Calculates the minimum straight-line distance (Euclidean metric) between 52,000+ DB centroids and their nearest service facility under two distinct iterations: a baseline scenario (the original 65 locations) and a pilot scenario (the 65 locations plus the pilot facility).
-* Quantifies the resultant shift in service catchments by identifying DBs where the pilot location represents a more proximal service point than the existing infrastructure.
+* Calculates the Euclidean distance from 52,000+ DB centroids to the nearest SBC facility using the `assign_unassigned_dbs` function.
+* Executes two distinct iterations of the assignment model: the first establishing a 65-office baseline and the second incorporating the pilot facility.
+* Aggregates population projections by age and year to the DB level, utilizing a many-to-many relationship join to distribute CSD-level growth rates.
+* Assigns a "Rural" or "Urban" status to each DB based on a spatial intersection with population center boundaries, utilizing a 30% area-coverage threshold for classification.
+* Validates spatial reassignments through a localized `ggplot2` visualization, focusing on the catchment shift within the pilot region.
 
-#### Demographic Integration and Rurality Classification
-
-* Aggregates population projections for the current year (2025) and subsequent five- and ten-year intervals (2030 and 2035) to support strategic resource allocation analysis.
-* Determines the urban-rural designation for each DB based on a spatial intersection with population center boundaries; following established project parameters, any DB maintaining an area coverage ratio of $\le 30\%$ within a defined population center is classified as "Rural."
-* Conducts a spatial validation of catchment reassignments using `ggplot2` to ensure that geographic partitions follow logical proximity gradients within the specific geographic extent of the pilot region.
 
 #### Output Files
 
-The finalized statistical artifact is exported to the `FOR_SBC_OUT` directory:
+The following statistical artifact is produced and saved in the `FOR_SBC_OUT` directory:
 
-* `sbc-pilot_statistics-db-centroid-method-[Date].csv`: A comprehensive table containing DB identifiers, CSD names, multi-year population projections, and comparative distance metrics for both the 65-office and 66-office scenarios.
+* `sbc-pilot_statistics-db-centroid-method-[Date].csv`: A tabular dataset containing DB identifiers, CSD associations, multi-year population projections, and comparative Euclidean distance metrics.
 
 #### Notes
 
-* This script employs Euclidean distance as an optimization for processing speed; users should note that these values do not represent true road-network travel distances and are intended for comparative proximity analysis rather than absolute accessibility modeling.
-* The script includes automated directory verification logic to ensure the `FOR_SBC_OUT` path exists prior to file serialization.
-* Numeric outputs for distances and population estimates are rounded to one decimal place to maintain reporting consistency across the administrative dataset.
+* Proximity calculations are derived from straight-line Euclidean distance and do not incorporate road-network topology, travel-time variables, or physical barriers.
+* Directory verification logic is executed to confirm the existence of the `FOR_SBC_OUT` path prior to data serialization.
+* Numerical values for distances and population estimates are rounded to one decimal place to maintain reporting consistency.
 
 ### 07-db-centroid-assignment-standalone.R (Automated Geometric Catchment Modeling) {-}
 
-This script constitutes a self-contained computational pipeline designed for the rapid spatial assignment of Dissemination Blocks (DBs) to Service BC (SBC) facilities and the subsequent aggregation of demographic projections. By automating data acquisition from the British Columbia Data Catalogue (BCDC) and Statistics Canada (via the Cancensus API), the routine facilitates an objective, reproducible analysis of service accessibility based on geometric proximity metrics.
+This script implements an automated workflow for the spatial assignment of Dissemination Blocks (DBs) to Service BC (SBC) facilities using geometric proximity. It utilizes real-time data acquisition from the British Columbia Data Catalogue (BCDC) and Statistics Canada to generate localized catchment statistics and geometries.
 
 #### Data Preparation and Inputs
-
-* Performs automated retrieval of Dissemination Block geometries and provincial population projections directly from the BCDC API, ensuring that the most recent geographic and demographic frameworks are utilized.
-* Executes an API-driven extraction of 2021 Census data (CA21) using the `cancensus` package, requiring a pre-configured CensusMapper API key for the retrieval of DB-level population and dwelling counts.
-* Ingests a facility location CSV (EPSG:4326), which is programmatically transformed into the British Columbia Albers projection (EPSG:3005) to maintain spatial alignment with provincial boundary layers.
-* Integrates an external rural-urban classification matrix (sourced from the Ministry of Jobs and Economic Growth) to assign categorical rurality labels at the Census Subdivision (CSD) level.
+* Retrieves Dissemination Block geometries and provincial population projections via the BCDC API (Resource ID: `0e15d04d-127c-457a-b999-20800c929927`).
+* Extracts 2021 Census data (CA21) through the `cancensus` API to obtain DB-level population and dwelling counts.
+* Transforms facility point data from geographic coordinates (EPSG:4326) into the BC Albers projection (EPSG:3005) to ensure spatial alignment with provincial layers.
+* Joins an external rural-urban classification matrix to provide CSD-level jurisdictional labels derived from the Ministry of Jobs and Economic Growth.
 
 #### Script Logic and Analysis
 
-* Implements a vectorized geometric assignment function (`assign_dbs`) that utilizes the `st_nearest_feature` operation to link individual DB centroids to the nearest SBC facility point based on Euclidean distance.
-* Employs a top-down demographic estimation model to convert CSD-level population projections into DB-level estimates; this methodology assumes a static longitudinal proportion of population distribution within each parent jurisdiction.
-* Executes a multi-dimensional data "roll-up" to calculate facility-specific metrics, including weighted mean and median age distributions (using `spatstat` weighted calculations) and age-bracketed population counts for the current reporting year.
-* Constructs aggregated catchment geometries by performing a spatial union of all DBs assigned to a specific facility, followed by a topological simplification (`ms_simplify`) to optimize rendering performance for geographic information systems (GIS).
+* Computes the nearest-neighbor assignment for every DB centroid to an SBC facility point using the `st_nearest_feature` operation.
+* Applies a proportional distribution model to estimate DB-level population projections based on the population ratios within parent Census Subdivisions.
+* Calculates facility-level demographics, including age-bracketed counts and weighted mean and median ages, using the `spatstat` package.
+* Generates aggregated facility catchment polygons by performing a spatial union of all DB geometries assigned to a specific facility.
+* Applies the `ms_simplify` algorithm with a 0.01 retention threshold to the resulting geometries to reduce topological complexity for mapping applications.
 
 #### Output Files
 
-The script generates three primary analytical artifacts within a user-specified output directory:
+The script produces three primary analytical artifacts within the specified output directory:
 
-* `db_centroid_assignments.csv`: A granular list identifying the assigned facility, Euclidean distance (in meters), and demographic projections for every dissemination block.
-* `facility_population_projections.csv`: A longitudinal summary of population demographics and age distributions aggregated to the service facility level.
-* `facility_catchments/sbc-catchments.shp`: A spatial dataset containing simplified polygonal boundaries representing the geometric service area for each SBC office.
+* `db_centroid_assignments.csv`: A granular record of DB assignments, including Euclidean distance and longitudinal population estimates.
+* `facility_population_projections.csv`: A facility-level summary of demographic projections, including weighted age distributions.
+* `facility_catchments/sbc-catchments.shp`: A simplified spatial dataset representing the geometric service areas calculated for each facility.
 
 #### Notes
 
-* Users must ensure that the `CM_API_KEY` system environment variable is correctly set via `set_cancensus_api_key()` to avoid authentication failures during the data acquisition phase.
-* The proximity modeling is restricted to straight-line Euclidean distance (measured centroid-to-centroid) and does not account for road-network topology, topographical barriers, or seasonal travel variations.
-* The "Urban/Rural" designation is derived verbatim from the Rural Initiatives Excel matrix at the CSD level rather than being calculated from local population density or the 30% area-coverage threshold used in previous analytical iterations.
-
-## Future Work
-
--   Expand the analysis to include additional municipalities and public services.
--   Incorporate socio-economic and demographic factors into the analysis.
+* Successful execution is dependent on the presence of a valid `CM_API_KEY` within the system environment for the `cancensus` API calls.
+* Catchment boundaries are derived strictly from geometric proximity and do not reflect empirical travel behavior or road-network constraints.
+* Rural/Urban designations are joined directly from the provided Excel matrix at the CSD level, rather than being calculated via spatial density analysis.
