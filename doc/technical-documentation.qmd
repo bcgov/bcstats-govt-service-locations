@@ -243,17 +243,15 @@ The script `02a-map-plots.R` generates thematic maps visualizing accessibility m
     -   Apply consistent cartographic styling (`MAP_THEME`, `FILL_THEME`).
     -   Overlay Service BC locations as reference points.
     -   Handle missing data by highlighting areas with no drive data in red.
--   The variable mapped is currently set to mean driving distance (`drv_dist_mean`), but the function can be adapted for other metrics if needed.
+-   The variable mapped is currently hard-coded to mean driving distance (`drv_dist_mean`), but the function can be adapted for other metrics if needed.
 
 #### Output Files
 
--   Saves one SVG map per municipality in the `csd-drive-distance-maps` subfolder of the `MAP_OUT` directory. Filenames reflect the mapped variable and region.
+-   Saves one SVG map per municipality in the `csd-drive-distance-maps` subfolder of the `MAP_OUT` directory. Filenames reflect the mapped variable and region (e.g. `MAP_OUT/csd-drive-distance-maps/drv_dist_mean-by-dissemination-block-langford.svg`).
 
 #### Notes
 
--   The script focuses on DB-level mapping for the four municipalities of interest; DA and CSD-level maps are not produced here.
--   DA and CSD shapefiles and DA-level summary statistics are not required for this script.
--   The script clears the R environment at the end to free memory for subsequent processing steps.
+-   The script focuses on DB-level mapping for the municipalities of interest; CSD-level maps are not produced and CSD shapefiles are not required for this script.
 
 
 ### 02b-box-violin-plots.R (Statistical Visualizations) {-}
@@ -282,12 +280,10 @@ The `02b-box-violin-plots.R` script generates statistical visualizations that re
 #### Notes
 
 -   The script currently visualizes mean driving distance (`drv_dist_mean`) by municipality. Other metrics can be substituted by adjusting the `y_var` parameter.
--   No summary statistics CSV is produced by this script; outputs are limited to the visualizations.
--   The script clears the R environment at the end to free memory for subsequent processing steps.
 
 ### 02c-density-map.R (Smoothed Density Maps) {-}
 
-The `02d-density_map.R` script generates smoothed spatial density maps visualizing drive distances to the nearest Service BC office for each municipality of interest. By applying kernel density estimation, the script produces continuous heatmaps that fill spatial gaps between known address points, providing a more complete representation of accessibility patterns.
+The `02c-density_map.R` script generates smoothed spatial density maps visualizing drive distances to the nearest Service BC office for each municipality of interest. By applying kernel density estimation, the script produces continuous heatmaps that fill spatial gaps between known address points, providing a more complete representation of accessibility patterns.
 
 #### Data Preparation and Inputs
 
