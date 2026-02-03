@@ -301,6 +301,7 @@ The `02c-density_map.R` script generates smoothed spatial density maps visualizi
 -   Converts the smoothed result to a raster and then to a spatial feature for plotting.
 -   Overlays CSD boundaries, address points, and Service BC locations on the map.
 -   Supports a toggle for common scale normalization across municipalities (`common_scale` parameter), ensuring either consistent color ranges for comparison or locally optimized ranges for detail.
+-   Focuses on drive distance (`drv_dist`) as the primary metric, but can be adapted for drivetime or other variables.
 
 #### Styling
 
@@ -312,11 +313,6 @@ The `02c-density_map.R` script generates smoothed spatial density maps visualizi
 
 -   Saves each map as a PNG file in the `csd-drive-distance-maps` subfolder of the `MAP_OUT` directory. Filenames indicate the mapped variable, scale setting, and municipality.
 
-#### Notes
-
--   The script focuses on drive distance (`drv_dist`) as the primary metric, but can be adapted for drivetime or other variables.
--   Handles missing or empty data gracefully, skipping maps for municipalities with no address points.
--   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
 ###  02d-csd-demographics.R (Additional Demographic Work) {-}
 
@@ -326,7 +322,7 @@ The `02d-csd-demographics.R` script generates demographic summaries and visualiz
 
 -   Reads Service BC location data (`reduced-service_bc_locs.csv`) and filters to the municipalities in `CSD_NAMES`.
 -   Loads population projections (`full-population-projections.csv`) and census population data (`reduced-population-db.csv`).
--   Reads the crosswalk file (`csd-da-db-loc-correspondance.csv`) to link DBs, DAs, and CSDs.
+-   Reads the crosswalk file (`csd-da-db-loc-correspondance.csv`) to link DBs and CSDs.
 -   Loads DB-level population projections (`full-db-projections-transformed.rds`) and filters to the CSDs of interest.
 
 #### Demographic Summaries
@@ -343,18 +339,13 @@ The `02d-csd-demographics.R` script generates demographic summaries and visualiz
 -   Uses the custom `create_population_pyramid()` function from `fxns/csd-plots.R` to create the plots.
 -   Saves each CSD’s population pyramid as a PNG file in the `csd_population_pyramids` subfolder of the `MAP_OUT` directory.
 -   Optionally creates a combined plot of up to four pyramids for comparative visualization.
+-   Uses age and gender breakdowns from the population projections.
 
 #### Output Files
 
 -   `reduced-csd_population_metrics.csv`: CSD-level summary statistics (TABLES_OUT)
 -   Individual PNG files for each CSD’s population pyramid (`csd_population_pyramids` folder in MAP_OUT)
 -   Combined PNG file with multiple pyramids for side-by-side comparison
-
-#### Notes
-
--   The script uses age and gender breakdowns from the population projections to provide both current and future demographic perspectives.
--   All plots and tables are generated for the municipalities specified in `CSD_NAMES`.
--   At the end of the script, the R environment is cleared to free memory for subsequent processing steps.
 
 ## SBC-level Analysis {-}
 
@@ -393,8 +384,7 @@ The following key datasets and geospatial artifacts are produced:
 #### Notes
 
 -   The script ensures total provincial coverage by falling back to spatial proximity when network-based routing is unavailable.
--   The simplification of the final shapefile geometry is set to a 1% threshold to balance geographic precision with computational performance.
--   The R environment is purged upon script completion to ensure memory availability for subsequent analytical modules.
+-   The simplification of the final shapefile geometry is set to a 1% threshold to balance geographic precision with computational.
 
 ### 03b-plot-catchments.R (Catchment Area Visualization) {-}
 
@@ -427,12 +417,6 @@ The following visualizations are archived within the `MAP_OUT/complete_catchment
 -   `pilot_regions.png`: A high-level reference map of the analysis focus areas.
 -   `pilot_original_catchments.png` and `province_original_catchments.png`: Maps illustrating service gaps in the primary drive-time dataset.
 -   `pilot_complete_catchments.png` and `province_complete_catchments.png`: Comprehensive maps displaying 100% geographic assignment across the province.
-
-#### Notes
-
--   The script relies on pre-computed data from `03a-create-catchments.R` and does not perform any new assignment calculations.
--   Geometry simplification is critical for the provincial-scale maps to prevent excessive memory usage during the `ggsave` process.
--   The R environment is cleared and memory is garbage-collected (`gc()`) upon completion to maintain system stability for the final document rendering.
 
 ### 03c-sbc-centric-stats.R (Facility-Centric Performance Metrics) {-}
 
@@ -491,12 +475,6 @@ The following high-resolution PNG artifacts are archived in the `{MAP_OUT}/sbc-c
 
 -   `catchment-drv_dist-commonscale=[TRUE/FALSE]-[CSD_NAME]-[FACILITY_ID].png`: Detailed heatmaps illustrating the spatial distribution of transit impedance for each facility catchment.
 
-#### Notes
-
--   The KDE routine utilizes `suppressWarnings` during `ppp` object creation to account for coincident address points (e.g., apartment complexes) which are valid in high-density urban contexts.
--   The script employs `tryCatch` blocks to handle potential failures in spatial smoothing for catchments with sparse data or irregular topologies.
--   To prevent memory fragmentation during the generation of complex spatial rasters, the R environment is purged and garbage-collected (`gc()`) upon the completion of the mapping loop.
-
 ## Service BC Specific Analysis {-}
 
 ### 04-sbc-servicebc-catchments.R (Administrative Catchment Mapping) {-}
@@ -527,7 +505,6 @@ The following visualization is produced and saved in the `complete_catchments` s
 
 -   This script is dependent on the external Excel mapping file; any changes to administrative assignments must be updated in the source spreadsheet.
 -   The label nudging logic is specific to the current pilot regions; if the project scope expands, additional municipalities may require manual coordinate adjustments.
--   The script clears the R environment and performs a garbage collection (`gc()`) at the end to ensure system memory is available for subsequent tasks.
 
 
 ### 05a-csd-data-tables.R (CSD Statistics and Demographic Profiling) {-}
@@ -536,10 +513,10 @@ This script aggregates demographic, geographic, and drive-time data to create a 
 
 #### Data Preparation and Inputs
 
-* Loads geographic crosswalks to align Dissemination Blocks (DBs) with Census Subdivisions (CSDs).
-* Imports spatial shapefiles for DBs, CSDs, and Statistics Canada population centers, standardizing all to the BC Albers projection.
+* Loads geographic crosswalks to align Dissemination Blocks (DBs) with Census Subdivisions (CSDs).(csd-da-db-loc-correspondance.csv)
+* Imports spatial shapefiles for DBs (full-db-with-location.gpkg), CSDs(full-csd-with-location.gpkg), and Statistics Canada population centers(popcenter-statscan.gpkg), standardizing all to the BC Albers projection.
 * Integrates provincial drive-time data containing over 2 million records to link residential areas to the nearest service facilities.
-* Ingests BC Stats population projections and age demographics for current and future year intervals.
+* Ingests BC Stats population projections and age demographics for current and future year intervals (full-db-projections-transformed.rds).
 * Calculates household size estimates by distributing total CSD populations proportionally across known address locations.
 
 #### Statistical Aggregation and Logic
@@ -557,18 +534,18 @@ The following statistical artifact is produced and saved in the `TABLES_OUT` dir
 
 * `csd-statistics-for-SBC-[Date].csv`: A master table containing all demographic, rurality, and drive-time metrics indexed by CSD.
 
-
 ### 05b-sbc-data-tables.R (SBC Catchment Area Statistical Profiling) {-}
 
 This script aggregates demographic, rurality, and accessibility metrics for the 65 Service BC (SBC) locations across British Columbia. Unlike the previous script which focused on municipality-level data, this routine compiles statistics based on the total population and area served by each specific SBC office catchment.
 
 #### Data Preparation and Inputs
 
-* Loads the complete database of address-to-office assignments, linking over 52,000 Dissemination Blocks (DBs) to their corresponding service locations.
+* Loads the complete database of address-to-office assignments, linking over 52,000 Dissemination Blocks (DBs) to their corresponding service locations (`complete-db-assignments.csv`).
 * Integrates provincial drive-time data to calculate the travel distances and times for all addresses within each office's service area.
-* Ingests BC Stats population projections, age demographics, and spatial shapefiles for both municipalities and population centers.
+* Ingests BC Stats population projections and age demographics (`full-db-projections-transformed.rds`), alongside spatial shapefiles for both municipalities (`full-csd-with-location.gpkg`) and population centers (`popcenter-statscan.gpkg`).
 * Standardizes all spatial data to the BC Albers projection (EPSG:3005) to ensure consistent area and distance calculations.
 * Calculates an estimated household size per address by dividing the total DB population by the number of known address points.
+
 
 #### Statistical Aggregation and Logic
 
@@ -601,11 +578,11 @@ This script evaluates and compares different methodologies for classifying resid
 
 #### Data Preparation and Inputs
 
-* Loads point-level address data and transforms it into spatial features using BC Albers coordinates.
-* Imports Statistics Canada Forward Sortation Area (FSA) boundaries to support postal-code-based classification (Method 1).
-* Ingests Statistics Canada Population Center boundaries to support geography-based classification (Method 2).
-* Integrates Dissemination Block (DB) shapefiles and population projections to allow for population-weighted rurality analysis.
-* Accesses the complete office assignment crosswalk to link individual residential classifications back to specific Service BC catchments.
+* Loads point-level address data, which is transformed into spatial features using the British Columbia Albers projection (`bc-address-points.gpkg`).
+* Imports Statistics Canada Forward Sortation Area (FSA) boundaries to support postal-code-based classification, designated as "Method 1" within the analytical framework (`fsa-boundaries.gpkg`).
+* Ingests Statistics Canada Population Center boundaries to support geography-based classification, designated as "Method 2" (`popcenter-statscan.gpkg`).
+* Integrates Dissemination Block (DB) shapefiles (`full-db-with-location.gpkg`) and longitudinal population projections (`full-db-projections-transformed.rds`) to facilitate population-weighted rurality analysis.
+* Accesses the complete office assignment crosswalk to link individual residential classifications back to specific Service BC catchments (`complete-db-assignments.csv`).
 
 #### Script Logic and Analysis
 
@@ -638,10 +615,10 @@ This script generates high-resolution vector graphics to visualize the spatial r
 
 #### Data Preparation and Inputs
 
-* Loads Dissemination Block (DB) shapefiles and transforms them to the BC Albers projection (EPSG:3005).
-* Imports the Statistics Canada population center boundaries used as the official urban baseline.
-* Reads the pre-calculated rurality results (`rurality-by-db.csv`) to obtain the specific urban/rural status assigned to each block.
-* Performs spatial joins to associate the geometric shapes of the blocks with their corresponding population center boundaries.
+* Loads Dissemination Block (DB) shapefiles and transforms geometries to the British Columbia Albers projection (EPSG:3005) (`full-db-with-location.gpkg`).
+* Imports the Statistics Canada population center boundaries used as the official baseline for urban-rural categorization (`popcenter-statscan.gpkg`).
+* Reads the pre-calculated rurality results to obtain the specific urban/rural status assigned to each individual block (`rurality-by-db.csv`).
+* Performs spatial joins to associate the geometric shapes of the blocks with their corresponding population center boundaries to support high-resolution visual validation.
 
 #### Script Logic and Generation
 
@@ -657,9 +634,6 @@ The following visualizations are produced and saved in the `rural-method-misc` d
 * `[Population-Center-Name].svg`: A collection of individual vector map files (one per population center) showing the exact classification of every block within and surrounding the area.
 
 #### Notes
-
-* The script includes a specific workaround for a known `ggplot2` viewport issue to ensure that the grid-based drawings render correctly in the SVG output.
-* The output format is set to SVG specifically to support detailed manual review of complex boundaries where standard raster images (like PNG) might lose detail.
 * While the script defaults to processing the entire province, it contains internal logic to filter for specific pilot regions (e.g., Duncan, Victoria, Fort St. James) for focused analysis.
 
 ## Ad Hoc Work {-}
@@ -670,9 +644,10 @@ This script executes a comparative spatial analysis to assess the implications o
 
 #### Data Preparation and Inputs
 
-* Ingests spatial coordinates for existing SBC facilities and a specific pilot location, executing a coordinate transformation from WGS 84 (EPSG:4326) to the BC Albers projection (EPSG:3005).
-* Loads Dissemination Block (DB) geometries, Census Subdivision (CSD) crosswalks, and Statistics Canada population center boundaries to establish the spatial baseline.
-* Accesses BC Stats population projections (RDS format) to integrate longitudinal demographic data for the years 2025, 2030, and 2035.
+* Ingests spatial coordinates for existing Service BC facilities and the proposed pilot location, necessitating a coordinate transformation from WGS 84 to the BC Albers projection (`full-service-bc-locs-wgs84.csv`).
+* Loads Dissemination Block (DB) geometries (`full-db-with-location.gpkg`), Census Subdivision (CSD) crosswalks (`csd-da-db-loc-correspondance.csv`), and Statistics Canada population center boundaries (`popcenter-statscan.gpkg`) to establish the spatial framework.
+* Integrates longitudinal population projections, aggregated from pre-processed data objects, to support multi-year service demand forecasting (`full-db-projections-transformed.rds`).
+
 
 #### Proximity Modeling and Catchment Assignment
 
@@ -700,10 +675,11 @@ The following statistical artifact is produced and saved in the `FOR_SBC_OUT` di
 This script implements an automated workflow for the spatial assignment of Dissemination Blocks (DBs) to Service BC (SBC) facilities using geometric proximity. It utilizes real-time data acquisition from the British Columbia Data Catalogue (BCDC) and Statistics Canada to generate localized catchment statistics and geometries.
 
 #### Data Preparation and Inputs
-* Retrieves Dissemination Block geometries and provincial population projections via the BCDC API (Resource ID: `0e15d04d-127c-457a-b999-20800c929927`).
-* Extracts 2021 Census data (CA21) through the `cancensus` API to obtain DB-level population and dwelling counts.
-* Transforms facility point data from geographic coordinates (EPSG:4326) into the BC Albers projection (EPSG:3005) to ensure spatial alignment with provincial layers.
-* Joins an external rural-urban classification matrix to provide CSD-level jurisdictional labels derived from the Ministry of Jobs and Economic Growth.
+
+* Retrieves Dissemination Block geometries and provincial population projections via automated API calls to the British Columbia Data Catalogue (`bcdata` package).
+* Executes an API-driven extraction of 2021 Census data (CA21) to obtain dissemination-level population and dwelling counts (`cancensus` package).
+* Transforms facility point data from geographic coordinates into the British Columbia Albers projection to ensure topological alignment with provincial layers (`full-service-bc-locs-wgs84.csv`).
+* Joins an external rural-urban classification matrix to provide Census Subdivision (CSD) jurisdictional labels as defined by the Ministry of Jobs and Economic Growth (`rural_matrix_list_of_communities.xlsx`).
 
 #### Script Logic and Analysis
 
