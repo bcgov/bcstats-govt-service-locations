@@ -513,20 +513,19 @@ This script aggregates demographic, geographic, and drive-time data to create a 
 
 #### Data Preparation and Inputs
 
-* Loads geographic crosswalks to align Dissemination Blocks (DBs) with Census Subdivisions (CSDs).(csd-da-db-loc-correspondance.csv)
-* Imports spatial shapefiles for DBs (full-db-with-location.gpkg), CSDs(full-csd-with-location.gpkg), and Statistics Canada population centers(popcenter-statscan.gpkg), standardizing all to the BC Albers projection.
+* Loads geographic crosswalks to align Dissemination Blocks (DBs) with Census Subdivisions (CSDs).(`csd-da-db-loc-correspondance.csv`)
+* Imports spatial shapefiles for DBs (`full-db-with-location.gpkg`), CSDs(`full-csd-with-location.gpkg`), and Statistics Canada population centers(`popcenter-statscan.gpkg`), standardizing all to the BC Albers projection.
 * Integrates provincial drive-time data containing over 2 million records to link residential areas to the nearest service facilities.
-* Ingests BC Stats population projections and age demographics for current and future year intervals (full-db-projections-transformed.rds).
+* Ingests BC Stats population projections and age demographics for current and future year intervals (`full-db-projections-transformed.rds`).
 * Calculates household size estimates by distributing total CSD populations proportionally across known address locations.
 
 #### Statistical Aggregation and Logic
 
-* Bins the population into specific driving distance categories ranging from under 5 km to over 180 km.
-* Categorizes population counts by drive-time intervals, using segments from 5 minutes up to 150+ minutes.
-* Calculates mean and median driving distances and times for every municipality to measure service accessibility.
-* Develops 5-year and 10-year population growth projections for each CSD to support long-term service planning.
-* Segments the population into four primary age brackets and calculates weighted mean and median ages for each jurisdiction.
-* Determines the rural status of both residents and Service BC offices by analyzing spatial overlaps with defined population centers.
+* Categorizes the population served by each CSD into drive-distance bins (ranging from <5 km to 180+ km) and drive-time bins (ranging from <5 minutes to 150+ minutes).
+* Calculates specific accessibility metrics for each CSD, including the total number of addresses served, the number of municipalities within the catchment, and the mean/median travel times and distances.
+* Projects catchment population growth for 5-year and 10-year intervals and segments the current population into age brackets (0–14, 15–24, 25–64, and 65+).
+* Determines the rural composition of each CSD by identifying residents living outside defined population centers.
+* Flags the office locations themselves as "Rural" or "Urban" based on their spatial overlap with Statistics Canada population center boundaries.
 
 #### Output Files
 
@@ -567,7 +566,6 @@ The script generates a master summary table and several supporting reference fil
 #### Notes
 
 * This script uses "household size estimates" to distribute population data across address points, which allows for more granular accessibility reporting than using block centroids alone.
-* The "assigned" office for each area is determined by the results of the drive-time optimization model established in previous workflow steps.
 * All numeric outputs are rounded to one decimal place for reporting consistency.
 
 ## Other Research {-}
@@ -605,9 +603,6 @@ The script produces several analytical tables and visualizations stored in the `
 #### Notes
 
 * The "Population Center" method is generally treated as the primary standard, where any area falling outside a defined center is automatically classified as rural.
-* The script identifies that address-based counts can sometimes overstate rurality compared to population-based counts; the provided comparison table helps account for this bias.
-* Manual checks are performed for specific locations (e.g., Atlin) to ensure the spatial joins handled remote areas correctly.
-* Standardized memory cleanup routines are executed to ensure efficient processing of large spatial datasets.
 
 ### 05d-plot-rural-urban.R (Population Center Boundary Visualization) {-}
 
