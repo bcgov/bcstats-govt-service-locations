@@ -492,7 +492,7 @@ The following high-resolution PNG artifacts are archived in the `{MAP_OUT}/sbc-c
 
 ### 04-sbc-servicebc-catchments.R (Administrative Catchment Mapping) {-}
 
-This script creates a provincial map illustrating the service catchments assigned to each municipality based on official administrative records. Unlike previous models that use empirical drive-time data, this script visualizes the "CSD Method" of assignment to provide a baseline for comparing existing administrative boundaries against network-based catchments.
+This script creates a provincial map illustrating the service catchments assigned to each municipality based on official administrative records. Unlike previous models that use empirical drive-time data, this script visualizes the "CSD Method" of assignment to provide a baseline for comparing existing administrative boundaries against network-based catchments, using data provided by SBC. 
 
 #### Data Preparation and Inputs
 
