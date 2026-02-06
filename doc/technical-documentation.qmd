@@ -678,7 +678,7 @@ The following statistical artifact is produced and saved in the `FOR_SBC_OUT` di
 * Directory verification logic is executed to confirm the existence of the `FOR_SBC_OUT` path prior to data serialization.
 * Numerical values for distances and population estimates are rounded to one decimal place to maintain reporting consistency.
 
-### 07-db-centroid-assignment-standalone.R (Automated Geometric Catchment Modeling) {-}
+### 07-single-db-centroid-assignment.R (Automated Geometric Catchment Modeling) {-}
 
 This script implements an automated workflow for the spatial assignment of Dissemination Blocks (DBs) to Service BC (SBC) facilities using geometric proximity. It utilizes real-time data acquisition from the British Columbia Data Catalogue (BCDC) and Statistics Canada to generate localized catchment statistics and geometries.
 
