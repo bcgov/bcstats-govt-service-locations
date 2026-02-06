@@ -498,7 +498,7 @@ This script creates a provincial map illustrating the service catchments assigne
 
 -   Loads the BC provincial boundary and Census Subdivision (CSD) geometries, transforming them to the BC Albers projection (EPSG:3005).
 -   Reads the reduced Service BC location data to identify office coordinates for the Diamond-shaped markers.
--   Imports the official mapping spreadsheet (`Municipality(CSD)toSBCofficeMappying_updated (1).xlsx`) from the raw data folder to link specific CSD IDs with their assigned office.
+-   Imports the SBC-supplied mapping spreadsheet (`Municipality(CSD)toSBCofficeMappying_updated (1).xlsx`) from the raw data folder to link specific CSD IDs with their assigned office.
 -   Joins the Excel-based assignments to the CSD spatial boundaries for mapping.
 
 #### Map Generation
