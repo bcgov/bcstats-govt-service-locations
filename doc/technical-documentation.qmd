@@ -193,7 +193,7 @@ This script `01b-compare-metrics.R` generates a comparative visualization (drivi
 
 #### Output Files
 
--   The scatter plot is saved as a PNG file in the `csd-drive-distance-plots` subfolder of the `VISUALS_OUT` directory.
+-   The scatter plot is saved as `scatter_plot_mean_drv_dist_time_by_csd.png` in the `csd-drive-distance-plots` subfolder of the `VISUALS_OUT` directory.
 
 ### 01c-bin-distances.R (Generate Binned Distances) {-}
 
