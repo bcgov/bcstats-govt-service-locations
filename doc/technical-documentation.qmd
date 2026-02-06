@@ -443,7 +443,20 @@ The script `03c-sbc-centric-stats.R` executes a granular performance and demogra
 
 #### Output Files
 
-The script produces an extensive catalog of evidentiary artifacts archived within the `TABLE
+The script produces an extensive catalog of evidentiary artifacts archived within the `TABLE_OUT` folder:
+
+* `service_bc_centered_drive_metrics.csv`: A list of statistical measures for the drive time metrics for individual SBC facilities, such as mean, median, and interquartile times and drive distances. 
+* `service_bc_centered_csd_counts.csv`: A table that documents how much of a given CSD by population is serviced by a given SBC facility. 
+* `service_bc_centered_population_metrics.csv`: Population metrics associated with each facility, such as estimated population and average age. 
+* `csd_populations.csv`: A copy of the csd populations for reference. 
+
+Further visuals are saved in the `sbc_drive_distance_plots` subfolder of the `MAP_OUT` folder:
+
+* `{facility}_drive_distance.png`: A histogram of the drive distances to a specific facility for every associated address.
+* `all_facilities_drive_distance.png`: A facet plot for all pilot facility histograms. 
+* `drive_distance_box_plot.png`: A faceted box plot for all pilot facility drive distances. 
+
+And finally chloropleth maps for each facility are saved in the `sbc_drive_distance_maps` subfolder, with filenames indicating the facility name and metric observed (e.g.  `Service BC - Smithers_drive_distance_map.png`). 
 
 ### 03d-sbc-density-maps.R (Catchment Spatial Density Analysis) {-}
 
