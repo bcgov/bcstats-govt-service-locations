@@ -274,7 +274,7 @@ The `02b-box-violin-plots.R` script generates statistical visualizations that re
 
 #### Output Files
 
--   Saves the box plot as a PNG file in the `csd-drive-distance-plots` subfolder of the `VISUALS_OUT` directory, with a filename indicating the plot type and variable.
+-   Saves the box plot as a PNG file in the `csd-drive-distance-plots` subfolder of the `VISUALS_OUT` directory, with a filename indicating the plot type and variable (e.g. `box_plot_drv_dist_mean_by_dissemination_block.png`).
 -   Saves the violin plot as a separate PNG file in the same directory.
 
 #### Notes
