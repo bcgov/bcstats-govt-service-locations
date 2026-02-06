@@ -691,7 +691,7 @@ This script implements an automated workflow for the spatial assignment of Disse
 
 #### Script Logic and Analysis
 
-* Computes the nearest-neighbor assignment for every DB centroid to an SBC facility point using the `st_nearest_feature` operation.
+* Calculates the Euclidean distance from 52,000+ DB centroids to the nearest SBC facility using the assign_dbs function.
 * Applies a proportional distribution model to estimate DB-level population projections based on the population ratios within parent Census Subdivisions.
 * Calculates facility-level demographics, including age-bracketed counts and weighted mean and median ages, using the `spatstat` package.
 * Generates aggregated facility catchment polygons by performing a spatial union of all DB geometries assigned to a specific facility.
