@@ -9,3 +9,4 @@ README.html
 *.rds
 *.lintr
 tasks.json
+.tkb

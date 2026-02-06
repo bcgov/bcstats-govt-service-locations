@@ -116,10 +116,6 @@ drivetime_stats_csd <- drivetime_stats_csd |>
 
 write_csv(
   drivetime_stats_db,
-  glue("{SRC_DATA_FOLDER}/reduced_db_average_times_dist_all_locs.csv")
-)
-write_csv(
-  drivetime_stats_db,
   glue("{TABLES_OUT}/reduced_db_average_times_dist_all_locs.csv")
 )
 write_csv(
