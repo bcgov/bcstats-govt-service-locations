@@ -344,7 +344,7 @@ The `02d-csd-demographics.R` script generates demographic summaries and visualiz
 #### Output Files
 
 -   `reduced-csd_population_metrics.csv`: CSD-level summary statistics (`TABLES_OUT`)
--   Individual PNG files for each CSD’s population pyramid (`csd_population_pyramids` folder in MAP_OUT)
+-   Individual PNG files for each CSD’s population pyramid (`csd_population_pyramids` folder in `MAP_OUT`). E.g. `Dawson Creek-population-pyramid.png`. 
 -   Combined PNG file with multiple pyramids for side-by-side comparison
 
 ## SBC-level Analysis {-}
