@@ -311,7 +311,7 @@ The `02c-density_map.R` script generates smoothed spatial density maps visualizi
 
 #### Output Files
 
--   Saves each map as a PNG file in the `csd-drive-distance-maps` subfolder of the `MAP_OUT` directory. Filenames indicate the mapped variable, scale setting, and municipality.
+-   Saves each map as a PNG file in the `csd-drive-distance-maps` subfolder of the `MAP_OUT` directory. Filenames indicate the mapped variable, scale setting, and municipality (e.g. `drv-dist-smoothed-commonscale-false-dawson-creek.png`).
 
 
 ###  02d-csd-demographics.R (Additional Demographic Work) {-}
