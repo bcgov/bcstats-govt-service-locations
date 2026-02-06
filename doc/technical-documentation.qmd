@@ -639,7 +639,7 @@ This script executes a comparative spatial analysis to assess the implications o
 
 #### Data Preparation and Inputs
 
-* Ingests spatial coordinates for existing Service BC facilities and the proposed pilot location, necessitating a coordinate transformation from WGS 84 to the BC Albers projection (`full-service-bc-locs-wgs84.csv`).
+* Ingests spatial coordinates for existing Service BC facilities (`full-service-bc-locs.csv`, BC Albers (EPSG:3005) format) and the proposed pilot location (`pilot-service-bc-locs.csv`, longitude/latitude (EPSG:4326) format) and converts both to BC Albers for alignment. 
 * Loads Dissemination Block (DB) geometries (`full-db-with-location.gpkg`), Census Subdivision (CSD) crosswalks (`csd-da-db-loc-correspondance.csv`), and Statistics Canada population center boundaries (`popcenter-statscan.gpkg`) to establish the spatial framework.
 * Integrates longitudinal population projections, aggregated from pre-processed data objects, to support multi-year service demand forecasting (`full-db-projections-transformed.rds`).
 
