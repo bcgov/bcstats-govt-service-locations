@@ -287,7 +287,7 @@ write_csv(
 write_csv(corresp, glue("{SRC_DATA_FOLDER}/csd-da-db-loc-correspondance.csv"))
 saveRDS(
   db_projections_transformed,
-  glue("{SRC_DATA_FOLDER}/full_db_projections_transformed.rds")
+  glue("{SRC_DATA_FOLDER}/full-db-projections-transformed.rds")
 )
 
 write_csv(pop_db, glue("{SRC_DATA_FOLDER}/full-population-db.csv"))
